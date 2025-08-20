@@ -87,7 +87,6 @@ public class AuthService {
 
         HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(requestBody, headers);
 
-        ResponseEntity<Map> response = restTemplate.exchange(authUrl, HttpMethod.POST, request, Map.class);
-        return response;
+        return restTemplate.exchange(authUrl, HttpMethod.POST, request, Map.class);
     }
 }
