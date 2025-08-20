@@ -61,15 +61,19 @@ public class ApiService {
     }
 
 
-    public String createSquadLog(String payload) {
+    public ResponseEntity<String> createSquadLog(String payload) {
         String token = authService.getToken();
         RestTemplate restTemplate = new RestTemplate();
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(token);
         headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setAccept(List.of(MediaType.APPLICATION_JSON));
         HttpEntity<String> request = new HttpEntity<>(payload, headers);
         ResponseEntity<String> response = restTemplate.exchange(
-                squadUrl + "/create_squad_log", HttpMethod.POST, request, String.class);
-        return response.getBody();
+                squadUrl.replace("/squads", "/squad_logs"),
+                HttpMethod.POST, request, String.class);
+        return restTemplate.exchange(
+                squadUrl.replace("/squads", "/squad_logs"),
+                HttpMethod.POST, request, String.class);
     }
 }
