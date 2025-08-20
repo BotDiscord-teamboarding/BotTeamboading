@@ -35,13 +35,7 @@ public class ComponentInteractionListener extends ListenerAdapter {
 
                 StringSelectMenu.Builder menuBuilder = StringSelectMenu.create("squad-select")
                         .setPlaceholder("Selecione uma Squad");
-                for (int i = 0; i < squadsArray.length(); i++) {
-                    JSONObject squad = squadsArray.getJSONObject(i);
-                    String name = squad.optString("name", "");
-                    if (!name.isEmpty()) {
-                        menuBuilder.addOption(name, String.valueOf(squad.get("id")));
-                    }
-                }
+                buildSelectMenu(squadsArray, menuBuilder);
 
                 interaction.editOriginal("Selecione uma Squad:")
                         .setComponents(ActionRow.of(menuBuilder.build()))
@@ -120,13 +114,7 @@ public class ComponentInteractionListener extends ListenerAdapter {
 
                 StringSelectMenu.Builder typeMenuBuilder = StringSelectMenu.create("type-select")
                         .setPlaceholder("Selecione o tipo");
-                for (int i = 0; i < logTypesArray.length(); i++) {
-                    JSONObject type = logTypesArray.getJSONObject(i);
-                    String name = type.optString("name", "");
-                    if (!name.isEmpty()) {
-                        typeMenuBuilder.addOption(name, String.valueOf(type.get("id")));
-                    }
-                }
+                buildSelectMenu(logTypesArray, typeMenuBuilder);
 
                 event.getInteraction().getHook().sendMessage("Selecione o tipo:")
                         .addActionRow(typeMenuBuilder.build())
@@ -152,13 +140,7 @@ public class ComponentInteractionListener extends ListenerAdapter {
                         .setPlaceholder("Selecione as categorias")
                         .setMinValues(1)
                         .setMaxValues(categoriesArray.length());
-                for (int i = 0; i < categoriesArray.length(); i++) {
-                    JSONObject category = categoriesArray.getJSONObject(i);
-                    String name = category.optString("name", "");
-                    if (!name.isEmpty()) {
-                        categoryMenuBuilder.addOption(name, String.valueOf(category.get("id")));
-                    }
-                }
+                buildSelectMenu(categoriesArray, categoryMenuBuilder);
 
                 event.getInteraction().getHook().sendMessage("Selecione as categorias:")
                         .addActionRow(categoryMenuBuilder.build())
@@ -181,6 +163,16 @@ public class ComponentInteractionListener extends ListenerAdapter {
                     .setEphemeral(true)
                     .queue();
                 state.step = FormStep.DESCRIPTION;
+            }
+        }
+    }
+
+    private static void buildSelectMenu(JSONArray categoriesArray, StringSelectMenu.Builder categoryMenuBuilder) {
+        for (int i = 0; i < categoriesArray.length(); i++) {
+            JSONObject category = categoriesArray.getJSONObject(i);
+            String name = category.optString("name", "");
+            if (!name.isEmpty()) {
+                categoryMenuBuilder.addOption(name, String.valueOf(category.get("id")));
             }
         }
     }
