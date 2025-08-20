@@ -9,7 +9,7 @@ import org.springframework.web.client.RestTemplate;
 import java.util.List;
 
 @Service
-public class ApiService {
+public class SquadLogService {
 
     @Value("${api.squad.url}")
     private String squadUrl;

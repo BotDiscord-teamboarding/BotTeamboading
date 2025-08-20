@@ -1,6 +1,6 @@
 package com.meli.teamboardingBot.discord.listener;
 
-import com.meli.teamboardingBot.service.ApiService;
+import com.meli.teamboardingBot.service.SquadLogService;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
@@ -20,7 +20,7 @@ import java.util.Map;
 public class ComponentInteractionListener extends ListenerAdapter {
 
     @Autowired
-    private ApiService apiService;
+    private SquadLogService squadLogService;
 
     private final Map<Long, FormState> userFormState = new HashMap<>();
 
@@ -30,7 +30,7 @@ public class ComponentInteractionListener extends ListenerAdapter {
 
         if (buttonId.equals("criar")) {
             event.deferReply().setEphemeral(true).queue(interaction -> {
-                String squadsJson = apiService.getSquads();
+                String squadsJson = squadLogService.getSquads();
                 JSONArray squadsArray = new JSONArray(squadsJson);
 
                 StringSelectMenu.Builder menuBuilder = StringSelectMenu.create("squad-select")
@@ -62,7 +62,7 @@ public class ComponentInteractionListener extends ListenerAdapter {
                 state.squadId = squadId;
                 state.squadName = squadName;
 
-                JSONArray squadsArray = new JSONArray(apiService.getSquads());
+                JSONArray squadsArray = new JSONArray(squadLogService.getSquads());
                 JSONObject selectedSquad = null;
                 for (int i = 0; i < squadsArray.length(); i++) {
                     JSONObject squad = squadsArray.getJSONObject(i);
@@ -115,7 +115,7 @@ public class ComponentInteractionListener extends ListenerAdapter {
                         .setEphemeral(true)
                         .queue();
 
-                String logTypesJson = apiService.getSquadLogTypes();
+                String logTypesJson = squadLogService.getSquadLogTypes();
                 JSONArray logTypesArray = new JSONArray(logTypesJson);
 
                 StringSelectMenu.Builder typeMenuBuilder = StringSelectMenu.create("type-select")
@@ -145,7 +145,7 @@ public class ComponentInteractionListener extends ListenerAdapter {
                         .setEphemeral(true)
                         .queue();
 
-                String categoriesJson = apiService.getSquadCategories();
+                String categoriesJson = squadLogService.getSquadCategories();
                 JSONArray categoriesArray = new JSONArray(categoriesJson);
 
                 StringSelectMenu.Builder categoryMenuBuilder = StringSelectMenu.create("category-select")
@@ -251,7 +251,7 @@ public class ComponentInteractionListener extends ListenerAdapter {
         );
 
         event.getChannel().sendMessage("---------------------------------------------").queue();
-        ResponseEntity<String> response = apiService.createSquadLog(payload);
+        ResponseEntity<String> response = squadLogService.createSquadLog(payload);
         event.getChannel().sendMessage("Status Code da API: " + response.getStatusCode()).queue();
         event.getChannel().sendMessage("Body de Resposta da API: " + response.getBody()).queue();
     }
