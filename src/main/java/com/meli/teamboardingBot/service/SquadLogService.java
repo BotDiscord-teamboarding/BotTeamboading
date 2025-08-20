@@ -69,9 +69,6 @@ public class SquadLogService {
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setAccept(List.of(MediaType.APPLICATION_JSON));
         HttpEntity<String> request = new HttpEntity<>(payload, headers);
-        ResponseEntity<String> response = restTemplate.exchange(
-                squadUrl.replace("/squads", "/squad_logs"),
-                HttpMethod.POST, request, String.class);
         return restTemplate.exchange(
                 squadUrl.replace("/squads", "/squad_logs"),
                 HttpMethod.POST, request, String.class);
