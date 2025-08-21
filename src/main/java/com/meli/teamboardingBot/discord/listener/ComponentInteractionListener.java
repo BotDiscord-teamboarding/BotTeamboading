@@ -9,6 +9,7 @@ import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
@@ -244,8 +245,11 @@ public class ComponentInteractionListener extends ListenerAdapter {
 
         event.getChannel().sendMessage("---------------------------------------------").queue();
         ResponseEntity<String> response = squadLogService.createSquadLog(payload);
+        if(response.getStatusCode() == HttpStatus.OK) {
+            event.getChannel().sendMessage("Squad Log criado com sucesso!").queue();
+        }
         event.getChannel().sendMessage("Status Code da API: " + response.getStatusCode()).queue();
-        event.getChannel().sendMessage("Body de Resposta da API: " + response.getBody()).queue();
+
     }
 
     enum FormStep {
