@@ -33,10 +33,16 @@ public class ComponentInteractionListener extends ListenerAdapter {
     @Override
     public void onButtonInteraction(ButtonInteractionEvent event) {
         String buttonId = event.getComponentId();
+        long discordUserId = event.getUser().getIdLong();
+        logger.info("[BUTTON_INTERACTION] Usuário: {} | Botão: {} | Guild: {}", 
+                   discordUserId, buttonId, event.getGuild() != null ? event.getGuild().getId() : "DM");
 
         if (buttonId.equals("criar")) {
+            logger.info("[CRIAR_SQUAD] Iniciando processo de criação para usuário: {}", discordUserId);
             event.deferReply().setEphemeral(true).queue(interaction -> {
+                logger.debug("[CRIAR_SQUAD] Buscando lista de squads para usuário: {}", discordUserId);
                 String squadsJson = squadLogService.getSquads();
+                logger.debug("[CRIAR_SQUAD] Resposta da API de squads: {}", squadsJson);
                 JSONArray squadsArray;
                 if (!squadsJson.trim().startsWith("[")) {
                     JSONObject obj = new JSONObject(squadsJson);
@@ -49,17 +55,20 @@ public class ComponentInteractionListener extends ListenerAdapter {
                         .setPlaceholder("Selecione uma Squad");
                 buildSelectMenu(squadsArray, menuBuilder);
 
+                logger.info("[CRIAR_SQUAD] Enviando menu de seleção de squads para usuário: {} | Total squads: {}", 
+                           discordUserId, squadsArray.length());
                 interaction.editOriginal("Selecione uma Squad:")
                         .setComponents(ActionRow.of(menuBuilder.build()))
                         .queue();
             });
         } else if (buttonId.equals("criar-log")) {
-            long discordUserId = event.getUser().getIdLong();
-            logger.info("Interação de botão 'criar-log' recebida para usuário: {}", discordUserId);
+            logger.info("[CRIAR_LOG] Iniciando criação do squad log para usuário: {}", discordUserId);
 
             FormState state = userFormState.get(discordUserId);
             if (state != null) {
-                logger.debug("FormState recuperado: {}", state);
+                logger.info("[CRIAR_LOG] FormState encontrado para usuário: {} | Squad: {} | Tipo: {}", 
+                           discordUserId, state.squadName, state.typeName);
+                logger.debug("[CRIAR_LOG] FormState completo: {}", formatFormState(state));
 
                 String payload = buildSquadLogPayload(
                         state.squadId,
@@ -72,8 +81,10 @@ public class ComponentInteractionListener extends ListenerAdapter {
                 );
                 logger.info("Payload montado para criação do Squad Log: {}", payload);
 
+                logger.info("[CRIAR_LOG] Chamando API createSquadLog para usuário: {} | Payload: {}", discordUserId, payload);
                 ResponseEntity<String> response = squadLogService.createSquadLog(payload);
-                logger.info("Resposta da API: status={}, body={}", response.getStatusCode(), response.getBody());
+                logger.info("[CRIAR_LOG] Resposta da API para usuário: {} | Status: {} | Body: {}", 
+                           discordUserId, response.getStatusCode(), response.getBody());
 
                 EmbedBuilder embedBuilder = new EmbedBuilder();
                 if(response.getStatusCode() == HttpStatus.OK) {
@@ -86,32 +97,47 @@ public class ComponentInteractionListener extends ListenerAdapter {
                 event.replyEmbeds(embedBuilder.build()).setEphemeral(true).queue();
                 userFormState.remove(discordUserId);
             } else {
-                logger.warn("FormState não encontrado para usuário: {}", discordUserId);
+                logger.warn("[CRIAR_LOG] FormState não encontrado para usuário: {} | Estados ativos: {}", 
+                           discordUserId, userFormState.keySet());
                 event.reply("Formulário não encontrado ou expirado.").setEphemeral(true).queue();
             }
         } else if (buttonId.equals("alterar-log")) {
-            long discordUserId = event.getUser().getIdLong();
+            logger.info("[ALTERAR_LOG] Usuário solicitou alteração: {}", discordUserId);
             FormState state = userFormState.get(discordUserId);
             
             if (state != null) {
+                logger.info("[ALTERAR_LOG] Mostrando botões de modificação para usuário: {}", discordUserId);
                 showFieldModificationButtons(event, state);
             } else {
+                logger.warn("[ALTERAR_LOG] FormState não encontrado para usuário: {}", discordUserId);
                 event.reply("Formulário não encontrado ou expirado.").setEphemeral(true).queue();
             }
         } else if (buttonId.startsWith("modify-")) {
+            logger.info("[MODIFY_FIELD] Usuário: {} | Campo: {}", discordUserId, buttonId);
             handleFieldModification(event, buttonId);
+        } else {
+            logger.warn("[BUTTON_UNKNOWN] Botão desconhecido: {} | Usuário: {}", buttonId, discordUserId);
         }
     }
 
     @Override
     public void onStringSelectInteraction(StringSelectInteractionEvent event) {
         long discordUserId = event.getUser().getIdLong();
+        String componentId = event.getComponentId();
+        List<String> selectedValues = event.getValues();
+        
+        logger.info("[SELECT_INTERACTION] Usuário: {} | Componente: {} | Valores: {} | Guild: {}", 
+                   discordUserId, componentId, selectedValues, 
+                   event.getGuild() != null ? event.getGuild().getId() : "DM");
+        
         FormState state = userFormState.computeIfAbsent(discordUserId, k -> new FormState());
 
         switch (event.getComponentId()) {
             case "squad-select" -> {
                 String squadId = event.getValues().getFirst();
                 String squadName = event.getSelectedOptions().getFirst().getLabel();
+                logger.info("[SQUAD_SELECT] Usuário: {} | Squad selecionada: {} (ID: {})", 
+                           discordUserId, squadName, squadId);
                 state.squadId = squadId;
                 state.squadName = squadName;
 
@@ -149,6 +175,7 @@ public class ComponentInteractionListener extends ListenerAdapter {
                     }
                 }
 
+                logger.debug("[SQUAD_SELECT] Enviando resposta de confirmação para usuário: {}", discordUserId);
                 event.reply("Squad selecionada: " + squadName + " (ID: " + squadId + ")")
                         .setEphemeral(true)
                         .queue();
@@ -163,6 +190,8 @@ public class ComponentInteractionListener extends ListenerAdapter {
             case "user-select" -> {
                 String selectedUserId = event.getValues().getFirst();
                 String selectedUserName = event.getSelectedOptions().getFirst().getLabel();
+                logger.info("[USER_SELECT] Usuário: {} | Pessoa selecionada: {} (ID: {})", 
+                           discordUserId, selectedUserName, selectedUserId);
                 state.userId = selectedUserId;
                 state.userName = selectedUserName;
 
@@ -187,6 +216,8 @@ public class ComponentInteractionListener extends ListenerAdapter {
             case "type-select" -> {
                 String typeId = event.getValues().getFirst();
                 String typeName = event.getSelectedOptions().getFirst().getLabel();
+                logger.info("[TYPE_SELECT] Usuário: {} | Tipo selecionado: {} (ID: {})", 
+                           discordUserId, typeName, typeId);
                 state.typeId = typeId;
                 state.typeName = typeName;
 
@@ -216,6 +247,9 @@ public class ComponentInteractionListener extends ListenerAdapter {
                 List<String> selectedNames = event.getSelectedOptions().stream()
                     .map(opt -> opt.getLabel())
                     .toList();
+                
+                logger.info("[CATEGORY_SELECT] Usuário: {} | Categorias selecionadas: {} | IDs: {}", 
+                           discordUserId, selectedNames, selectedIds);
                     
                 state.categoryIds = selectedIds;
                 state.categoryNames = selectedNames;
@@ -234,6 +268,8 @@ public class ComponentInteractionListener extends ListenerAdapter {
             case "squad-select-modify" -> {
                 String squadId = event.getValues().getFirst();
                 String squadName = event.getSelectedOptions().getFirst().getLabel();
+                logger.info("[SQUAD_MODIFY] Usuário: {} | Nova squad: {} (ID: {})", 
+                           discordUserId, squadName, squadId);
                 state.squadId = squadId;
                 state.squadName = squadName;
 
@@ -284,6 +320,8 @@ public class ComponentInteractionListener extends ListenerAdapter {
             case "user-select-modify" -> {
                 String selectedUserId = event.getValues().getFirst();
                 String selectedUserName = event.getSelectedOptions().getFirst().getLabel();
+                logger.info("[USER_MODIFY] Usuário: {} | Nova pessoa: {} (ID: {})", 
+                           discordUserId, selectedUserName, selectedUserId);
                 state.userId = selectedUserId;
                 state.userName = selectedUserName;
 
@@ -297,6 +335,8 @@ public class ComponentInteractionListener extends ListenerAdapter {
             case "type-select-modify" -> {
                 String typeId = event.getValues().getFirst();
                 String typeName = event.getSelectedOptions().getFirst().getLabel();
+                logger.info("[TYPE_MODIFY] Usuário: {} | Novo tipo: {} (ID: {})", 
+                           discordUserId, typeName, typeId);
                 state.typeId = typeId;
                 state.typeName = typeName;
 
@@ -314,6 +354,9 @@ public class ComponentInteractionListener extends ListenerAdapter {
                 List<String> selectedNames = event.getSelectedOptions().stream()
                     .map(opt -> opt.getLabel())
                     .toList();
+                
+                logger.info("[CATEGORY_MODIFY] Usuário: {} | Novas categorias: {} | IDs: {}", 
+                           discordUserId, selectedNames, selectedIds);
                     
                 state.categoryIds = selectedIds;
                 state.categoryNames = selectedNames;
@@ -323,6 +366,9 @@ public class ComponentInteractionListener extends ListenerAdapter {
                     .queue();
                 
                 showSummaryFromSelectInteraction(event, state);
+            }
+            default -> {
+                logger.warn("[SELECT_UNKNOWN] Componente desconhecido: {} | Usuário: {}", componentId, discordUserId);
             }
         }
     }
@@ -341,59 +387,77 @@ public class ComponentInteractionListener extends ListenerAdapter {
     public void onMessageReceived(net.dv8tion.jda.api.events.message.MessageReceivedEvent event) {
         long discordUserId = event.getAuthor().getIdLong();
         if (!userFormState.containsKey(discordUserId)) return;
-        FormState state = userFormState.get(discordUserId);
-
+        
         if (event.isFromGuild() && event.getAuthor().isBot()) return;
+        
+        FormState state = userFormState.get(discordUserId);
+        String messageContent = event.getMessage().getContentRaw();
+        
+        logger.info("[MESSAGE_RECEIVED] Usuário: {} | Step: {} | Conteúdo: {} | Guild: {}", 
+                   discordUserId, state.step, messageContent, 
+                   event.getGuild() != null ? event.getGuild().getId() : "DM");
 
         switch (state.step) {
             case DESCRIPTION -> {
-                state.description = event.getMessage().getContentRaw();
+                state.description = messageContent;
+                logger.info("[DESCRIPTION_INPUT] Usuário: {} | Descrição: {}", discordUserId, messageContent);
                 event.getChannel().sendMessage("Descrição registrada. Informe a data de início (YYYY-MM-DD):").queue();
                 state.step = FormStep.START_DATE;
             }
             case START_DATE -> {
-                state.startDate = event.getMessage().getContentRaw();
+                state.startDate = messageContent;
+                logger.info("[START_DATE_INPUT] Usuário: {} | Data início: {}", discordUserId, messageContent);
                 event.getChannel().sendMessage("O formulario tem data de fim? (s/n)").queue();
                 state.step = FormStep.HAS_END;
             }
             case HAS_END -> {
-                String content = event.getMessage().getContentRaw().trim().toLowerCase();
+                String content = messageContent.trim().toLowerCase();
+                logger.info("[HAS_END_INPUT] Usuário: {} | Resposta: {}", discordUserId, content);
                 if (content.equals("s")) {
+                    logger.debug("[HAS_END_INPUT] Usuário escolheu adicionar data de fim: {}", discordUserId);
                     event.getChannel().sendMessage("Informe a data de fim (YYYY-MM-DD):").queue();
                     state.step = FormStep.END_DATE;
                 } else {
+                    logger.debug("[HAS_END_INPUT] Usuário escolheu não adicionar data de fim: {}", discordUserId);
                     state.endDate = null;
                     showSummary(event, state);
                     // Don't remove userFormState here - keep it for button interaction
                 }
             }
             case END_DATE -> {
-                state.endDate = event.getMessage().getContentRaw();
+                state.endDate = messageContent;
+                logger.info("[END_DATE_INPUT] Usuário: {} | Data fim: {}", discordUserId, messageContent);
                 showSummary(event, state);
                 // Don't remove userFormState here - keep it for button interaction
             }
             case DESCRIPTION_MODIFY -> {
-                state.description = event.getMessage().getContentRaw();
+                state.description = messageContent;
+                logger.info("[DESCRIPTION_MODIFY] Usuário: {} | Nova descrição: {}", discordUserId, messageContent);
                 event.getChannel().sendMessage("Descrição atualizada para: " + state.description).queue();
                 showSummaryFromMessage(event, state);
             }
             case START_DATE_MODIFY -> {
-                state.startDate = event.getMessage().getContentRaw();
+                state.startDate = messageContent;
+                logger.info("[START_DATE_MODIFY] Usuário: {} | Nova data início: {}", discordUserId, messageContent);
                 event.getChannel().sendMessage("Data de início atualizada para: " + state.startDate).queue();
                 showSummaryFromMessage(event, state);
             }
             case END_DATE_MODIFY -> {
-                String content = event.getMessage().getContentRaw().trim();
+                String content = messageContent.trim();
                 if (content.equalsIgnoreCase("null")) {
+                    logger.info("[END_DATE_MODIFY] Usuário: {} | Removendo data de fim", discordUserId);
                     state.endDate = null;
                     event.getChannel().sendMessage("Data de fim removida.").queue();
                 } else {
+                    logger.info("[END_DATE_MODIFY] Usuário: {} | Nova data fim: {}", discordUserId, content);
                     state.endDate = content;
                     event.getChannel().sendMessage("Data de fim atualizada para: " + state.endDate).queue();
                 }
                 showSummaryFromMessage(event, state);
             }
             default -> {
+                logger.warn("[MESSAGE_UNKNOWN] Step desconhecido: {} | Usuário: {} | Conteúdo: {}", 
+                           state.step, discordUserId, messageContent);
                 event.getChannel().sendMessage("O formulario foi cancelado.").queue();
                 userFormState.remove(discordUserId);
             }
@@ -672,5 +736,17 @@ public class ComponentInteractionListener extends ListenerAdapter {
             payload.put("end_date", endDate);
         }
         return payload.toString();
+    }
+
+    /**
+     * Helper method to format FormState for debugging purposes
+     */
+    private String formatFormState(FormState state) {
+        return String.format("FormState{squadId='%s', squadName='%s', userId='%s', userName='%s', " +
+                "typeId='%s', typeName='%s', categoryIds=%s, categoryNames=%s, " +
+                "description='%s', startDate='%s', endDate='%s', step=%s}",
+                state.squadId, state.squadName, state.userId, state.userName,
+                state.typeId, state.typeName, state.categoryIds, state.categoryNames,
+                state.description, state.startDate, state.endDate, state.step);
     }
 }
