@@ -1,6 +1,7 @@
 package com.meli.teamboardingBot.discord.listener;
 
 import com.meli.teamboardingBot.service.SquadLogService;
+import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
@@ -32,7 +33,13 @@ public class ComponentInteractionListener extends ListenerAdapter {
         if (buttonId.equals("criar")) {
             event.deferReply().setEphemeral(true).queue(interaction -> {
                 String squadsJson = squadLogService.getSquads();
-                JSONArray squadsArray = new JSONArray(squadsJson);
+                JSONArray squadsArray;
+                if (!squadsJson.trim().startsWith("[")) {
+                    JSONObject obj = new JSONObject(squadsJson);
+                    squadsArray = obj.optJSONArray("items"); // ajuste a chave conforme o retorno da API
+                } else {
+                    squadsArray = new JSONArray(squadsJson);
+                }
 
                 StringSelectMenu.Builder menuBuilder = StringSelectMenu.create("squad-select")
                         .setPlaceholder("Selecione uma Squad");
@@ -57,7 +64,9 @@ public class ComponentInteractionListener extends ListenerAdapter {
                 state.squadId = squadId;
                 state.squadName = squadName;
 
-                JSONArray squadsArray = new JSONArray(squadLogService.getSquads());
+                String squadsJson = squadLogService.getSquads();
+                JSONObject obj = new JSONObject(squadsJson);
+                JSONArray squadsArray = obj.optJSONArray("items");
                 JSONObject selectedSquad = null;
                 for (int i = 0; i < squadsArray.length(); i++) {
                     JSONObject squad = squadsArray.getJSONObject(i);
@@ -221,17 +230,18 @@ public class ComponentInteractionListener extends ListenerAdapter {
     }
 
     private void showSummary(net.dv8tion.jda.api.events.message.MessageReceivedEvent event, FormState state) {
-        StringBuilder builder = new StringBuilder();
-        builder.append("**Resumo dos dados inseridos:**\n");
-        builder.append("Squad: ").append(state.squadName).append("\n");
-        builder.append("Pessoa: ").append(state.userName).append("\n");
-        builder.append("Tipo: ").append(state.typeName).append("\n");
-        builder.append("Categorias: ").append(String.join(", ", state.categoryNames)).append("\n");
-        builder.append("Descrição: ").append(state.description).append("\n");
-        builder.append("Data de início: ").append(state.startDate).append("\n");
-        builder.append("Data de fim: ").append(state.endDate != null ? state.endDate : "Não informado").append("\n");
 
-        event.getChannel().sendMessage(builder.toString()).queue();
+        EmbedBuilder embed = new EmbedBuilder();
+        embed.setTitle("Resumo dos dados inseridos");
+        embed.addField("Squad", state.squadName, false);
+        embed.addField("Pessoa", state.userName, false);
+        embed.addField("Tipo", state.typeName, false);
+        embed.addField("Categorias", String.join(", ", state.categoryNames), false);
+        embed.addField("Descrição", state.description, false);
+        embed.addField("Data de início", state.startDate, false);
+        embed.addField("Data de fim", state.endDate != null ? state.endDate : "Não informado", false);
+
+        event.getChannel().sendMessageEmbeds(embed.build()).queue();
 
         String payload = buildSquadLogPayload(
                 state.squadId,
@@ -244,12 +254,16 @@ public class ComponentInteractionListener extends ListenerAdapter {
         );
 
         event.getChannel().sendMessage("---------------------------------------------").queue();
+        EmbedBuilder embedBuilder = new EmbedBuilder();
         ResponseEntity<String> response = squadLogService.createSquadLog(payload);
         if(response.getStatusCode() == HttpStatus.OK) {
-            event.getChannel().sendMessage("Squad Log criado com sucesso!").queue();
+            embedBuilder.setColor(0x00FF00);
+            embedBuilder.setDescription("Squad Log criado com sucesso! \nStatus Code da API: " + response.getStatusCode());
+        } else {
+            embedBuilder.setColor(0xFF0000);
+            embedBuilder.setDescription("Falha ao criar Squad Log.\nStatus Code da API: " + response.getStatusCode());
         }
-        event.getChannel().sendMessage("Status Code da API: " + response.getStatusCode()).queue();
-
+        event.getChannel().sendMessageEmbeds(embedBuilder.build()).queue();
     }
 
     enum FormStep {
