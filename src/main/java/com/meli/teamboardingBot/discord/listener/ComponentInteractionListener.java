@@ -114,23 +114,23 @@ public class ComponentInteractionListener extends ListenerAdapter {
             }
         } else if (buttonId.equals("atualizar")) {
             event.deferReply().setEphemeral(true).queue(interaction -> {
-                logger.debug("[ATUALIZAR_SQUAD] Buscando lista de todas as squads: {}");
-                String squadsJson = squadLogService.getSquadsAll();
-                logger.debug("[ATUALIZAR_SQUAD] Resposta da API de todas as squads: {}", squadsJson);
+                logger.debug("[ATUALIZAR_QUESTIONARIO] Buscando lista de todos os questionarios: {}");
+                String questionnarioesJson = squadLogService.getSquadLogAll();
+                logger.debug("[ATUALIZAR_QUESTIONARIO] Resposta da API de todos os questionarios: {}", questionnarioesJson);
                 JSONArray squadsArray;
-                if (!squadsJson.trim().startsWith("[")) {
-                    JSONObject obj = new JSONObject(squadsJson);
+                if (!questionnarioesJson.trim().startsWith("[")) {
+                    JSONObject obj = new JSONObject(questionnarioesJson);
                     squadsArray = obj.optJSONArray("items");
                 } else {
-                    squadsArray = new JSONArray(squadsJson);
+                    squadsArray = new JSONArray(questionnarioesJson);
                 }
+                System.out.println(squadsArray);
+                StringSelectMenu.Builder menuBuilder = StringSelectMenu.create("squad-logs-select-update")
+                        .setPlaceholder("Selecione um questionário para alterar");
+                buildSelectMenuUpdate(squadsArray, menuBuilder);
 
-                StringSelectMenu.Builder menuBuilder = StringSelectMenu.create("squad-select-update")
-                        .setPlaceholder("Selecione uma Squad para alterar");
-                buildSelectMenu(squadsArray, menuBuilder);
-
-                logger.info("[ATUALIZAR_SQUAD] Enviando menu de seleção de squads para usuário: {} | Total squads: {}");
-                interaction.editOriginal("Selecione uma Squad:")
+                logger.info("[ATUALIZAR_QUESTIONARIO] Enviando menu de seleção de squads para usuário: {} | Total squads: {}", questionnarioesJson.length());
+                interaction.editOriginal("Selecione um Questionário:")
                         .setComponents(ActionRow.of(menuBuilder.build()))
                         .queue();
             });
@@ -388,8 +388,11 @@ public class ComponentInteractionListener extends ListenerAdapter {
                 
                 showSummaryFromSelectInteraction(event, state);
             }
-            case "squad-select-update" -> {
+            case "squad-logs-select-update" -> {
+                logger.info("[ATUALIZAR_SQUAD] montando resumo dos dados para ser alterado");
 
+                System.out.printf(event.getValues().getFirst());
+                //showSummaryFromSelectInteraction(event, state);
             }
             default -> {
                 logger.warn("[SELECT_UNKNOWN] Componente desconhecido: {} | Usuário: {}", componentId, discordUserId);
@@ -411,13 +414,18 @@ public class ComponentInteractionListener extends ListenerAdapter {
         for (int i = 0; i < categoriesArray.length(); i++) {
             JSONObject category = categoriesArray.getJSONObject(i);
             String id = String.valueOf(category.getInt("id"));
-            String name = category.optString("name", "");
-            String type = category.getString("type");
-            String project = category.getString("project");
-            String squad = category.getString("squad");
-            String send_by = category.getString("squad");;
+            String name = category.optString("description", "");
+            String person = category.getJSONObject("user").getString("first_name") + " " + category.getJSONObject("user").getString("last_name");
+            String addedBy = category.getJSONObject("register_user").getString("first_name") + " " + category.getJSONObject("register_user").getString("last_name");;
+            String type = category.getJSONObject("squad_log_type").getString("name");
+            String project = category.getJSONObject("squad").getJSONObject("project").getString("name");
+            String start_date = category.getString("start_date");
+//              JSONObject squad = category.getJSONObject("squad").getJSONObject("project");
+//            String sent_by = "send by";//category.getString("squad");
+//            String target = "target";//category.getString("squad");
+//            String sent_on = "sent on";//category.getString("squad");
             if (!name.isEmpty()) {
-                categoryMenuBuilder.addOption(name, String.valueOf(category.get("id")), id + " | " + type + " | " + project + " | " + squad);
+                categoryMenuBuilder.addOption(name,id, id + " | " + project + " | " + person + " | " + addedBy + " | " + type + " | " + start_date);
             }
         }
     }

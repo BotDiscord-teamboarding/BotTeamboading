@@ -32,7 +32,7 @@ public class SquadLogService {
         return  clientBoarding.createSquadLog(payload);
     }
 
-    public String getSquadsAll() {
-        return  clientBoarding.getSquadsAll();
+    public String getSquadLogAll() {
+        return  clientBoarding.getSquadLogAll();
     }
 }
