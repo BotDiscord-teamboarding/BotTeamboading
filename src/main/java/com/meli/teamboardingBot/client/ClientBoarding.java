@@ -32,7 +32,7 @@ public class ClientBoarding {
     private final String SQUAD_LOG_PATH = "/clients/squad_logs";
     private final String SQUAD_LOGTYPE_PATH = "/clients/squad_log_types/all";
     private final String SQUAD_CATEGORY_PATH = "/clients/skill_categories";
-
+    private final String SQUAD_LIST_ALL_PATH = "/clients/squads/all";
     private AuthTokenResponseDTO getAuthToken() {
         return authBoarding.getToken();
     }
@@ -95,4 +95,17 @@ public class ClientBoarding {
         return restTemplate.exchange(fullUrl, HttpMethod.POST, request, String.class);
     }
 
+    public String getSquadsAll() {
+        AuthTokenResponseDTO token = getAuthToken();
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(token.getAccessToken());
+        HttpEntity<Void> request = new HttpEntity<>(headers);
+
+        String fullUrl = apiUrl + SQUAD_LIST_ALL_PATH;
+        logger.info("Fazendo requisição para buscar todas as squads: {}", fullUrl);
+
+        ResponseEntity<String> response = restTemplate.exchange(
+                fullUrl, HttpMethod.GET, request, String.class);
+        return response.getBody();
+    }
 }
