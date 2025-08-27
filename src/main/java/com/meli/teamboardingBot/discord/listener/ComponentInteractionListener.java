@@ -263,8 +263,7 @@ public class ComponentInteractionListener extends ListenerAdapter {
                     .queue();
                 state.step = FormStep.DESCRIPTION;
             }
-            
-            // Modify handlers
+
             case "squad-select-modify" -> {
                 String squadId = event.getValues().getFirst();
                 String squadName = event.getSelectedOptions().getFirst().getLabel();
@@ -277,7 +276,6 @@ public class ComponentInteractionListener extends ListenerAdapter {
                     .setEphemeral(true)
                     .queue();
                 
-                // Auto-update user selection for new squad
                 String squadsJson = squadLogService.getSquads();
                 JSONObject obj = new JSONObject(squadsJson);
                 JSONArray squadsArray = obj.optJSONArray("items");
@@ -421,14 +419,12 @@ public class ComponentInteractionListener extends ListenerAdapter {
                     logger.debug("[HAS_END_INPUT] Usuário escolheu não adicionar data de fim: {}", discordUserId);
                     state.endDate = null;
                     showSummary(event, state);
-                    // Don't remove userFormState here - keep it for button interaction
                 }
             }
             case END_DATE -> {
                 state.endDate = messageContent;
                 logger.info("[END_DATE_INPUT] Usuário: {} | Data fim: {}", discordUserId, messageContent);
                 showSummary(event, state);
-                // Don't remove userFormState here - keep it for button interaction
             }
             case DESCRIPTION_MODIFY -> {
                 state.description = messageContent;
@@ -540,7 +536,6 @@ public class ComponentInteractionListener extends ListenerAdapter {
                 });
             }
             case "modify-user" -> {
-                // Get current squad users
                 String squadsJson = squadLogService.getSquads();
                 JSONObject obj = new JSONObject(squadsJson);
                 JSONArray squadsArray = obj.optJSONArray("items");
