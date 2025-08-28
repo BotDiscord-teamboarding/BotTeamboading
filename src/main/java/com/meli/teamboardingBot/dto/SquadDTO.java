@@ -72,5 +72,4 @@ public class SquadDTO {
     @JsonProperty("metric_connections_enabled")
     private Boolean metricConnectionsEnabled;
 
-
 }

@@ -17,7 +17,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -113,30 +112,7 @@ public class ComponentInteractionListener extends ListenerAdapter {
                 logger.warn("[ALTERAR_LOG] FormState não encontrado para usuário: {}", discordUserId);
                 event.reply("Formulário não encontrado ou expirado.").setEphemeral(true).queue();
             }
-        } else if (buttonId.equals("atualizar")) {
-            event.deferReply().setEphemeral(true).queue(interaction -> {
-                logger.debug("[UPADATE_SQUAD_LOG] Buscando lista de todas as squad logs: {}:",discordUserId);
-                String sqaudLogUpdateJson = squadLogService.getSquadLogAll();
-                logger.debug("[UPDATE_SQUAD_LOG] Resposta da API de todas as squad logs: {}", sqaudLogUpdateJson);
-                JSONArray squadsArray;
-                if (!sqaudLogUpdateJson.trim().startsWith("[")) {
-                    JSONObject obj = new JSONObject(sqaudLogUpdateJson);
-                    squadsArray = obj.optJSONArray("items");
-                } else {
-                    squadsArray = new JSONArray(sqaudLogUpdateJson);
-                }
-
-                StringSelectMenu.Builder menuBuilder = StringSelectMenu.create("squad-logs-select-update")
-                        .setPlaceholder("Selecione uma squad log para alterar");
-                buildSelectMenuUpdate(squadsArray, menuBuilder);
-
-                logger.info("[UPDATE_SQUAD_LOG] Enviando menu de seleção de squads para usuário: {} | Total squads: {}", discordUserId, sqaudLogUpdateJson.length());
-                interaction.editOriginal("Selecione uma squad log para atualizar:")
-                        .setComponents(ActionRow.of(menuBuilder.build()))
-                        .queue();
-            });
-
-        }else if (buttonId.startsWith("modify-")) {
+        } else if (buttonId.startsWith("modify-")) {
             logger.info("[MODIFY_FIELD] Usuário: {} | Campo: {}", discordUserId, buttonId);
             handleFieldModification(event, buttonId);
         } else {
@@ -376,7 +352,7 @@ public class ComponentInteractionListener extends ListenerAdapter {
                 List<String> selectedNames = event.getSelectedOptions().stream()
                     .map(opt -> opt.getLabel())
                     .toList();
-
+                
                 logger.info("[CATEGORY_MODIFY] Usuário: {} | Novas categorias: {} | IDs: {}", 
                            discordUserId, selectedNames, selectedIds);
                     
@@ -388,26 +364,6 @@ public class ComponentInteractionListener extends ListenerAdapter {
                     .queue();
                 
                 showSummaryFromSelectInteraction(event, state);
-            }
-            case "squad-logs-select-update" -> {
-                state.squadId = event.getValues().getFirst();
-                String squadName = event.getSelectedOptions().getFirst().getLabel();
-
-                logger.info("[SQUAD_SELECT_UPDATE] Usuário: {} | Squad selecionada: {} (ID: {})",
-                        discordUserId, squadName, state.squadId);
-
-                try {
-                    event.deferReply(true).queue(); // Defer the reply to prevent timeout
-                    
-                    JSONObject squadLog = new JSONObject(squadLogService.getSquadLogId(event.getValues().getFirst()));
-
-                    logger.info("[UPDATE_SQUAD] montando resumo dos dados para ser alterado ");
-                    this.showSummaryUpdate(event, squadLog);
-                } catch (Exception e) {
-                    logger.error("[UPDATE_SQUAD] Erro ao processar seleção do squad log: {}", e.getMessage(), e);
-                    event.getHook().editOriginal("❌ Erro ao carregar os dados do questionário selecionado. Tente novamente.")
-                        .queue();
-                }
             }
             default -> {
                 logger.warn("[SELECT_UNKNOWN] Componente desconhecido: {} | Usuário: {}", componentId, discordUserId);
@@ -425,21 +381,6 @@ public class ComponentInteractionListener extends ListenerAdapter {
         }
     }
 
-    private static void buildSelectMenuUpdate(JSONArray categoriesArray, StringSelectMenu.Builder categoryMenuBuilder) {
-        for (int i = 0; i < categoriesArray.length(); i++) {
-            JSONObject category = categoriesArray.getJSONObject(i);
-            String id = String.valueOf(category.getInt("id"));
-            String name = category.optString("description", "");
-            String person = category.getJSONObject("user").getString("first_name") + " " + category.getJSONObject("user").getString("last_name");
-            String addedBy = category.getJSONObject("register_user").getString("first_name") + " " + category.getJSONObject("register_user").getString("last_name");;
-            String type = category.getJSONObject("squad_log_type").getString("name");
-            String project = category.getJSONObject("squad").getJSONObject("project").getString("name");
-            String start_date = category.getString("start_date");
-            if (!name.isEmpty()) {
-                categoryMenuBuilder.addOption(name,id, id + " | " + project + " | " + person + " | " + addedBy + " | " + type + " | " + start_date);
-            }
-        }
-    }
     @Override
     public void onMessageReceived(net.dv8tion.jda.api.events.message.MessageReceivedEvent event) {
         long discordUserId = event.getAuthor().getIdLong();
@@ -537,58 +478,6 @@ public class ComponentInteractionListener extends ListenerAdapter {
                 Button.secondary("alterar-log", "✏️ Alterar")
             )
             .queue();
-    }
-
-    private void showSummaryUpdate(StringSelectInteractionEvent event, JSONObject squadLogUpdate) {
-        long discordUserId = event.getUser().getIdLong();
-        FormState state = userFormState.computeIfAbsent(discordUserId, k -> new FormState());
-
-        state.squadId =  String.valueOf(squadLogUpdate.getJSONObject("squad").getInt("id")) ;
-        state.squadName = squadLogUpdate.getJSONObject("squad").getString("name");
-        String squad = state.squadName + " (" + squadLogUpdate.getJSONObject("squad").getJSONObject("project").getString("name") + ")";
-
-        state.userId =  String.valueOf(squadLogUpdate.getInt("user_id")) ;
-        String firstName = squadLogUpdate.getJSONObject("user").getString("first_name");
-        String lastName = squadLogUpdate.getJSONObject("user").getString("last_name");
-        state.userName = firstName + " " + lastName;
-
-        String email = squadLogUpdate.getJSONObject("user").getString("email");
-        String person = "#"+state.userId+" - " + state.userName+ " ("+ email +")";
-        state.typeId = String.valueOf(squadLogUpdate.getInt("squad_log_type_id"));
-        state.typeName = squadLogUpdate.getJSONObject("squad_log_type").getString("name");
-
-        JSONArray skillCategoriesArray = squadLogUpdate.getJSONArray("skill_categories");
-        List<String> skillCategoriesId = new ArrayList<>();
-        List<String> skillCategoriesName = new ArrayList<>();
-
-        for (int i = 0; i < skillCategoriesArray.length(); i++) {
-            skillCategoriesId.add(String.valueOf(skillCategoriesArray.getJSONObject(i).getInt("id")));
-            skillCategoriesName.add(skillCategoriesArray.getJSONObject(i).getString("name"));
-        }
-
-        state.categoryIds = skillCategoriesId;
-        state.categoryNames = skillCategoriesName;
-        state.description = squadLogUpdate.getString("description");
-        state.startDate = squadLogUpdate.getString("start_date");
-        state.endDate = squadLogUpdate.optString("end_date", null);
-
-        EmbedBuilder embed = new EmbedBuilder();
-        embed.setTitle("📋 Resumo da squad log selecionada #" + state.squadId);
-        embed.setColor(0x0099FF);
-        embed.addField("🏢 Squad", squad, false);
-        embed.addField("👤 Pessoa", person, false);
-        embed.addField("📝 Tipo", state.squadName, false);
-        embed.addField("🏷️ Categorias", state.categoryNames.size() == 0 ? "Nenhuma categoria" : String.join(", ", state.categoryNames), false);
-        embed.addField("📄 Descrição", state.description, false);
-        embed.addField("📅 Data de início", state.startDate, false);
-            embed.addField("📅 Data de fim", state.endDate != null ? state.endDate : "Não informado", false);
-
-        event.getHook().sendMessageEmbeds(embed.build())
-                .setActionRow(
-                        Button.success("criar-log", "✅ Confirmar"),
-                        Button.secondary("alterar-log", "✏️ Alterar")
-                )
-                .queue();
     }
 
     private void showFieldModificationButtons(ButtonInteractionEvent event, FormState state) {

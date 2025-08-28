@@ -10,7 +10,6 @@ com/meli/teamboardingBot/client/ClientBoarding.class
 com/meli/teamboardingBot/discord/listener/SlashCommandListener.class
 com/meli/teamboardingBot/service/SquadLogService.class
 com/meli/teamboardingBot/discord/listener/ComponentInteractionListener.class
-com/meli/teamboardingBot/discord/listener/ComponentInteractionListener$Step.class
 com/meli/teamboardingBot/dto/TechnologyDTO.class
 com/meli/teamboardingBot/discord/listener/ComponentInteractionListener$FormState.class
 com/meli/teamboardingBot/config/JdaConfig.class
@@ -21,6 +20,7 @@ com/meli/teamboardingBot/dto/request/AuthTokenRequestDTO.class
 com/meli/teamboardingBot/client/ClientAuthBoarding.class
 com/meli/teamboardingBot/dto/RoleDTO.class
 com/meli/teamboardingBot/dto/AuthTokenResponseDTO.class
+com/meli/teamboardingBot/discord/listener/ComponentInteractionListener$FormStep.class
 com/meli/teamboardingBot/discord/command/SlashCommandHandler.class
 com/meli/teamboardingBot/TeamboardingBotApplication.class
 com/meli/teamboardingBot/dto/request/SquadLogRequestDTO.class

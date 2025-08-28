@@ -30,6 +30,5 @@ public class ProjectDTO {
     
     @JsonProperty("referents")
     private List<Object> referents;
-    
 
 }
