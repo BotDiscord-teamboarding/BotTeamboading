@@ -24,8 +24,11 @@ public class SquadLogService {
     }
 
     public ResponseEntity<String> createSquadLog(String payload) {
+        return clientBoarding.createSquadLog(payload);
+    }
 
-        return  clientBoarding.createSquadLog(payload);
+    public ResponseEntity<String> updateSquadLog(Long squadLogId, String payload) {
+        return clientBoarding.updateSquadLog(squadLogId, payload);
     }
 
     public String getSquadLogAll() {

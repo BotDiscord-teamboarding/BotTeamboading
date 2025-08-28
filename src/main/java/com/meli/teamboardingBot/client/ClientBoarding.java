@@ -5,7 +5,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.*;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
@@ -42,7 +47,6 @@ public class ClientBoarding {
         return getAuthToken().getUser().getId();
     }
 
-
     public String getSquads() {
         AuthTokenResponseDTO token = getAuthToken();
         HttpHeaders headers = new HttpHeaders();
@@ -78,7 +82,6 @@ public class ClientBoarding {
         return response.getBody();
     }
 
-
     public ResponseEntity<String> createSquadLog(String payload) {
         AuthTokenResponseDTO token = getAuthToken();
         HttpHeaders headers = new HttpHeaders();
@@ -92,6 +95,21 @@ public class ClientBoarding {
         logger.debug("Payload: {}", payload);
         
         return restTemplate.exchange(fullUrl, HttpMethod.POST, request, String.class);
+    }
+
+    public ResponseEntity<String> updateSquadLog(Long squadLogId, String payload) {
+        AuthTokenResponseDTO token = getAuthToken();
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(token.getAccessToken());
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setAccept(List.of(MediaType.APPLICATION_JSON));
+        HttpEntity<String> request = new HttpEntity<>(payload, headers);
+        
+        String fullUrl = apiUrl + SQUAD_LOG_PATH + "/" + squadLogId;
+        logger.info("Fazendo requisição para atualizar squad log {}: {}", squadLogId, fullUrl);
+        logger.debug("Payload: {}", payload);
+        
+        return restTemplate.exchange(fullUrl, HttpMethod.PUT, request, String.class);
     }
 
     public String getSquadLogAll() {
