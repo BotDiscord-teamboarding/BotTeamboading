@@ -35,4 +35,8 @@ public class SquadLogService {
     public String getSquadLogAll() {
         return  clientBoarding.getSquadLogAll();
     }
+
+    public String getSquadLogId(String id) {
+        return clientBoarding.getSquadLogId(id);
+    }
 }
