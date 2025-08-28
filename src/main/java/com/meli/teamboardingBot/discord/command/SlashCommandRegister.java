@@ -2,24 +2,24 @@ package com.meli.teamboardingBot.discord.command;
 
 import jakarta.annotation.PostConstruct;
 import net.dv8tion.jda.api.JDA;
+import net.dv8tion.jda.api.interactions.commands.build.Commands;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Component
 public class SlashCommandRegister {
 
-    private final JDA jda;
-    private final String guildId;
+    @Autowired
+    private JDA jda;
 
-    public SlashCommandRegister(JDA jda, @Value("${discord.guild.id}") String guildId) {
-        this.jda = jda;
-        this.guildId = guildId;
-    }
+    @Value("${discord.guild.id}")
+    private String guildId;
 
     @PostConstruct
     public void registerCommands() {
         jda.getGuildById(guildId).updateCommands().addCommands(
-                /*Commands aqui*/
+                Commands.slash("squad-log", "Squad Log")
         ).queue();
     }
 }
