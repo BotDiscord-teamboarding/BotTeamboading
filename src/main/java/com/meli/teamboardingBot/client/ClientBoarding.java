@@ -32,7 +32,8 @@ public class ClientBoarding {
     private final String SQUAD_LOG_PATH = "/clients/squad_logs";
     private final String SQUAD_LOGTYPE_PATH = "/clients/squad_log_types/all";
     private final String SQUAD_CATEGORY_PATH = "/clients/skill_categories";
-
+    private final String SQUAD_LOG_LIST_ALL_PATH = "/clients/squad_logs?offset=0&q=&client_id=67&area_id=67&project_id=35&squad_id=232&only_active_squads=true&limit=15";
+    private final String SQUAD_LOG_ID_PATH = "/clients/squad_logs/";
     private AuthTokenResponseDTO getAuthToken() {
         return authBoarding.getToken();
     }
@@ -93,4 +94,31 @@ public class ClientBoarding {
         return restTemplate.exchange(fullUrl, HttpMethod.POST, request, String.class);
     }
 
+    public String getSquadLogAll() {
+        AuthTokenResponseDTO token = getAuthToken();
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(token.getAccessToken());
+        HttpEntity<Void> request = new HttpEntity<>(headers);
+
+        String fullUrl = apiUrl + SQUAD_LOG_LIST_ALL_PATH;
+        logger.info("Fazendo requisição para buscar todas as squads log: {}", fullUrl);
+
+        ResponseEntity<String> response = restTemplate.exchange(
+                fullUrl, HttpMethod.GET, request, String.class);
+        return response.getBody();
+    }
+
+    public String getSquadLogId(String id) {
+        AuthTokenResponseDTO token = getAuthToken();
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(token.getAccessToken());
+        HttpEntity<Void> request = new HttpEntity<>(headers);
+
+        String fullUrl = apiUrl + SQUAD_LOG_ID_PATH + id;
+        logger.info("Fazendo requisição para buscar squads log: "+ id +" {}", fullUrl);
+
+        ResponseEntity<String> response = restTemplate.exchange(
+                fullUrl, HttpMethod.GET, request, String.class);
+        return response.getBody();
+    }
 }

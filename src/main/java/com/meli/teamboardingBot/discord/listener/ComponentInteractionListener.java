@@ -1,23 +1,13 @@
 package com.meli.teamboardingBot.discord.listener;
 
-import com.meli.teamboardingBot.discord.ui.Ui;
 import com.meli.teamboardingBot.service.SquadLogService;
 import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.entities.User;
-import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
-import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
-import net.dv8tion.jda.api.interactions.components.selections.SelectOption;
-import net.dv8tion.jda.api.interactions.components.text.TextInput;
-import net.dv8tion.jda.api.interactions.components.text.TextInputStyle;
-import net.dv8tion.jda.api.interactions.modals.Modal;
-import net.dv8tion.jda.api.utils.messages.MessageEditBuilder;
-import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.slf4j.Logger;
@@ -27,814 +17,708 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 @Component
 public class ComponentInteractionListener extends ListenerAdapter {
 
-   
-    private static final Logger logger = LoggerFactory.getLogger(ComponentInteractionListener.class);
-    private static final DateTimeFormatter BRAZILIAN_DATE_FORMAT = DateTimeFormatter.ofPattern("dd-MM-yyyy");
-
     @Autowired
     private SquadLogService squadLogService;
 
-    private static final String BTN_CREATE = "criar";
-    private static final String BTN_CONFIRM_CREATE = "criar-log";
-    private static final String BTN_EDIT = "alterar-log";
-    private static final String BTN_UPDATE = "atualizar";
+    private final Map<Long, FormState> userFormState = new HashMap<>();
+    private final Logger logger = LoggerFactory.getLogger(ComponentInteractionListener.class);
 
-    private static final String ID_SQUAD_SELECT = "squad-select";
-    private static final String ID_USER_SELECT = "user-select";
-    private static final String ID_TYPE_SELECT = "type-select";
-    private static final String ID_CATEGORY_SELECT = "category-select";
-    
-    private static final String ID_SQUAD_SELECT_MODIFY = "squad-select-modify";
-    private static final String ID_USER_SELECT_MODIFY = "user-select-modify";
-    private static final String ID_TYPE_SELECT_MODIFY = "type-select-modify";
-    private static final String ID_CATEGORY_SELECT_MODIFY = "category-select-modify";
+    @Override
+    public void onButtonInteraction(ButtonInteractionEvent event) {
+        String buttonId = event.getComponentId();
+        long discordUserId = event.getUser().getIdLong();
+        logger.info("[BUTTON_INTERACTION] Usuário: {} | Botão: {} | Guild: {}", 
+                   discordUserId, buttonId, event.getGuild() != null ? event.getGuild().getId() : "DM");
 
-    private static final String BTN_MOD_SQUAD = "modify-squad";
-    private static final String BTN_MOD_USER = "modify-user";
-    private static final String BTN_MOD_TYPE = "modify-type";
-    private static final String BTN_MOD_CATEGORY = "modify-category";
-    private static final String BTN_MOD_DESC = "modify-description";
-    private static final String BTN_MOD_START = "modify-start-date";
-    private static final String BTN_MOD_END = "modify-end-date";
-    private static final String BTN_BACK_SUMMARY = "back-to-summary";
-    
-    private static final String BTN_NEW_SQUAD_LOG = "new-squad-log";
-    private static final String BTN_EXIT = "exit";
+        if (buttonId.equals("criar")) {
+            logger.info("[CRIAR_SQUAD] Iniciando processo de criação para usuário: {}", discordUserId);
+            event.deferReply().setEphemeral(true).queue(interaction -> {
+                logger.debug("[CRIAR_SQUAD] Buscando lista de squads para usuário: {}", discordUserId);
+                String squadsJson = squadLogService.getSquads();
+                logger.debug("[CRIAR_SQUAD] Resposta da API de squads: {}", squadsJson);
+                JSONArray squadsArray;
+                if (!squadsJson.trim().startsWith("[")) {
+                    JSONObject obj = new JSONObject(squadsJson);
+                    squadsArray = obj.optJSONArray("items");
+                } else {
+                    squadsArray = new JSONArray(squadsJson);
+                }
 
-    private static final String MODAL_DETAILS = "wiz:details";
-    
-    private static final int SUCCESS_MESSAGE_DELAY = 2;
+                StringSelectMenu.Builder menuBuilder = StringSelectMenu.create("squad-select")
+                        .setPlaceholder("Selecione uma Squad");
+                buildSelectMenu(squadsArray, menuBuilder);
 
-    private enum Step { SELECT_SQUAD, SELECT_USER, SELECT_TYPE, SELECT_CATEGORIES, AWAIT_DETAILS_MODAL, REVIEW }
+                logger.info("[CRIAR_SQUAD] Enviando menu de seleção de squads para usuário: {} | Total squads: {}", 
+                           discordUserId, squadsArray.length());
+                interaction.editOriginal("Selecione uma Squad:")
+                        .setComponents(ActionRow.of(menuBuilder.build()))
+                        .queue();
+            });
+        } else if (buttonId.equals("criar-log")) {
+            logger.info("[CRIAR_LOG] Iniciando criação do squad log para usuário: {}", discordUserId);
+
+            FormState state = userFormState.get(discordUserId);
+            if (state != null) {
+                logger.info("[CRIAR_LOG] FormState encontrado para usuário: {} | Squad: {} | Tipo: {}", 
+                           discordUserId, state.squadName, state.typeName);
+                logger.debug("[CRIAR_LOG] FormState completo: {}", formatFormState(state));
+
+                String payload = buildSquadLogPayload(
+                        state.squadId,
+                        state.userId,
+                        state.typeId,
+                        state.categoryIds,
+                        state.description,
+                        state.startDate,
+                        state.endDate
+                );
+                logger.info("Payload montado para criação do Squad Log: {}", payload);
+
+                logger.info("[CRIAR_LOG] Chamando API createSquadLog para usuário: {} | Payload: {}", discordUserId, payload);
+                ResponseEntity<String> response = squadLogService.createSquadLog(payload);
+                logger.info("[CRIAR_LOG] Resposta da API para usuário: {} | Status: {} | Body: {}", 
+                           discordUserId, response.getStatusCode(), response.getBody());
+
+                EmbedBuilder embedBuilder = new EmbedBuilder();
+                if(response.getStatusCode() == HttpStatus.OK) {
+                    embedBuilder.setColor(0x00FF00);
+                    embedBuilder.setDescription("Squad Log criado com sucesso! \nStatus Code da API: " + response.getStatusCode());
+                } else {
+                    embedBuilder.setColor(0xFF0000);
+                    embedBuilder.setDescription("Falha ao criar Squad Log.\nStatus Code da API: " + response.getStatusCode());
+                }
+                event.replyEmbeds(embedBuilder.build()).setEphemeral(true).queue();
+                userFormState.remove(discordUserId);
+            } else {
+                logger.warn("[CRIAR_LOG] FormState não encontrado para usuário: {} | Estados ativos: {}", 
+                           discordUserId, userFormState.keySet());
+                event.reply("Formulário não encontrado ou expirado.").setEphemeral(true).queue();
+            }
+        } else if (buttonId.equals("alterar-log")) {
+            logger.info("[ALTERAR_LOG] Usuário solicitou alteração: {}", discordUserId);
+            FormState state = userFormState.get(discordUserId);
+            
+            if (state != null) {
+                logger.info("[ALTERAR_LOG] Mostrando botões de modificação para usuário: {}", discordUserId);
+                showFieldModificationButtons(event, state);
+            } else {
+                logger.warn("[ALTERAR_LOG] FormState não encontrado para usuário: {}", discordUserId);
+                event.reply("Formulário não encontrado ou expirado.").setEphemeral(true).queue();
+            }
+        } else if (buttonId.startsWith("modify-")) {
+            logger.info("[MODIFY_FIELD] Usuário: {} | Campo: {}", discordUserId, buttonId);
+            handleFieldModification(event, buttonId);
+        } else {
+            logger.warn("[BUTTON_UNKNOWN] Botão desconhecido: {} | Usuário: {}", buttonId, discordUserId);
+        }
+    }
+
+    @Override
+    public void onStringSelectInteraction(StringSelectInteractionEvent event) {
+        long discordUserId = event.getUser().getIdLong();
+        String componentId = event.getComponentId();
+        List<String> selectedValues = event.getValues();
+        
+        logger.info("[SELECT_INTERACTION] Usuário: {} | Componente: {} | Valores: {} | Guild: {}", 
+                   discordUserId, componentId, selectedValues, 
+                   event.getGuild() != null ? event.getGuild().getId() : "DM");
+        
+        FormState state = userFormState.computeIfAbsent(discordUserId, k -> new FormState());
+
+        switch (event.getComponentId()) {
+            case "squad-select" -> {
+                String squadId = event.getValues().getFirst();
+                String squadName = event.getSelectedOptions().getFirst().getLabel();
+                logger.info("[SQUAD_SELECT] Usuário: {} | Squad selecionada: {} (ID: {})", 
+                           discordUserId, squadName, squadId);
+                state.squadId = squadId;
+                state.squadName = squadName;
+
+                String squadsJson = squadLogService.getSquads();
+                JSONObject obj = new JSONObject(squadsJson);
+                JSONArray squadsArray = obj.optJSONArray("items");
+                JSONObject selectedSquad = null;
+                for (int i = 0; i < squadsArray.length(); i++) {
+                    JSONObject squad = squadsArray.getJSONObject(i);
+                    if (String.valueOf(squad.get("id")).equals(squadId)) {
+                        selectedSquad = squad;
+                        break;
+                    }
+                }
+
+                StringSelectMenu.Builder userMenuBuilder = StringSelectMenu.create("user-select")
+                        .setPlaceholder("Selecione quem irá responder");
+
+                if (selectedSquad != null) {
+                    userMenuBuilder.addOption("All team", squadId);
+
+                    JSONArray userSquads = selectedSquad.optJSONArray("user_squads");
+                    if (userSquads != null) {
+                        for (int i = 0; i < userSquads.length(); i++) {
+                            JSONObject userSquad = userSquads.getJSONObject(i);
+                            JSONObject user = userSquad.optJSONObject("user");
+                            if (user != null) {
+                                String name = user.optString("first_name", "") + " " + user.optString("last_name", "");
+                                String userIdStr = String.valueOf(user.opt("id"));
+                                if (!name.trim().isEmpty()) {
+                                    userMenuBuilder.addOption(name, userIdStr);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                logger.debug("[SQUAD_SELECT] Enviando resposta de confirmação para usuário: {}", discordUserId);
+                event.reply("Squad selecionada: " + squadName + " (ID: " + squadId + ")")
+                        .setEphemeral(true)
+                        .queue();
+
+                event.getInteraction().getHook().sendMessage("Selecione quem irá responder:")
+                        .addActionRow(userMenuBuilder.build())
+                        .setEphemeral(true)
+                        .queue();
+                state.step = FormStep.USER;
+            }
+
+            case "user-select" -> {
+                String selectedUserId = event.getValues().getFirst();
+                String selectedUserName = event.getSelectedOptions().getFirst().getLabel();
+                logger.info("[USER_SELECT] Usuário: {} | Pessoa selecionada: {} (ID: {})", 
+                           discordUserId, selectedUserName, selectedUserId);
+                state.userId = selectedUserId;
+                state.userName = selectedUserName;
+
+                event.reply("Pessoa selecionada: " + selectedUserName)
+                        .setEphemeral(true)
+                        .queue();
+
+                String logTypesJson = squadLogService.getSquadLogTypes();
+                JSONArray logTypesArray = new JSONArray(logTypesJson);
+
+                StringSelectMenu.Builder typeMenuBuilder = StringSelectMenu.create("type-select")
+                        .setPlaceholder("Selecione o tipo");
+                buildSelectMenu(logTypesArray, typeMenuBuilder);
+
+                event.getInteraction().getHook().sendMessage("Selecione o tipo:")
+                        .addActionRow(typeMenuBuilder.build())
+                        .setEphemeral(true)
+                        .queue();
+                state.step = FormStep.TYPE;
+            }
+
+            case "type-select" -> {
+                String typeId = event.getValues().getFirst();
+                String typeName = event.getSelectedOptions().getFirst().getLabel();
+                logger.info("[TYPE_SELECT] Usuário: {} | Tipo selecionado: {} (ID: {})", 
+                           discordUserId, typeName, typeId);
+                state.typeId = typeId;
+                state.typeName = typeName;
+
+                event.reply("Tipo selecionado: " + typeName + " (ID: " + typeId + ")")
+                        .setEphemeral(true)
+                        .queue();
+
+                String categoriesJson = squadLogService.getSquadCategories();
+                JSONArray categoriesArray = new JSONArray(categoriesJson);
+
+                StringSelectMenu.Builder categoryMenuBuilder = StringSelectMenu.create("category-select")
+                        .setPlaceholder("Selecione as categorias")
+                        .setMinValues(1)
+                        .setMaxValues(categoriesArray.length());
+                buildSelectMenu(categoriesArray, categoryMenuBuilder);
+
+                event.getInteraction().getHook().sendMessage("Selecione as categorias:")
+                        .addActionRow(categoryMenuBuilder.build())
+                        .setEphemeral(true)
+                        .queue();
+                state.step = FormStep.CATEGORY;
+            }
+            case "category-select" -> {
+                List<String> selectedIds = event.getSelectedOptions().stream()
+                    .map(opt -> opt.getValue())
+                    .toList();
+                List<String> selectedNames = event.getSelectedOptions().stream()
+                    .map(opt -> opt.getLabel())
+                    .toList();
+                
+                logger.info("[CATEGORY_SELECT] Usuário: {} | Categorias selecionadas: {} | IDs: {}", 
+                           discordUserId, selectedNames, selectedIds);
+                    
+                state.categoryIds = selectedIds;
+                state.categoryNames = selectedNames;
+
+                event.reply("Categorias selecionadas: " + String.join(", ", selectedNames))
+                    .setEphemeral(true)
+                    .queue();
+
+                event.getInteraction().getHook().sendMessage("Digite uma descrição:")
+                    .setEphemeral(true)
+                    .queue();
+                state.step = FormStep.DESCRIPTION;
+            }
+
+            case "squad-select-modify" -> {
+                String squadId = event.getValues().getFirst();
+                String squadName = event.getSelectedOptions().getFirst().getLabel();
+                logger.info("[SQUAD_MODIFY] Usuário: {} | Nova squad: {} (ID: {})", 
+                           discordUserId, squadName, squadId);
+                state.squadId = squadId;
+                state.squadName = squadName;
+
+                event.reply("Squad alterada para: " + squadName)
+                    .setEphemeral(true)
+                    .queue();
+                
+                String squadsJson = squadLogService.getSquads();
+                JSONObject obj = new JSONObject(squadsJson);
+                JSONArray squadsArray = obj.optJSONArray("items");
+                JSONObject selectedSquad = null;
+                for (int i = 0; i < squadsArray.length(); i++) {
+                    JSONObject squad = squadsArray.getJSONObject(i);
+                    if (String.valueOf(squad.get("id")).equals(squadId)) {
+                        selectedSquad = squad;
+                        break;
+                    }
+                }
+
+                StringSelectMenu.Builder userMenuBuilder = StringSelectMenu.create("user-select-modify")
+                        .setPlaceholder("Selecione quem irá responder");
+
+                if (selectedSquad != null) {
+                    userMenuBuilder.addOption("All team", squadId);
+                    JSONArray userSquads = selectedSquad.optJSONArray("user_squads");
+                    if (userSquads != null) {
+                        for (int i = 0; i < userSquads.length(); i++) {
+                            JSONObject userSquad = userSquads.getJSONObject(i);
+                            JSONObject user = userSquad.optJSONObject("user");
+                            if (user != null) {
+                                String name = user.optString("first_name", "") + " " + user.optString("last_name", "");
+                                String userIdStr = String.valueOf(user.opt("id"));
+                                if (!name.trim().isEmpty()) {
+                                    userMenuBuilder.addOption(name, userIdStr);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                event.getInteraction().getHook().sendMessage("Agora selecione a pessoa para esta nova squad:")
+                        .addActionRow(userMenuBuilder.build())
+                        .setEphemeral(true)
+                        .queue();
+            }
+            
+            case "user-select-modify" -> {
+                String selectedUserId = event.getValues().getFirst();
+                String selectedUserName = event.getSelectedOptions().getFirst().getLabel();
+                logger.info("[USER_MODIFY] Usuário: {} | Nova pessoa: {} (ID: {})", 
+                           discordUserId, selectedUserName, selectedUserId);
+                state.userId = selectedUserId;
+                state.userName = selectedUserName;
+
+                event.reply("Pessoa alterada para: " + selectedUserName)
+                    .setEphemeral(true)
+                    .queue();
+                
+                showSummaryFromSelectInteraction(event, state);
+            }
+            
+            case "type-select-modify" -> {
+                String typeId = event.getValues().getFirst();
+                String typeName = event.getSelectedOptions().getFirst().getLabel();
+                logger.info("[TYPE_MODIFY] Usuário: {} | Novo tipo: {} (ID: {})", 
+                           discordUserId, typeName, typeId);
+                state.typeId = typeId;
+                state.typeName = typeName;
+
+                event.reply("Tipo alterado para: " + typeName)
+                    .setEphemeral(true)
+                    .queue();
+                
+                showSummaryFromSelectInteraction(event, state);
+            }
+            
+            case "category-select-modify" -> {
+                List<String> selectedIds = event.getSelectedOptions().stream()
+                    .map(opt -> opt.getValue())
+                    .toList();
+                List<String> selectedNames = event.getSelectedOptions().stream()
+                    .map(opt -> opt.getLabel())
+                    .toList();
+                
+                logger.info("[CATEGORY_MODIFY] Usuário: {} | Novas categorias: {} | IDs: {}", 
+                           discordUserId, selectedNames, selectedIds);
+                    
+                state.categoryIds = selectedIds;
+                state.categoryNames = selectedNames;
+
+                event.reply("Categorias alteradas para: " + String.join(", ", selectedNames))
+                    .setEphemeral(true)
+                    .queue();
+                
+                showSummaryFromSelectInteraction(event, state);
+            }
+            default -> {
+                logger.warn("[SELECT_UNKNOWN] Componente desconhecido: {} | Usuário: {}", componentId, discordUserId);
+            }
+        }
+    }
+
+    private static void buildSelectMenu(JSONArray categoriesArray, StringSelectMenu.Builder categoryMenuBuilder) {
+        for (int i = 0; i < categoriesArray.length(); i++) {
+            JSONObject category = categoriesArray.getJSONObject(i);
+            String name = category.optString("name", "");
+            if (!name.isEmpty()) {
+                categoryMenuBuilder.addOption(name, String.valueOf(category.get("id")));
+            }
+        }
+    }
+
+    @Override
+    public void onMessageReceived(net.dv8tion.jda.api.events.message.MessageReceivedEvent event) {
+        long discordUserId = event.getAuthor().getIdLong();
+        if (!userFormState.containsKey(discordUserId)) return;
+        
+        if (event.isFromGuild() && event.getAuthor().isBot()) return;
+        
+        FormState state = userFormState.get(discordUserId);
+        String messageContent = event.getMessage().getContentRaw();
+        
+        logger.info("[MESSAGE_RECEIVED] Usuário: {} | Step: {} | Conteúdo: {} | Guild: {}", 
+                   discordUserId, state.step, messageContent, 
+                   event.getGuild() != null ? event.getGuild().getId() : "DM");
+
+        switch (state.step) {
+            case DESCRIPTION -> {
+                state.description = messageContent;
+                logger.info("[DESCRIPTION_INPUT] Usuário: {} | Descrição: {}", discordUserId, messageContent);
+                event.getChannel().sendMessage("Descrição registrada. Informe a data de início (YYYY-MM-DD):").queue();
+                state.step = FormStep.START_DATE;
+            }
+            case START_DATE -> {
+                state.startDate = messageContent;
+                logger.info("[START_DATE_INPUT] Usuário: {} | Data início: {}", discordUserId, messageContent);
+                event.getChannel().sendMessage("O formulario tem data de fim? (s/n)").queue();
+                state.step = FormStep.HAS_END;
+            }
+            case HAS_END -> {
+                String content = messageContent.trim().toLowerCase();
+                logger.info("[HAS_END_INPUT] Usuário: {} | Resposta: {}", discordUserId, content);
+                if (content.equals("s")) {
+                    logger.debug("[HAS_END_INPUT] Usuário escolheu adicionar data de fim: {}", discordUserId);
+                    event.getChannel().sendMessage("Informe a data de fim (YYYY-MM-DD):").queue();
+                    state.step = FormStep.END_DATE;
+                } else {
+                    logger.debug("[HAS_END_INPUT] Usuário escolheu não adicionar data de fim: {}", discordUserId);
+                    state.endDate = null;
+                    showSummary(event, state);
+                }
+            }
+            case END_DATE -> {
+                state.endDate = messageContent;
+                logger.info("[END_DATE_INPUT] Usuário: {} | Data fim: {}", discordUserId, messageContent);
+                showSummary(event, state);
+            }
+            case DESCRIPTION_MODIFY -> {
+                state.description = messageContent;
+                logger.info("[DESCRIPTION_MODIFY] Usuário: {} | Nova descrição: {}", discordUserId, messageContent);
+                event.getChannel().sendMessage("Descrição atualizada para: " + state.description).queue();
+                showSummaryFromMessage(event, state);
+            }
+            case START_DATE_MODIFY -> {
+                state.startDate = messageContent;
+                logger.info("[START_DATE_MODIFY] Usuário: {} | Nova data início: {}", discordUserId, messageContent);
+                event.getChannel().sendMessage("Data de início atualizada para: " + state.startDate).queue();
+                showSummaryFromMessage(event, state);
+            }
+            case END_DATE_MODIFY -> {
+                String content = messageContent.trim();
+                if (content.equalsIgnoreCase("null")) {
+                    logger.info("[END_DATE_MODIFY] Usuário: {} | Removendo data de fim", discordUserId);
+                    state.endDate = null;
+                    event.getChannel().sendMessage("Data de fim removida.").queue();
+                } else {
+                    logger.info("[END_DATE_MODIFY] Usuário: {} | Nova data fim: {}", discordUserId, content);
+                    state.endDate = content;
+                    event.getChannel().sendMessage("Data de fim atualizada para: " + state.endDate).queue();
+                }
+                showSummaryFromMessage(event, state);
+            }
+            default -> {
+                logger.warn("[MESSAGE_UNKNOWN] Step desconhecido: {} | Usuário: {} | Conteúdo: {}", 
+                           state.step, discordUserId, messageContent);
+                event.getChannel().sendMessage("O formulario foi cancelado.").queue();
+                userFormState.remove(discordUserId);
+            }
+        }
+    }
+
+    private void showSummary(net.dv8tion.jda.api.events.message.MessageReceivedEvent event, FormState state) {
+        EmbedBuilder embed = new EmbedBuilder();
+        embed.setTitle("📋 Resumo dos dados inseridos");
+        embed.setColor(0x0099FF);
+        embed.addField("🏢 Squad", state.squadName, false);
+        embed.addField("👤 Pessoa", state.userName, false);
+        embed.addField("📝 Tipo", state.typeName, false);
+        embed.addField("🏷️ Categorias", String.join(", ", state.categoryNames), false);
+        embed.addField("📄 Descrição", state.description, false);
+        embed.addField("📅 Data de início", state.startDate, false);
+        embed.addField("📅 Data de fim", state.endDate != null ? state.endDate : "Não informado", false);
+
+        event.getChannel().sendMessageEmbeds(embed.build())
+            .setActionRow(
+                Button.success("criar-log", "✅ Criar"),
+                Button.secondary("alterar-log", "✏️ Alterar")
+            )
+            .queue();
+    }
+
+    private void showFieldModificationButtons(ButtonInteractionEvent event, FormState state) {
+        EmbedBuilder embed = new EmbedBuilder();
+        embed.setTitle("✏️ Selecione o campo que deseja alterar");
+        embed.setColor(0xFFA500);
+        embed.setDescription("Clique no botão correspondente ao campo que deseja modificar:");
+
+        event.reply("Selecione o campo para alterar:")
+            .setEphemeral(true)
+            .addActionRow(
+                Button.secondary("modify-squad", "🏢 Squad"),
+                Button.secondary("modify-user", "👤 Pessoa"),
+                Button.secondary("modify-type", "📝 Tipo")
+            )
+            .addActionRow(
+                Button.secondary("modify-category", "🏷️ Categorias"),
+                Button.secondary("modify-description", "📄 Descrição")
+            )
+            .addActionRow(
+                Button.secondary("modify-start-date", "📅 Data Início"),
+                Button.secondary("modify-end-date", "📅 Data Fim"),
+                Button.primary("back-to-summary", "🔙 Voltar ao Resumo")
+            )
+            .queue();
+    }
+
+    private void handleFieldModification(ButtonInteractionEvent event, String buttonId) {
+        long discordUserId = event.getUser().getIdLong();
+        FormState state = userFormState.get(discordUserId);
+        
+        if (state == null) {
+            event.reply("Formulário não encontrado ou expirado.").setEphemeral(true).queue();
+            return;
+        }
+
+        switch (buttonId) {
+            case "modify-squad" -> {
+                event.deferReply().setEphemeral(true).queue(interaction -> {
+                    String squadsJson = squadLogService.getSquads();
+                    JSONArray squadsArray;
+                    if (!squadsJson.trim().startsWith("[")) {
+                        JSONObject obj = new JSONObject(squadsJson);
+                        squadsArray = obj.optJSONArray("items");
+                    } else {
+                        squadsArray = new JSONArray(squadsJson);
+                    }
+
+                    StringSelectMenu.Builder menuBuilder = StringSelectMenu.create("squad-select-modify")
+                            .setPlaceholder("Selecione uma nova Squad");
+                    buildSelectMenu(squadsArray, menuBuilder);
+
+                    interaction.editOriginal("Selecione uma nova Squad:")
+                            .setComponents(ActionRow.of(menuBuilder.build()))
+                            .queue();
+                });
+            }
+            case "modify-user" -> {
+                String squadsJson = squadLogService.getSquads();
+                JSONObject obj = new JSONObject(squadsJson);
+                JSONArray squadsArray = obj.optJSONArray("items");
+                JSONObject selectedSquad = null;
+                
+                for (int i = 0; i < squadsArray.length(); i++) {
+                    JSONObject squad = squadsArray.getJSONObject(i);
+                    if (String.valueOf(squad.get("id")).equals(state.squadId)) {
+                        selectedSquad = squad;
+                        break;
+                    }
+                }
+
+                StringSelectMenu.Builder userMenuBuilder = StringSelectMenu.create("user-select-modify")
+                        .setPlaceholder("Selecione uma nova pessoa");
+
+                if (selectedSquad != null) {
+                    userMenuBuilder.addOption("All team", state.squadId);
+                    JSONArray userSquads = selectedSquad.optJSONArray("user_squads");
+                    if (userSquads != null) {
+                        for (int i = 0; i < userSquads.length(); i++) {
+                            JSONObject userSquad = userSquads.getJSONObject(i);
+                            JSONObject user = userSquad.optJSONObject("user");
+                            if (user != null) {
+                                String name = user.optString("first_name", "") + " " + user.optString("last_name", "");
+                                String userIdStr = String.valueOf(user.opt("id"));
+                                if (!name.trim().isEmpty()) {
+                                    userMenuBuilder.addOption(name, userIdStr);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                event.reply("Selecione uma nova pessoa:")
+                        .setEphemeral(true)
+                        .addActionRow(userMenuBuilder.build())
+                        .queue();
+            }
+            case "modify-type" -> {
+                String logTypesJson = squadLogService.getSquadLogTypes();
+                JSONArray logTypesArray = new JSONArray(logTypesJson);
+
+                StringSelectMenu.Builder typeMenuBuilder = StringSelectMenu.create("type-select-modify")
+                        .setPlaceholder("Selecione um novo tipo");
+                buildSelectMenu(logTypesArray, typeMenuBuilder);
+
+                event.reply("Selecione um novo tipo:")
+                        .setEphemeral(true)
+                        .addActionRow(typeMenuBuilder.build())
+                        .queue();
+            }
+            case "modify-category" -> {
+                String categoriesJson = squadLogService.getSquadCategories();
+                JSONArray categoriesArray = new JSONArray(categoriesJson);
+
+                StringSelectMenu.Builder categoryMenuBuilder = StringSelectMenu.create("category-select-modify")
+                        .setPlaceholder("Selecione novas categorias")
+                        .setMinValues(1)
+                        .setMaxValues(categoriesArray.length());
+                buildSelectMenu(categoriesArray, categoryMenuBuilder);
+
+                event.reply("Selecione novas categorias:")
+                        .setEphemeral(true)
+                        .addActionRow(categoryMenuBuilder.build())
+                        .queue();
+            }
+            case "modify-description" -> {
+                event.reply("Digite a nova descrição:")
+                        .setEphemeral(true)
+                        .queue();
+                state.step = FormStep.DESCRIPTION_MODIFY;
+            }
+            case "modify-start-date" -> {
+                event.reply("Digite a nova data de início (YYYY-MM-DD):")
+                        .setEphemeral(true)
+                        .queue();
+                state.step = FormStep.START_DATE_MODIFY;
+            }
+            case "modify-end-date" -> {
+                event.reply("Digite a nova data de fim (YYYY-MM-DD) ou 'null' para remover:")
+                        .setEphemeral(true)
+                        .queue();
+                state.step = FormStep.END_DATE_MODIFY;
+            }
+            case "back-to-summary" -> {
+                showSummaryFromButton(event, state);
+            }
+        }
+    }
+
+    private void showSummaryFromButton(ButtonInteractionEvent event, FormState state) {
+        EmbedBuilder embed = new EmbedBuilder();
+        embed.setTitle("📋 Resumo dos dados inseridos");
+        embed.setColor(0x0099FF);
+        embed.addField("🏢 Squad", state.squadName, false);
+        embed.addField("👤 Pessoa", state.userName, false);
+        embed.addField("📝 Tipo", state.typeName, false);
+        embed.addField("🏷️ Categorias", String.join(", ", state.categoryNames), false);
+        embed.addField("📄 Descrição", state.description, false);
+        embed.addField("📅 Data de início", state.startDate, false);
+        embed.addField("📅 Data de fim", state.endDate != null ? state.endDate : "Não informado", false);
+
+        event.reply("Resumo atualizado:")
+            .setEphemeral(true)
+            .addEmbeds(embed.build())
+            .addActionRow(
+                Button.success("criar-log", "✅ Criar"),
+                Button.secondary("alterar-log", "✏️ Alterar")
+            )
+            .queue();
+    }
+
+    private void showSummaryFromSelectInteraction(StringSelectInteractionEvent event, FormState state) {
+        EmbedBuilder embed = new EmbedBuilder();
+        embed.setTitle("📋 Resumo dos dados inseridos");
+        embed.setColor(0x0099FF);
+        embed.addField("🏢 Squad", state.squadName, false);
+        embed.addField("👤 Pessoa", state.userName, false);
+        embed.addField("📝 Tipo", state.typeName, false);
+        embed.addField("🏷️ Categorias", String.join(", ", state.categoryNames), false);
+        embed.addField("📄 Descrição", state.description, false);
+        embed.addField("📅 Data de início", state.startDate, false);
+        embed.addField("📅 Data de fim", state.endDate != null ? state.endDate : "Não informado", false);
+
+        event.getInteraction().getHook().sendMessage("Resumo atualizado:")
+            .addEmbeds(embed.build())
+            .addActionRow(
+                Button.success("criar-log", "✅ Criar"),
+                Button.secondary("alterar-log", "✏️ Alterar")
+            )
+            .setEphemeral(true)
+            .queue();
+    }
+
+    private void showSummaryFromMessage(net.dv8tion.jda.api.events.message.MessageReceivedEvent event, FormState state) {
+        EmbedBuilder embed = new EmbedBuilder();
+        embed.setTitle("📋 Resumo dos dados inseridos");
+        embed.setColor(0x0099FF);
+        embed.addField("🏢 Squad", state.squadName, false);
+        embed.addField("👤 Pessoa", state.userName, false);
+        embed.addField("📝 Tipo", state.typeName, false);
+        embed.addField("🏷️ Categorias", String.join(", ", state.categoryNames), false);
+        embed.addField("📄 Descrição", state.description, false);
+        embed.addField("📅 Data de início", state.startDate, false);
+        embed.addField("📅 Data de fim", state.endDate != null ? state.endDate : "Não informado", false);
+
+        event.getChannel().sendMessageEmbeds(embed.build())
+            .setActionRow(
+                Button.success("criar-log", "✅ Criar"),
+                Button.secondary("alterar-log", "✏️ Alterar")
+            )
+            .queue();
+    }
+
+    enum FormStep {
+        USER, TYPE, CATEGORY, DESCRIPTION, START_DATE, HAS_END, END_DATE,
+        DESCRIPTION_MODIFY, START_DATE_MODIFY, END_DATE_MODIFY
+    }
 
     static class FormState {
-        Step step;
         String squadId;
         String squadName;
         String userId;
         String userName;
         String typeId;
         String typeName;
-        List<String> categoryIds = new ArrayList<>();
-        List<String> categoryNames = new ArrayList<>();
+        List<String> categoryIds;
+        List<String> categoryNames;
         String description;
         String startDate;
         String endDate;
-        JSONArray squads;
-        JSONArray logTypes;
-        JSONArray categories;
-    }
-
-    private final Map<Long, FormState> userFormState = new ConcurrentHashMap<>();
-
-    private void showMenuOnly(InteractionHook hook, StringSelectMenu menu) {
-        MessageEditBuilder b = new MessageEditBuilder();
-        b.setContent(" ");
-        b.setEmbeds();
-        b.setComponents(ActionRow.of(menu));
-        hook.editOriginal(b.build()).queue();
-    }
-
-    private void showSuccess(InteractionHook hook, String msg) {
-        MessageEditBuilder b = new MessageEditBuilder();
-        b.setContent(" ");
-        b.setEmbeds(Ui.success(msg).build());
-        b.setComponents();
-        hook.editOriginal(b.build()).queue();
-    }
-    
-    private LocalDate parseBrazilianDate(String dateStr) {
-        return LocalDate.parse(dateStr, BRAZILIAN_DATE_FORMAT);
-    }
-    
-    private String formatToBrazilianDate(LocalDate date) {
-        return date.format(BRAZILIAN_DATE_FORMAT);
-    }
-    
-    private String convertToIsoDate(String brazilianDate) {
-        LocalDate date = parseBrazilianDate(brazilianDate);
-        return date.toString();
-    }
-    
-
-
-    @Override
-    public void onButtonInteraction(@NotNull ButtonInteractionEvent event) {
-        String id = event.getComponentId();
-        long uid = event.getUser().getIdLong();
-        logger.info("[BUTTON] user={} id={}", uid, id);
-
-        try {
-            if (BTN_CREATE.equals(id)) {
-                FormState s = userFormState.computeIfAbsent(uid, k -> new FormState());
-                s.step = Step.SELECT_SQUAD;
-                s.squads = fetchSquads(event.getUser());
-
-                event.editMessage(" ")
-                        .setEmbeds()
-                        .setActionRow(buildSquadSelect(s))
-                        .queue();
-                return;
-            }
-
-            if (BTN_CONFIRM_CREATE.equals(id)) {
-                FormState s = userFormState.get(uid);
-                if (s == null) {
-                    event.replyEmbeds(Ui.error("Sessão expirada. Use /squad-log novamente.").build())
-                            .setEphemeral(true).queue();
-                    return;
-                }
-
-                event.editMessage(" ")
-                        .setEmbeds(Ui.info("Criando Squad Log...", null).build())
-                        .setComponents()
-                        .queue();
-
-                String payload = buildSquadLogPayload(
-                        s.squadId, s.userId, s.typeId, s.categoryIds, s.description, s.startDate, s.endDate
-                );
-                logger.info("[CRIAR_LOG] payload={}", payload);
-
-                ResponseEntity<String> resp = squadLogService.createSquadLog(payload);
-                if (resp.getStatusCode() == HttpStatus.OK) {
-                    event.getHook().editOriginalEmbeds(Ui.success("Squad Log criado com sucesso! ✅").build())
-                            .setActionRow(
-                                    Button.primary(BTN_NEW_SQUAD_LOG, "🆕 Criar novo Squad Log"),
-                                    Button.secondary(BTN_EXIT, "🚪 Sair")
-                            )
-                            .queue();
-                    userFormState.remove(uid);
-                } else {
-                    event.getHook().editOriginalEmbeds(
-                            Ui.error("Erro ao criar", "Status: " + resp.getStatusCode() + "\n" + resp.getBody()).build()
-                    ).setActionRow(Button.secondary(BTN_EDIT, "✏️ Editar")).queue();
-                }
-                return;
-            }
-
-            if (BTN_EDIT.equals(id)) {
-                FormState s = userFormState.get(uid);
-                if (s == null) {
-                    event.replyEmbeds(Ui.error("Sessão expirada. Use /squad-log novamente.").build())
-                            .setEphemeral(true).queue();
-                    return;
-                }
-                event.editMessage(" ")
-                        .setEmbeds(Ui.warning("Selecione o campo que deseja alterar").build())
-                        .setComponents(buildModifyButtons().toArray(new ActionRow[0]))
-                        .queue();
-                return;
-            }
-
-            if (BTN_BACK_SUMMARY.equals(id)) {
-                FormState s = userFormState.get(uid);
-                if (s == null) {
-                    event.replyEmbeds(Ui.error("Sessão expirada. Use /squad-log novamente.").build())
-                            .setEphemeral(true).queue();
-                    return;
-                }
-                event.editMessage(" ")
-                        .setEmbeds(buildReviewEmbed(s).build())
-                        .setActionRow(Button.success(BTN_CONFIRM_CREATE, "✅ Confirmar"),
-                                Button.secondary(BTN_EDIT, "✏️ Editar"))
-                        .queue();
-                return;
-            }
-
-            if (BTN_UPDATE.equals(id)) {
-                event.editMessage(" ")
-                        .setEmbeds(Ui.warning("Atualizar", "Fluxo ainda não implementado. Use 'Criar' por enquanto.").build())
-                        .setComponents()
-                        .queue();
-                return;
-            }
-
-            if (BTN_NEW_SQUAD_LOG.equals(id)) {
-                event.editMessage("Escolha uma opção:")
-                        .setEmbeds(Ui.info("Escolha uma opção").build())
-                        .setActionRow(
-                                Button.success(BTN_CREATE, "Criar"),
-                                Button.secondary(BTN_UPDATE, "Atualizar")
-                        )
-                        .queue();
-                return;
-            }
-
-            if (BTN_EXIT.equals(id)) {
-                event.editMessage("Obrigado por usar o Bot TeamBoarding! 👋 Desligando...")
-                        .setEmbeds()
-                        .setComponents()
-                        .queue(hook -> {
-                            hook.deleteOriginal().queueAfter(2, java.util.concurrent.TimeUnit.SECONDS);
-                        });
-                return;
-            }
-
-            if (id.startsWith("modify-")) {
-                handleModify(event, id);
-            }
-
-        } catch (Exception e) {
-            logger.error("Erro no onButtonInteraction", e);
-            event.replyEmbeds(Ui.error("Ocorreu um erro. Tente novamente.").build())
-                    .setEphemeral(true).queue();
-        }
-    }
-
-
-    @Override
-    public void onStringSelectInteraction(@NotNull StringSelectInteractionEvent event) {
-        long uid = event.getUser().getIdLong();
-        FormState s = userFormState.computeIfAbsent(uid, k -> new FormState());
-        InteractionHook hook = event.getHook();
-
-        try {
-            switch (event.getComponentId()) {
-                case ID_SQUAD_SELECT -> {
-                    s.squadName = event.getSelectedOptions().get(0).getLabel();
-                    s.squadId   = event.getValues().get(0);
-
-                    event.editMessage(" ")
-                            .setEmbeds(Ui.success("Squad selecionada com sucesso: " + s.squadName).build())
-                            .setComponents()
-                            .queue(v -> {
-                                hook.editOriginal(" ")
-                                        .setEmbeds(Ui.info("Carregando usuários 🤔", "Processando...").build())
-                                        .setComponents()
-                                        .queueAfter(SUCCESS_MESSAGE_DELAY, java.util.concurrent.TimeUnit.SECONDS, thinking -> {
-                                            showMenuOnly(hook, buildUserSelect(s));
-                                        });
-                            });
-                    s.step = Step.SELECT_USER;
-                    return;
-                }
-
-                case ID_USER_SELECT -> {
-                    s.userName = event.getSelectedOptions().get(0).getLabel();
-                    s.userId   = event.getValues().get(0);
-
-                    event.editMessage(" ")
-                            .setEmbeds(Ui.success("Pessoa selecionada com sucesso: " + s.userName).build())
-                            .setComponents()
-                            .queue(v -> {
-                                hook.editOriginal(" ")
-                                        .setEmbeds(Ui.info("Carregando tipos 🤔", "Processando...").build())
-                                        .setComponents()
-                                        .queueAfter(SUCCESS_MESSAGE_DELAY, java.util.concurrent.TimeUnit.SECONDS, thinking -> {
-                                            s.logTypes = fetchLogTypes();
-                                            showMenuOnly(hook, buildTypeSelect(s));
-                                        });
-                            });
-                    s.step = Step.SELECT_TYPE;
-                    return;
-                }
-
-                case ID_TYPE_SELECT -> {
-                    s.typeName = event.getSelectedOptions().get(0).getLabel();
-                    s.typeId   = event.getValues().get(0);
-
-                    event.editMessage(" ")
-                            .setEmbeds(Ui.success("Tipo selecionado com sucesso: " + s.typeName).build())
-                            .setComponents()
-                            .queue(v -> {
-                                hook.editOriginal(" ")
-                                        .setEmbeds(Ui.info("Carregando categorias 🤔", "Processando...").build())
-                                        .setComponents()
-                                        .queueAfter(SUCCESS_MESSAGE_DELAY, java.util.concurrent.TimeUnit.SECONDS, thinking -> {
-                                            s.categories = fetchCategories();
-                                            if (s.categories == null || s.categories.length() == 0) {
-                                                hook.editOriginalEmbeds(
-                                                        Ui.warning("Não há categorias disponíveis para esta seleção.", "Volte e escolha outro tipo.").build()
-                                                ).setActionRow(Button.primary(BTN_BACK_SUMMARY, "🔙 Voltar")).queue();
-                                            } else {
-                                                showMenuOnly(hook, buildCategorySelect(s));
-                                            }
-                                        });
-                            });
-                    s.step = Step.SELECT_CATEGORIES;
-                    return;
-                }
-
-                case ID_CATEGORY_SELECT -> {
-                    s.categoryNames = event.getSelectedOptions().stream().map(SelectOption::getLabel).toList();
-                    s.categoryIds   = new ArrayList<>(event.getValues());
-
-                    event.replyModal(buildDetailsModal(s)).queue(success -> {
-                        event.getHook().deleteOriginal().queue();
-                    });
-                    s.step = Step.AWAIT_DETAILS_MODAL;
-                    return;
-                }
-
-                case ID_SQUAD_SELECT_MODIFY -> {
-                    s.squadName = event.getSelectedOptions().get(0).getLabel();
-                    s.squadId   = event.getValues().get(0);
-
-                    event.editMessage("✅ Squad alterada para: " + s.squadName)
-                            .setEmbeds()
-                            .setComponents()
-                            .queue(v -> {
-                                hook.editOriginal(" ")
-                                        .setEmbeds(Ui.info("Atualizando resumo 🤔", "Processando...").build())
-                                        .setComponents()
-                                        .queueAfter(SUCCESS_MESSAGE_DELAY, java.util.concurrent.TimeUnit.SECONDS, thinking -> {
-                                            hook.editOriginal("📋 Resumo atualizado")
-                                                    .setEmbeds(buildReviewEmbed(s).build())
-                                                    .setActionRow(Button.success(BTN_CONFIRM_CREATE, "✅ Confirmar"),
-                                                            Button.secondary(BTN_EDIT, "✏️ Editar"))
-                                                    .queue();
-                                        });
-                            });
-                    return;
-                }
-
-                case ID_USER_SELECT_MODIFY -> {
-                    s.userName = event.getSelectedOptions().get(0).getLabel();
-                    s.userId   = event.getValues().get(0);
-
-                    event.editMessage("✅ Pessoa alterada para: " + s.userName)
-                            .setEmbeds()
-                            .setComponents()
-                            .queue(v -> {
-                                hook.editOriginal(" ")
-                                        .setEmbeds(Ui.info("Atualizando resumo 🤔", "Processando...").build())
-                                        .setComponents()
-                                        .queueAfter(SUCCESS_MESSAGE_DELAY, java.util.concurrent.TimeUnit.SECONDS, thinking -> {
-                                            hook.editOriginal("📋 Resumo atualizado")
-                                                    .setEmbeds(buildReviewEmbed(s).build())
-                                                    .setActionRow(Button.success(BTN_CONFIRM_CREATE, "✅ Confirmar"),
-                                                            Button.secondary(BTN_EDIT, "✏️ Editar"))
-                                                    .queue();
-                                        });
-                            });
-                    return;
-                }
-
-                case ID_TYPE_SELECT_MODIFY -> {
-                    s.typeName = event.getSelectedOptions().get(0).getLabel();
-                    s.typeId   = event.getValues().get(0);
-
-                    event.editMessage("✅ Tipo alterado para: " + s.typeName)
-                            .setEmbeds()
-                            .setComponents()
-                            .queue(v -> {
-                                hook.editOriginal(" ")
-                                        .setEmbeds(Ui.info("Atualizando resumo 🤔", "Processando...").build())
-                                        .setComponents()
-                                        .queueAfter(SUCCESS_MESSAGE_DELAY, java.util.concurrent.TimeUnit.SECONDS, thinking -> {
-                                            hook.editOriginal("📋 Resumo atualizado")
-                                                    .setEmbeds(buildReviewEmbed(s).build())
-                                                    .setActionRow(Button.success(BTN_CONFIRM_CREATE, "✅ Confirmar"),
-                                                            Button.secondary(BTN_EDIT, "✏️ Editar"))
-                                                    .queue();
-                                        });
-                            });
-                    return;
-                }
-
-                case ID_CATEGORY_SELECT_MODIFY -> {
-                    s.categoryNames = event.getSelectedOptions().stream().map(SelectOption::getLabel).toList();
-                    s.categoryIds   = new ArrayList<>(event.getValues());
-
-                    event.editMessage("✅ Categorias alteradas para: " + String.join(", ", s.categoryNames))
-                            .setEmbeds()
-                            .setComponents()
-                            .queue(v -> {
-                                hook.editOriginal(" ")
-                                        .setEmbeds(Ui.info("Atualizando resumo 🤔", "Processando...").build())
-                                        .setComponents()
-                                        .queueAfter(SUCCESS_MESSAGE_DELAY, java.util.concurrent.TimeUnit.SECONDS, thinking -> {
-                                            hook.editOriginal("📋 Resumo atualizado")
-                                                    .setEmbeds(buildReviewEmbed(s).build())
-                                                    .setActionRow(Button.success(BTN_CONFIRM_CREATE, "✅ Confirmar"),
-                                                            Button.secondary(BTN_EDIT, "✏️ Editar"))
-                                                    .queue();
-                                        });
-                            });
-                    return;
-                }
-
-                default -> {
-                }
-            }
-        } catch (Exception e) {
-            logger.error("Erro no onStringSelectInteraction", e);
-            event.replyEmbeds(Ui.error("Ocorreu um erro. Tente novamente.").build())
-                    .setEphemeral(true).queue();
-        }
-    }
-
-
-    @Override
-    public void onModalInteraction(@NotNull ModalInteractionEvent event) {
-        if (!MODAL_DETAILS.equals(event.getModalId())) return;
-
-        long uid = event.getUser().getIdLong();
-        FormState s = userFormState.get(uid);
-        if (s == null) {
-            event.replyEmbeds(Ui.error("Sessão expirada. Use /squad-log novamente.").build())
-                    .setEphemeral(true).queue();
-            return;
-        }
-
-        try {
-            String desc = event.getValue("f-desc").getAsString().trim();
-            String start = event.getValue("f-start").getAsString().trim();
-            String hasEnd = event.getValue("f-has-end").getAsString().trim().toLowerCase();
-            String end = event.getValue("f-end") != null ? event.getValue("f-end").getAsString().trim() : "";
-
-            if (!start.matches("\\d{2}-\\d{2}-\\d{4}")) {
-                event.replyEmbeds(Ui.error("Data inválida", "Data de início deve estar no formato DD-MM-AAAA (ex: 20-06-1986).").build())
-                        .setEphemeral(true).queue();
-                return;
-            }
-            try { parseBrazilianDate(start); } catch (Exception ex) {
-                event.replyEmbeds(Ui.error("Data inválida", "Data de início não é uma data válida.").build())
-                        .setEphemeral(true).queue();
-                return;
-            }
-
-            if ("s".equals(hasEnd)) {
-                if (end.isEmpty() || !end.matches("\\d{2}-\\d{2}-\\d{4}")) {
-                    event.replyEmbeds(Ui.error("Data inválida", "Informe data de fim (DD-MM-AAAA) ou marque 'n'.").build())
-                            .setEphemeral(true).queue();
-                    return;
-                }
-                try { parseBrazilianDate(end); } catch (Exception ex) {
-                    event.replyEmbeds(Ui.error("Data inválida", "Data de fim não é uma data válida.").build())
-                            .setEphemeral(true).queue();
-                    return;
-                }
-                s.endDate = end;
-            } else {
-                s.endDate = null;
-            }
-
-            s.description = desc;
-            s.startDate = start;
-            s.step = Step.REVIEW;
-
-            event.replyEmbeds(buildReviewEmbed(s).build())
-                    .addActionRow(Button.success(BTN_CONFIRM_CREATE, "✅ Confirmar"),
-                            Button.secondary(BTN_EDIT, "✏️ Editar"))
-                    .setEphemeral(true).queue();
-
-        } catch (Exception e) {
-            logger.error("Erro no onModalInteraction", e);
-            event.replyEmbeds(Ui.error("Ocorreu um erro. Tente novamente.").build())
-                    .setEphemeral(true).queue();
-        }
-    }
-
-
-    private void handleModify(ButtonInteractionEvent event, String id) {
-        long uid = event.getUser().getIdLong();
-        FormState s = userFormState.get(uid);
-        if (s == null) {
-            event.replyEmbeds(Ui.error("Sessão expirada. Use /squad-log novamente.").build())
-                    .setEphemeral(true).queue();
-            return;
-        }
-
-        switch (id) {
-            case BTN_MOD_SQUAD -> {
-                s.squads = fetchSquads(event.getUser());
-                event.editMessage("Selecione uma nova Squad:")
-                        .setEmbeds()
-                        .setActionRow(buildSquadSelectModify(s))
-                        .queue();
-            }
-            case BTN_MOD_USER -> {
-                s.squads = fetchSquads(event.getUser());
-                event.editMessage("Selecione uma nova pessoa:")
-                        .setEmbeds()
-                        .setActionRow(buildUserSelectModify(s))
-                        .queue();
-            }
-            case BTN_MOD_TYPE -> {
-                s.logTypes = fetchLogTypes();
-                event.editMessage("Selecione um novo tipo:")
-                        .setEmbeds()
-                        .setActionRow(buildTypeSelectModify(s))
-                        .queue();
-            }
-            case BTN_MOD_CATEGORY -> {
-                s.categories = fetchCategories();
-                if (s.categories == null || s.categories.length() == 0) {
-                    event.editMessage("❌ Erro")
-                            .setEmbeds(Ui.warning("Não há categorias disponíveis.", "Volte e escolha outro tipo.").build())
-                            .setActionRow(Button.primary(BTN_BACK_SUMMARY, "🔙 Voltar"))
-                            .queue();
-                } else {
-                    event.editMessage("Selecione novas categorias:")
-                            .setEmbeds()
-                            .setActionRow(buildCategorySelectModify(s))
-                            .queue();
-                }
-            }
-            case BTN_MOD_DESC, BTN_MOD_START, BTN_MOD_END -> {
-                event.replyModal(buildDetailsModal(s)).queue(success -> {
-                    event.getHook().deleteOriginal().queue();
-                });
-            }
-            case BTN_BACK_SUMMARY -> {
-                event.editMessage("📋 Resumo atualizado")
-                        .setEmbeds(buildReviewEmbed(s).build())
-                        .setActionRow(Button.success(BTN_CONFIRM_CREATE, "✅ Confirmar"),
-                                Button.secondary(BTN_EDIT, "✏️ Editar"))
-                        .queue();
-            }
-        }
-    }
-
-
-    private StringSelectMenu buildSquadSelect(FormState state) {
-        StringSelectMenu.Builder b = StringSelectMenu.create(ID_SQUAD_SELECT)
-                .setPlaceholder("Selecione uma Squad");
-        if (state.squads != null) {
-            for (int i = 0; i < state.squads.length(); i++) {
-                JSONObject s = state.squads.getJSONObject(i);
-                String id = String.valueOf(s.opt("id"));
-                String name = s.optString("name", "");
-                if (name == null || name.isBlank()) name = "Squad #" + id;
-                if (name.length() > 100) name = name.substring(0, 100);
-                b.addOption(name, id);
-            }
-        }
-        return b.build();
-    }
-
-    private StringSelectMenu buildUserSelect(FormState state) {
-        StringSelectMenu.Builder b = StringSelectMenu.create(ID_USER_SELECT)
-                .setPlaceholder("Selecione uma pessoa");
-        if (state.squads != null && state.squadId != null) {
-            JSONObject selected = null;
-            for (int i = 0; i < state.squads.length(); i++) {
-                JSONObject sq = state.squads.getJSONObject(i);
-                if (String.valueOf(sq.opt("id")).equals(state.squadId)) { selected = sq; break; }
-            }
-            if (selected != null) {
-                b.addOption("All team", state.squadId);
-                JSONArray userSquads = selected.optJSONArray("user_squads");
-                if (userSquads != null) {
-                    for (int i = 0; i < userSquads.length(); i++) {
-                        JSONObject us = userSquads.getJSONObject(i);
-                        JSONObject u = us.optJSONObject("user");
-                        if (u != null) {
-                            String name = (u.optString("first_name","") + " " + u.optString("last_name","")).trim();
-                            String id = String.valueOf(u.opt("id"));
-                            if (name == null || name.isBlank()) name = "Usuário #" + id;
-                            if (name.length() > 100) name = name.substring(0, 100);
-                            b.addOption(name, id);
-                        }
-                    }
-                }
-            }
-        }
-        return b.build();
-    }
-
-    private StringSelectMenu buildTypeSelect(FormState state) {
-        StringSelectMenu.Builder b = StringSelectMenu.create(ID_TYPE_SELECT)
-                .setPlaceholder("Selecione um tipo");
-        if (state.logTypes != null) {
-            for (int i = 0; i < state.logTypes.length(); i++) {
-                JSONObject t = state.logTypes.getJSONObject(i);
-                String id = String.valueOf(t.opt("id"));
-                String name = t.optString("name", "");
-                if (name == null || name.isBlank()) name = "Tipo #" + id;
-                if (name.length() > 100) name = name.substring(0, 100);
-                b.addOption(name, id);
-            }
-        }
-        return b.build();
-    }
-
-    private StringSelectMenu buildCategorySelect(FormState state) {
-        StringSelectMenu.Builder b = StringSelectMenu.create(ID_CATEGORY_SELECT)
-                .setPlaceholder("Selecione uma ou mais categorias")
-                .setMinValues(1);
-        int total = 0;
-        if (state.categories != null) {
-            for (int i = 0; i < state.categories.length(); i++) {
-                JSONObject c = state.categories.getJSONObject(i);
-                String id = String.valueOf(c.opt("id"));
-                String name = c.optString("name", "");
-                if (name == null || name.isBlank()) name = "Categoria #" + id;
-                if (name.length() > 100) name = name.substring(0, 100);
-                b.addOption(name, id);
-                total++;
-            }
-        }
-        if (total == 0) {
-            return StringSelectMenu.create(ID_CATEGORY_SELECT)
-                    .setPlaceholder("Sem categorias disponíveis")
-                    .setDisabled(true)
-                    .build();
-        }
-        b.setMaxValues(Math.max(1, Math.min(total, 25)));
-        return b.build();
-    }
-
-    private StringSelectMenu buildSquadSelectModify(FormState state) {
-        StringSelectMenu.Builder b = StringSelectMenu.create(ID_SQUAD_SELECT_MODIFY)
-                .setPlaceholder("Selecione uma Squad");
-        if (state.squads != null) {
-            for (int i = 0; i < state.squads.length(); i++) {
-                JSONObject s = state.squads.getJSONObject(i);
-                String id = String.valueOf(s.opt("id"));
-                String name = s.optString("name", "");
-                if (name == null || name.isBlank()) name = "Squad #" + id;
-                if (name.length() > 100) name = name.substring(0, 100);
-                b.addOption(name, id);
-            }
-        }
-        return b.build();
-    }
-
-    private StringSelectMenu buildUserSelectModify(FormState state) {
-        StringSelectMenu.Builder b = StringSelectMenu.create(ID_USER_SELECT_MODIFY)
-                .setPlaceholder("Selecione uma pessoa");
-        if (state.squads != null && state.squadId != null) {
-            JSONObject selected = null;
-            for (int i = 0; i < state.squads.length(); i++) {
-                JSONObject sq = state.squads.getJSONObject(i);
-                if (String.valueOf(sq.opt("id")).equals(state.squadId)) { selected = sq; break; }
-            }
-            if (selected != null) {
-                b.addOption("All team", state.squadId);
-                JSONArray userSquads = selected.optJSONArray("user_squads");
-                if (userSquads != null) {
-                    for (int i = 0; i < userSquads.length(); i++) {
-                        JSONObject us = userSquads.getJSONObject(i);
-                        JSONObject u = us.optJSONObject("user");
-                        if (u != null) {
-                            String name = (u.optString("first_name","") + " " + u.optString("last_name","")).trim();
-                            String id = String.valueOf(u.opt("id"));
-                            if (name == null || name.isBlank()) name = "Usuário #" + id;
-                            if (name.length() > 100) name = name.substring(0, 100);
-                            b.addOption(name, id);
-                        }
-                    }
-                }
-            }
-        }
-        return b.build();
-    }
-
-    private StringSelectMenu buildTypeSelectModify(FormState state) {
-        StringSelectMenu.Builder b = StringSelectMenu.create(ID_TYPE_SELECT_MODIFY)
-                .setPlaceholder("Selecione um tipo");
-        if (state.logTypes != null) {
-            for (int i = 0; i < state.logTypes.length(); i++) {
-                JSONObject t = state.logTypes.getJSONObject(i);
-                String id = String.valueOf(t.opt("id"));
-                String name = t.optString("name", "");
-                if (name == null || name.isBlank()) name = "Tipo #" + id;
-                if (name.length() > 100) name = name.substring(0, 100);
-                b.addOption(name, id);
-            }
-        }
-        return b.build();
-    }
-
-    private StringSelectMenu buildCategorySelectModify(FormState state) {
-        StringSelectMenu.Builder b = StringSelectMenu.create(ID_CATEGORY_SELECT_MODIFY)
-                .setPlaceholder("Selecione uma ou mais categorias")
-                .setMinValues(1);
-        int total = 0;
-        if (state.categories != null) {
-            for (int i = 0; i < state.categories.length(); i++) {
-                JSONObject c = state.categories.getJSONObject(i);
-                String id = String.valueOf(c.opt("id"));
-                String name = c.optString("name", "");
-                if (name == null || name.isBlank()) name = "Categoria #" + id;
-                if (name.length() > 100) name = name.substring(0, 100);
-                b.addOption(name, id);
-                total++;
-            }
-        }
-        if (total == 0) {
-            return StringSelectMenu.create(ID_CATEGORY_SELECT_MODIFY)
-                    .setPlaceholder("Sem categorias disponíveis")
-                    .setDisabled(true)
-                    .build();
-        }
-        b.setMaxValues(Math.max(1, Math.min(total, 25)));
-        return b.build();
-    }
-
-    private List<ActionRow> buildModifyButtons() {
-        return List.of(
-                ActionRow.of(Button.secondary(BTN_MOD_SQUAD, "🏢 Squad"),
-                        Button.secondary(BTN_MOD_USER, "👤 Pessoa"),
-                        Button.secondary(BTN_MOD_TYPE, "📝 Tipo")),
-                ActionRow.of(Button.secondary(BTN_MOD_CATEGORY, "🏷️ Categorias"),
-                        Button.secondary(BTN_MOD_DESC, "📄 Descrição")),
-                ActionRow.of(Button.secondary(BTN_MOD_START, "📅 Data Início"),
-                        Button.secondary(BTN_MOD_END, "📅 Data Fim"),
-                        Button.primary(BTN_BACK_SUMMARY, "🔙 Voltar ao Resumo"))
-        );
-    }
-
-    private Modal buildDetailsModal(FormState s) {
-        TextInput.Builder descB = TextInput.create("f-desc", "Descrição", TextInputStyle.PARAGRAPH)
-                .setRequired(true)
-                .setMaxLength(1000)
-                .setPlaceholder("Explique o que aconteceu, resultados, etc.");
-        if (s.description != null && !s.description.isBlank()) {
-            descB.setValue(s.description);
-        }
-
-        TextInput.Builder startB = TextInput.create("f-start", "Data de início (DD-MM-AAAA)", TextInputStyle.SHORT)
-                .setRequired(true)
-                .setPlaceholder("20-06-1986");
-        if (s.startDate != null && !s.startDate.isBlank()) {
-            startB.setValue(s.startDate);
-        }
-
-        String hasEndDefault = (s.endDate != null && !s.endDate.isBlank()) ? "s" : "n";
-        TextInput.Builder hasEndB = TextInput.create("f-has-end", "Tem data de fim? (s/n)", TextInputStyle.SHORT)
-                .setRequired(true)
-                .setPlaceholder("s ou n")
-                .setValue(hasEndDefault);
-
-        TextInput.Builder endB = TextInput.create("f-end", "Data de fim (opcional, DD-MM-AAAA)", TextInputStyle.SHORT)
-                .setRequired(false)
-                .setPlaceholder("02-10-1986");
-        if (s.endDate != null && !s.endDate.isBlank()) {
-            endB.setValue(s.endDate);
-        }
-
-        return Modal.create(MODAL_DETAILS, "Descrição e Datas")
-                .addActionRow(descB.build())
-                .addActionRow(startB.build())
-                .addActionRow(hasEndB.build())
-                .addActionRow(endB.build())
-                .build();
-    }
-
-    private EmbedBuilder buildReviewEmbed(FormState s) {
-        return new EmbedBuilder()
-                .setColor(Ui.INFO)
-                .setTitle("📋 Resumo dos dados inseridos")
-                .addField("🏢 Squad", valueOr(s.squadName), false)
-                .addField("👤 Pessoa", valueOr(s.userName), false)
-                .addField("📝 Tipo", valueOr(s.typeName), false)
-                .addField("🏷️ Categorias", s.categoryNames == null || s.categoryNames.isEmpty() ? "—" : String.join(", ", s.categoryNames), false)
-                .addField("📄 Descrição", valueOr(s.description), false)
-                .addField("📅 Data de início", valueOr(s.startDate), false)
-                .addField("📅 Data de fim", s.endDate != null ? s.endDate : "Não informado", false);
-    }
-
-    private String valueOr(String v) { return (v == null || v.isBlank()) ? "—" : v; }
-
-
-    private JSONArray fetchSquads(User user) {
-        try {
-            String squadsJson = squadLogService.getSquads();
-            if (!squadsJson.trim().startsWith("[")) {
-                JSONObject obj = new JSONObject(squadsJson);
-                return obj.optJSONArray("items");
-            }
-            return new JSONArray(squadsJson);
-        } catch (Exception e) {
-            logger.error("Erro ao carregar squads", e);
-            return new JSONArray();
-        }
-    }
-
-    private JSONArray fetchLogTypes() {
-        try {
-            return new JSONArray(squadLogService.getSquadLogTypes());
-        } catch (Exception e) {
-            logger.error("Erro ao carregar tipos", e);
-            return new JSONArray();
-        }
-    }
-
-    private JSONArray fetchCategories() {
-        try {
-            return new JSONArray(squadLogService.getSquadCategories());
-        } catch (Exception e) {
-            logger.error("Erro ao carregar categorias", e);
-            return new JSONArray();
-        }
+        FormStep step;
     }
 
     public String buildSquadLogPayload(
-            String squadId, String userId, String squadLogTypeId,
-            List<String> skillCategoryIds, String description, String startDate, String endDate
+            String squadId,
+            String userId,
+            String squadLogTypeId,
+            List<String> skillCategoryIds,
+            String description,
+            String startDate,
+            String endDate
     ) {
         JSONObject payload = new JSONObject();
         payload.put("squad_id", Integer.parseInt(squadId));
@@ -842,9 +726,22 @@ public class ComponentInteractionListener extends ListenerAdapter {
         payload.put("squad_log_type_id", Integer.parseInt(squadLogTypeId));
         payload.put("skill_categories", skillCategoryIds.stream().map(Integer::parseInt).toList());
         payload.put("description", description);
-        payload.put("start_date", convertToIsoDate(startDate));
-        if (endDate != null && !endDate.isBlank()) payload.put("end_date", convertToIsoDate(endDate));
+        payload.put("start_date", startDate);
+        if (endDate != null && !endDate.isBlank()) {
+            payload.put("end_date", endDate);
+        }
         return payload.toString();
     }
-}
 
+    /**
+     * Helper method to format FormState for debugging purposes
+     */
+    private String formatFormState(FormState state) {
+        return String.format("FormState{squadId='%s', squadName='%s', userId='%s', userName='%s', " +
+                "typeId='%s', typeName='%s', categoryIds=%s, categoryNames=%s, " +
+                "description='%s', startDate='%s', endDate='%s', step=%s}",
+                state.squadId, state.squadName, state.userId, state.userName,
+                state.typeId, state.typeName, state.categoryIds, state.categoryNames,
+                state.description, state.startDate, state.endDate, state.step);
+    }
+}
