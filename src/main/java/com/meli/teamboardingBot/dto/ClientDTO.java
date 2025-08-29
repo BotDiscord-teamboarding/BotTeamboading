@@ -1,38 +1,51 @@
 package com.meli.teamboardingBot.dto;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import lombok.ToString;
-
 import java.util.List;
 
-@Getter
-@Setter
-@NoArgsConstructor
-@ToString
 public class ClientDTO {
     
-    @JsonProperty("id")
     private Long id;
-    
-    @JsonProperty("name")
     private String name;
-    
-    @JsonProperty("areas")
     private List<AreaDTO> areas;
-    
-    @JsonProperty("skill_categories")
     private List<Object> skillCategories;
-    
-    @JsonProperty("nomenclatures")
     private List<Object> nomenclatures;
-    
-    @JsonProperty("allow_rookies_to_see_knowledge_tree")
     private Boolean allowRookiesToSeeKnowledgeTree;
-    
-    @JsonProperty("can_access_public_contents")
     private Boolean canAccessPublicContents;
+    
+    public ClientDTO() {}
+    
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+    
+    public List<AreaDTO> getAreas() { return areas; }
+    public void setAreas(List<AreaDTO> areas) { this.areas = areas; }
+    
+    public List<Object> getSkillCategories() { return skillCategories; }
+    public void setSkillCategories(List<Object> skillCategories) { this.skillCategories = skillCategories; }
+    
+    public List<Object> getNomenclatures() { return nomenclatures; }
+    public void setNomenclatures(List<Object> nomenclatures) { this.nomenclatures = nomenclatures; }
+    
+    public Boolean getAllowRookiesToSeeKnowledgeTree() { return allowRookiesToSeeKnowledgeTree; }
+    public void setAllowRookiesToSeeKnowledgeTree(Boolean allowRookiesToSeeKnowledgeTree) { this.allowRookiesToSeeKnowledgeTree = allowRookiesToSeeKnowledgeTree; }
+    
+    public Boolean getCanAccessPublicContents() { return canAccessPublicContents; }
+    public void setCanAccessPublicContents(Boolean canAccessPublicContents) { this.canAccessPublicContents = canAccessPublicContents; }
+    
+    @Override
+    public String toString() {
+        return "ClientDTO{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", areas=" + areas +
+                ", skillCategories=" + skillCategories +
+                ", nomenclatures=" + nomenclatures +
+                ", allowRookiesToSeeKnowledgeTree=" + allowRookiesToSeeKnowledgeTree +
+                ", canAccessPublicContents=" + canAccessPublicContents +
+                '}';
+    }
 
 }

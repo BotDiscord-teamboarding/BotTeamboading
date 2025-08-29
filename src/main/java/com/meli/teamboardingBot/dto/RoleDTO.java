@@ -1,29 +1,61 @@
 package com.meli.teamboardingBot.dto;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import lombok.ToString;
-
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@ToString
 public class RoleDTO {
     
-    @JsonProperty("id")
     private String id;
-    
-    @JsonProperty("name")
     private String name;
-    
-    @JsonProperty("is_squad_role")
     private Boolean isSquadRole;
-    
-    @JsonProperty("scopes_set")
     private String scopesSet;
+    
+    public RoleDTO() {}
+    
+    public RoleDTO(String id, String name, Boolean isSquadRole, String scopesSet) {
+        this.id = id;
+        this.name = name;
+        this.isSquadRole = isSquadRole;
+        this.scopesSet = scopesSet;
+    }
+    
+    public String getId() {
+        return id;
+    }
+    
+    public void setId(String id) {
+        this.id = id;
+    }
+    
+    public String getName() {
+        return name;
+    }
+    
+    public void setName(String name) {
+        this.name = name;
+    }
+    
+    public Boolean getIsSquadRole() {
+        return isSquadRole;
+    }
+    
+    public void setIsSquadRole(Boolean isSquadRole) {
+        this.isSquadRole = isSquadRole;
+    }
+    
+    public String getScopesSet() {
+        return scopesSet;
+    }
+    
+    public void setScopesSet(String scopesSet) {
+        this.scopesSet = scopesSet;
+    }
+    
+    @Override
+    public String toString() {
+        return "RoleDTO{" +
+                "id='" + id + '\'' +
+                ", name='" + name + '\'' +
+                ", isSquadRole=" + isSquadRole +
+                ", scopesSet='" + scopesSet + '\'' +
+                '}';
+    }
 
 }
