@@ -1,25 +1,49 @@
 package com.meli.teamboardingBot.dto;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import lombok.ToString;
-
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@ToString
 public class TechnologyDTO {
     
-    @JsonProperty("id")
     private Long id;
-    
-    @JsonProperty("name")
     private String name;
-    
-    @JsonProperty("technology_type_id")
     private String technologyTypeId;
+    
+    public TechnologyDTO() {}
+    
+    public TechnologyDTO(Long id, String name, String technologyTypeId) {
+        this.id = id;
+        this.name = name;
+        this.technologyTypeId = technologyTypeId;
+    }
+    
+    public Long getId() {
+        return id;
+    }
+    
+    public void setId(Long id) {
+        this.id = id;
+    }
+    
+    public String getName() {
+        return name;
+    }
+    
+    public void setName(String name) {
+        this.name = name;
+    }
+    
+    public String getTechnologyTypeId() {
+        return technologyTypeId;
+    }
+    
+    public void setTechnologyTypeId(String technologyTypeId) {
+        this.technologyTypeId = technologyTypeId;
+    }
+    
+    @Override
+    public String toString() {
+        return "TechnologyDTO{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", technologyTypeId='" + technologyTypeId + '\'' +
+                '}';
+    }
 }

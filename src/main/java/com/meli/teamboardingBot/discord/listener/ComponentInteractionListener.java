@@ -19,7 +19,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
@@ -31,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.Arrays;
 import java.util.regex.Pattern;
 
 @Component
@@ -41,215 +41,304 @@ public class ComponentInteractionListener extends ListenerAdapter {
 
     private final Map<Long, FormState> userFormState = new HashMap<>();
     private final Logger logger = LoggerFactory.getLogger(ComponentInteractionListener.class);
+    
+    private static final String BTN_CRIAR = "criar";
+    private static final String BTN_ATUALIZAR = "atualizar";
+    private static final String BTN_CRIAR_LOG = "criar-log";
+    private static final String BTN_EDITAR_LOG = "editar-log";
+    private static final String BTN_VOLTAR_LOGS = "voltar-logs";
+    private static final String BTN_CRIAR_NOVO = "criar-novo";
+    private static final String BTN_ATUALIZAR_EXISTENTE = "atualizar-existente";
+    private static final String BTN_SAIR = "sair";
+    
+    private static final String BTN_EDIT_SQUAD = "edit-squad";
+    private static final String BTN_EDIT_PESSOA = "edit-pessoa";
+    private static final String BTN_EDIT_TIPO = "edit-tipo";
+    private static final String BTN_EDIT_CATEGORIAS = "edit-categorias";
+    private static final String BTN_EDIT_DESCRICAO = "edit-descricao";
+    private static final String BTN_EDIT_DATAS = "edit-datas";
+    private static final String BTN_VOLTAR_RESUMO = "voltar-resumo";
+    
+    private static final String SELECT_SQUAD = "squad-select";
+    private static final String SELECT_USER = "user-select";
+    private static final String SELECT_TYPE = "type-select";
+    private static final String SELECT_CATEGORY = "category-select";
+    private static final String SELECT_LOG = "log-select";
+    
+    private static final String MODAL_CREATE_FINAL = "modal-create-final";
+    private static final String MODAL_EDIT_DESCRICAO = "modal-edit-descricao";
+    private static final String MODAL_EDIT_DATAS = "modal-edit-datas";
+    private static final String MODAL_DESCRIPTION = "modal-description";
+    private static final String MODAL_START_DATE = "modal-start-date";
+    private static final String MODAL_END_DATE = "modal-end-date";
+    private static final String MODAL_EDIT_DESCRIPTION = "modal-edit-description";
+    private static final String MODAL_EDIT_DATES = "modal-edit-dates";
+    
+    private static final String BTN_OPEN_START_DATE_MODAL = "open-start-date-modal";
+    private static final String BTN_HAS_END_DATE_YES = "has-end-date-yes";
+    private static final String BTN_HAS_END_DATE_NO = "has-end-date-no";
+    
+    private static final DateTimeFormatter BRAZILIAN_DATE_FORMAT = DateTimeFormatter.ofPattern("dd-MM-yyyy");
 
     @Override
     public void onButtonInteraction(ButtonInteractionEvent event) {
         String buttonId = event.getComponentId();
         long discordUserId = event.getUser().getIdLong();
-        logger.info("[BUTTON_INTERACTION] Usuário: {} | Botão: {} | Guild: {}", 
-                   discordUserId, buttonId, event.getGuild() != null ? event.getGuild().getId() : "DM");
+        logger.info("[BUTTON] Usuário: {} | Botão: {}", discordUserId, buttonId);
 
         FormState state = userFormState.computeIfAbsent(discordUserId, k -> new FormState());
 
         switch (buttonId) {
-            case "criar" -> {
-                logger.info("[CRIAR_SQUAD] Iniciando processo de criação para usuário: {}", discordUserId);
-                showSquadSelection(event, state);
-            }
-            case "atualizar" -> {
-                logger.info("[ATUALIZAR_SQUAD] Iniciando processo de atualização para usuário: {}", discordUserId);
-                showQuestionarioSelection(event, state);
-            }
-            case "criar-log" -> {
-                logger.info("[CRIAR_LOG] Criando squad log para usuário: {}", discordUserId);
-                createSquadLog(event, state);
-            }
-            case "alterar-log" -> {
-                logger.info("[ALTERAR_LOG] Mostrando opções de alteração para usuário: {}", discordUserId);
-                showEditFieldsMenu(event, state);
-            }
-            case "criar-novo-log" -> {
-                logger.info("[CRIAR_NOVO_LOG] Iniciando novo processo de criação para usuário: {}", discordUserId);
-                
-                userFormState.put(discordUserId, new FormState());
-                event.deferEdit().queue();
-                showSquadSelectionWithHook(event.getHook(), userFormState.get(discordUserId));
-            }
-            case "alterar-log-existente" -> {
-                logger.info("[ALTERAR_LOG_EXISTENTE] Iniciando processo de alteração para usuário: {}", discordUserId);
-                event.deferEdit().queue();
-                showQuestionarioSelectionWithHook(event.getHook(), state);
-            }
-            case "sair" -> {
-                logger.info("[SAIR] Usuário saindo: {}", discordUserId);
-                event.deferEdit().queue();
-                exitBotWithHook(event.getHook(), discordUserId);
-            }
-            case "voltar-questionarios" -> {
-                logger.info("[VOLTAR_QUESTIONARIOS] Voltando para seleção de questionários: {}", discordUserId);
-                showQuestionarioSelection(event, state);
-            }
-            case "editar-questionario" -> {
-                logger.info("[EDITAR_QUESTIONARIO] Mostrando menu de edição: {}", discordUserId);
-                showEditFieldsMenu(event, state);
-            }
-            case "retornar-resumo" -> {
-                logger.info("[RETORNAR_RESUMO] Retornando ao resumo: {}", discordUserId);
-                showSummaryWithButtons(event, state);
-            }
+            case BTN_CRIAR -> handleCriarButton(event, state);
+            case BTN_ATUALIZAR -> handleAtualizarButton(event, state);
+            case BTN_CRIAR_LOG -> handleCriarLogButton(event, state);
+            case BTN_EDITAR_LOG -> handleEditarLogButton(event, state);
+            case BTN_VOLTAR_LOGS -> handleVoltarLogsButton(event, state);
+            case BTN_CRIAR_NOVO -> handleCriarNovoButton(event, state);
+            case BTN_ATUALIZAR_EXISTENTE -> handleAtualizarExistenteButton(event, state);
+            case BTN_SAIR -> handleSairButton(event, state);
+            case BTN_EDIT_SQUAD -> handleEditSquadButton(event, state);
+            case BTN_EDIT_PESSOA -> handleEditPessoaButton(event, state);
+            case BTN_EDIT_TIPO -> handleEditTipoButton(event, state);
+            case BTN_EDIT_CATEGORIAS -> handleEditCategoriasButton(event, state);
+            case BTN_EDIT_DESCRICAO -> handleEditDescricaoButton(event, state);
+            case BTN_EDIT_DATAS -> handleEditDatasButton(event, state);
+            case BTN_VOLTAR_RESUMO -> handleVoltarResumoButton(event, state);
+            case "open-create-complete-modal-btn" -> handleOpenCreateCompleteModalButton(event, state);
+            case "editar-questionario" -> handleEditarLogButton(event, state);
+            case "confirmar-criacao" -> handleCriarLogButton(event, state);
+            case "confirmar-atualizacao" -> handleCriarLogButton(event, state);
+            case "voltar-questionarios" -> handleVoltarLogsButton(event, state);
             
-            case "edit-squad" -> editSquad(event, state);
-            case "edit-pessoa" -> editPessoa(event, state);
-            case "edit-tipo" -> editTipo(event, state);
-            case "edit-categorias" -> editCategorias(event, state);
-            case "edit-descricao" -> editDescricao(event, state);
-            case "edit-datas" -> {
-                logger.info("[EDIT_DATAS] Editando datas para usuário: {}", discordUserId);
-
-                TextInput.Builder startDateInputBuilder = TextInput.create("start_date", "Data de Início (DD-MM-AAAA)", TextInputStyle.SHORT)
-                        .setPlaceholder("Ex: 20-06-1986")
-                        .setRequired(true)
-                        .setMaxLength(10);
-
-                if (state.startDate != null) {
-                    String currentStartDate = formatToBrazilianDate(state.startDate);
-                    startDateInputBuilder.setValue(currentStartDate);
-                }
-                
-                TextInput.Builder endDateInputBuilder = TextInput.create("end_date", "Data de Fim (DD-MM-AAAA) - OPCIONAL", TextInputStyle.SHORT)
-                        .setPlaceholder("Ex: 25-06-1986 (deixe em branco para remover)")
-                        .setRequired(false)
-                        .setMaxLength(10);
-
-                if (state.endDate != null) {
-                    String currentEndDate = formatToBrazilianDate(state.endDate);
-                    endDateInputBuilder.setValue(currentEndDate);
-                }
-                
-                TextInput startDateInput = startDateInputBuilder.build();
-                TextInput endDateInput = endDateInputBuilder.build();
-
-                Modal datesModal = Modal.create("dates-modal-edit", "📅 Editar Datas")
-                        .addActionRow(startDateInput)
-                        .addActionRow(endDateInput)
-                        .build();
-
-                event.replyModal(datesModal).queue();
-            }
-            case "open-dates-modal-auto" -> {
-                logger.info("[OPEN_DATES_MODAL_AUTO] Abrindo modal de datas para usuário: {}", discordUserId);
-
-                TextInput startDateInput = TextInput.create("start_date", "Data de Início (DD-MM-AAAA)", TextInputStyle.SHORT)
-                        .setPlaceholder("Ex: 20-06-1986")
-                        .setMinLength(10)
-                        .setMaxLength(10)
-                        .build();
-
-                TextInput endDateInput = TextInput.create("end_date", "Data de Fim (DD-MM-AAAA) - OPCIONAL", TextInputStyle.SHORT)
-                        .setPlaceholder("Ex: 20-06-1986 (deixe em branco se não houver)")
-                        .setRequired(false)
-                        .setMaxLength(10)
-                        .build();
-
-                Modal datesModal = Modal.create("dates-modal-create", "📅 Adicionar Datas")
-                        .addActionRow(startDateInput)
-                        .addActionRow(endDateInput)
-                        .build();
-
-                event.replyModal(datesModal).queue();
-            }
-            case "open-description-modal-create" -> {
-                
-                TextInput descriptionInput = TextInput.create("description", "Descrição", TextInputStyle.PARAGRAPH)
-                        .setPlaceholder("Digite a descrição detalhada...")
-                        .setMinLength(10)
-                        .setMaxLength(1000)
-                        .build();
-
-                Modal modal = Modal.create("description-modal-create", "📝 Adicionar Descrição")
-                        .addActionRow(descriptionInput)
-                        .build();
-
-                event.replyModal(modal).queue();
-            }
-            case "open-start-date-modal" -> {
-                
-                TextInput startDateInput = TextInput.create("start_date", "Data de Início (DD-MM-AAAA)", TextInputStyle.SHORT)
-                        .setPlaceholder("Ex: 20-06-1986")
-                        .setMinLength(10)
-                        .setMaxLength(10)
-                        .build();
-
-                TextInput hasEndDateInput = TextInput.create("has_end_date", "Há data de fim? (sim/não)", TextInputStyle.SHORT)
-                        .setPlaceholder("Digite: sim, s, não, nao, n")
-                        .setMinLength(1)
-                        .setMaxLength(10)
-                        .build();
-
-                Modal startDateModal = Modal.create("start-date-modal-create", "📅 Adicionar Data de Início")
-                        .addActionRow(startDateInput)
-                        .addActionRow(hasEndDateInput)
-                        .build();
-
-                event.replyModal(startDateModal).queue();
-            }
-            case "confirmar-atualizacao" -> {
-                logger.info("[CONFIRMAR_ATUALIZACAO] Atualizando squad log para usuário: {}", discordUserId);
-                updateSquadLog(event, state);
-            }
-            case "has-end-date-yes" -> {
-                
-                TextInput endDateInput = TextInput.create("end_date", "Data de Fim (DD-MM-AAAA)", TextInputStyle.SHORT)
-                        .setPlaceholder("Ex: 20-06-1986")
-                        .setMinLength(10)
-                        .setMaxLength(10)
-                        .build();
-
-                Modal endDateModal = Modal.create("end-date-modal-create", "📅 Adicionar Data de Fim")
-                        .addActionRow(endDateInput)
-                        .build();
-
-                event.replyModal(endDateModal).queue();
-            }
-            case "has-end-date-no" -> {
-                
-                FormState state2 = userFormState.get(discordUserId);
-                if (state2 != null) {
-                    state2.endDate = null;
-                    state2.step = FormStep.REVIEW;
-                    showSummaryWithButtons(event, state2);
-                }
-            }
-            case "open-end-date-modal-modify" -> {
-                
-                TextInput.Builder endDateInputBuilder = TextInput.create("end_date", "Data de Fim (DD-MM-AAAA) - OPCIONAL", TextInputStyle.SHORT)
-                        .setPlaceholder("Ex: 20-06-1986 (deixe em branco para remover)")
-                        .setRequired(false)
-                        .setMaxLength(10);
-
-                if (state.endDate != null) {
-                    String formattedDate = formatToBrazilianDate(state.endDate);
-                    if (formattedDate != null && !formattedDate.trim().isEmpty()) {
-                        endDateInputBuilder.setValue(formattedDate);
-                    }
-                }
-                
-                TextInput endDateInput = endDateInputBuilder.build();
-
-                Modal endDateModal = Modal.create("end-date-modal-edit", "📅 Editar Data de Fim (Opcional)")
-                        .addActionRow(endDateInput)
-                        .build();
-
-                event.replyModal(endDateModal).queue();
-            }
             default -> {
                 logger.warn("[BUTTON_UNKNOWN] Botão desconhecido: {} | Usuário: {}", buttonId, discordUserId);
                 event.reply("❌ Botão não reconhecido.").setEphemeral(true).queue();
             }
         }
     }
+    
+    
+    private void handleCriarButton(ButtonInteractionEvent event, FormState state) {
+        logger.info("[CRIAR] Iniciando fluxo de criação");
+        state.isCreating = true;
+        state.isEditing = false;
+        showSquadSelection(event);
+    }
+    
+    private void handleAtualizarButton(ButtonInteractionEvent event, FormState state) {
+        logger.info("[ATUALIZAR] Iniciando fluxo de atualização");
+        state.isCreating = false;
+        state.isEditing = true;
+        showLogSelection(event);
+    }
+    
+    private void handleCriarLogButton(ButtonInteractionEvent event, FormState state) {
+        logger.info("[CRIAR_LOG] Executando criação/salvamento do log");
+        if (state.isCreating) {
+            createSquadLog(event, state);
+        } else {
+            updateSquadLog(event, state);
+        }
+    }
+    
+    private void handleEditarLogButton(ButtonInteractionEvent event, FormState state) {
+        logger.info("[EDITAR_LOG] Mostrando menu de edição");
+        
+        
+        
+        
+        state.isEditing = true;
+        
+        
+        logger.info("[EDITAR_LOG] Estado mantido: isEditing={}, isCreating={}", state.isEditing, state.isCreating);
+        showEditFieldsMenu(event);
+    }
+    
+    private void handleVoltarLogsButton(ButtonInteractionEvent event, FormState state) {
+        logger.info("[VOLTAR_LOGS] Voltando para seleção de logs");
+        showLogSelection(event);
+    }
+    
+    private void handleCriarNovoButton(ButtonInteractionEvent event, FormState state) {
+        logger.info("[CRIAR_NOVO] Iniciando novo fluxo de criação");
+        
+        userFormState.put(event.getUser().getIdLong(), new FormState());
+        FormState newState = userFormState.get(event.getUser().getIdLong());
+        newState.isCreating = true;
+        newState.isEditing = false;
+        
+        event.deferEdit().queue();
+        showSquadSelectionWithHook(event.getHook());
+    }
+    
+    private void handleAtualizarExistenteButton(ButtonInteractionEvent event, FormState state) {
+        logger.info("[ATUALIZAR_EXISTENTE] Iniciando fluxo de atualização");
+        state.isCreating = false;
+        state.isEditing = true;
+        
+        event.deferEdit().queue();
+        showLogSelectionWithHook(event.getHook());
+    }
+    
+    private void handleSairButton(ButtonInteractionEvent event, FormState state) {
+        logger.info("[SAIR] Usuário saindo do bot");
+        event.deferEdit().queue();
+        exitBotWithHook(event.getHook(), event.getUser().getIdLong());
+    }
+    
+    private void handleEditSquadButton(ButtonInteractionEvent event, FormState state) {
+        logger.info("[EDIT_SQUAD] Editando squad");
+        showSquadSelection(event);
+    }
+    
+    private void handleEditPessoaButton(ButtonInteractionEvent event, FormState state) {
+        logger.info("[EDIT_PESSOA] Editando pessoa");
+        showUserSelection(event, state.squadId);
+    }
+    
+    private void handleEditTipoButton(ButtonInteractionEvent event, FormState state) {
+        logger.info("[EDIT_TIPO] Editando tipo");
+        showTypeSelection(event);
+    }
+    
+    private void handleEditCategoriasButton(ButtonInteractionEvent event, FormState state) {
+        logger.info("[EDIT_CATEGORIAS] Editando categorias");
+        showCategorySelection(event);
+    }
+    
+    private void handleEditDescricaoButton(ButtonInteractionEvent event, FormState state) {
+        logger.info("[EDIT_DESCRICAO] Editando descrição");
+        
+        TextInput descriptionInput = TextInput.create("description", "Descrição", TextInputStyle.PARAGRAPH)
+            .setPlaceholder("Digite a descrição do log...")
+            .setValue(state.description != null ? state.description : "")
+            .setMaxLength(1000)
+            .setRequired(true)
+            .build();
 
-    private void showSquadSelection(ButtonInteractionEvent event, FormState state) {
+        Modal modal = Modal.create(MODAL_EDIT_DESCRIPTION, "📝 Editar Descrição")
+            .addActionRow(descriptionInput)
+            .build();
+
+        event.replyModal(modal).queue();
+    }
+    
+    private void handleEditDatasButton(ButtonInteractionEvent event, FormState state) {
+        logger.info("[EDIT_DATAS] Editando datas");
+        
+        
+        TextInput.Builder startDateBuilder = TextInput.create("start_date", "Data de Início (DD-MM-AAAA)", TextInputStyle.SHORT)
+            .setPlaceholder("Ex: 20-06-1986")
+            .setMaxLength(10)
+            .setRequired(true);
+        
+        
+        if (state.startDate != null) {
+            startDateBuilder.setValue(formatToBrazilianDate(state.startDate));
+        }
+        TextInput startDateInput = startDateBuilder.build();
+
+        TextInput.Builder endDateBuilder = TextInput.create("end_date", "Data de Fim (DD-MM-AAAA) - Opcional", TextInputStyle.SHORT)
+            .setPlaceholder("Ex: 25-06-1986 (deixe vazio se não houver)")
+            .setMaxLength(10)
+            .setRequired(false);
+        
+        
+        if (state.endDate != null) {
+            endDateBuilder.setValue(formatToBrazilianDate(state.endDate));
+        }
+        TextInput endDateInput = endDateBuilder.build();
+
+        Modal modal = Modal.create(MODAL_EDIT_DATES, "📅 Editar Datas")
+            .addActionRow(startDateInput)
+            .addActionRow(endDateInput)
+            .build();
+
+        event.replyModal(modal).queue();
+    }
+    
+    private void handleVoltarResumoButton(ButtonInteractionEvent event, FormState state) {
+        logger.info("[VOLTAR_RESUMO] Voltando ao resumo - isEditing={}, isCreating={}", state.isEditing, state.isCreating);
+        
+        
+        if (state.isEditing && !state.isCreating) {
+            logger.info("[VOLTAR_RESUMO] Voltando ao resumo de criação (2 botões)");
+            showCreateSummary(event, state);
+        } else if (state.isCreating) {
+            logger.info("[VOLTAR_RESUMO] Voltando ao resumo de criação (modo criando)");
+            showCreateSummary(event, state);
+        } else {
+            logger.info("[VOLTAR_RESUMO] Voltando ao resumo de atualização (3 botões)");
+            showUpdateSummary(event, state);
+        }
+    }
+    
+    private void handleOpenCreateCompleteModalButton(ButtonInteractionEvent event, FormState state) {
+        logger.info("[OPEN_CREATE_COMPLETE_MODAL_BUTTON] Abrindo modal único de criação");
+        
+        TextInput descriptionInput = TextInput.create("description", "Descrição", TextInputStyle.PARAGRAPH)
+            .setPlaceholder("Digite a descrição do log...")
+            .setMaxLength(1000)
+            .setRequired(true)
+            .build();
+
+        TextInput startDateInput = TextInput.create("start_date", "Data de Início (DD-MM-AAAA)", TextInputStyle.SHORT)
+            .setPlaceholder("Ex: 20-06-1986")
+            .setMaxLength(10)
+            .setRequired(true)
+            .build();
+
+        TextInput endDateInput = TextInput.create("end_date", "Data de Fim (DD-MM-AAAA) - Opcional", TextInputStyle.SHORT)
+            .setPlaceholder("Ex: 25-06-1986 (deixe vazio se não houver)")
+            .setMaxLength(10)
+            .setRequired(false)
+            .build();
+
+        Modal modal = Modal.create("create-complete-modal", "📝 Finalizar Criação do Log")
+            .addActionRow(descriptionInput)
+            .addActionRow(startDateInput)
+            .addActionRow(endDateInput)
+            .build();
+
+        event.replyModal(modal).queue();
+    }
+    
+    
+    
+    private void showCreateSummaryWithHook(InteractionHook hook, FormState state) {
+        logger.info("[SHOW_CREATE_SUMMARY_WITH_HOOK] Exibindo resumo final de criação");
+        
+        
+        String squadName = state.squadName != null ? state.squadName : "Não informado";
+        String userName = state.userName != null ? state.userName : "Não informado";
+        String typeName = state.typeName != null ? state.typeName : "Não informado";
+        String categoryNames = (state.categoryNames != null && !state.categoryNames.isEmpty()) ? String.join(", ", state.categoryNames) : "Não informado";
+        String description = state.description != null ? state.description : "Não informado";
+        String startDateText = state.startDate != null ? formatToBrazilianDate(state.startDate) : "Não informado";
+        String endDateText = state.endDate != null ? formatToBrazilianDate(state.endDate) : "Não informada";
+        
+        EmbedBuilder embed = new EmbedBuilder()
+            .setTitle("📋 Resumo do Squad Log")
+            .setDescription("Confirme os dados antes de criar:")
+            .addField("🏢 Squad", squadName, false)
+            .addField("👤 Pessoa", userName, false)
+            .addField("📝 Tipo", typeName, false)
+            .addField("🏷️ Categorias", categoryNames, false)
+            .addField("📄 Descrição", description, false)
+            .addField("📅 Data de Início", startDateText, false)
+            .addField("📅 Data de Fim", endDateText, false)
+            .setColor(0x0099FF);
+
+        
+        Button createButton = Button.success("confirmar-criacao", "✅ Criar");
+        Button editButton = Button.secondary(BTN_EDITAR_LOG, "✏️ Editar");
+
+        hook.editOriginalEmbeds(embed.build())
+            .setComponents(ActionRow.of(createButton, editButton))
+            .queue();
+    }
+    
+    private void showSquadSelection(ButtonInteractionEvent event) {
         logger.info("[SHOW_SQUAD_SELECTION] Mostrando seleção de squads");
         
         try {
@@ -265,7 +354,7 @@ public class ComponentInteractionListener extends ListenerAdapter {
                 return;
             }
 
-            StringSelectMenu.Builder squadMenuBuilder = StringSelectMenu.create("squad-select")
+            StringSelectMenu.Builder squadMenuBuilder = StringSelectMenu.create(SELECT_SQUAD)
                     .setPlaceholder("Selecione uma squad");
 
             for (int i = 0; i < squadsArray.length(); i++) {
@@ -279,15 +368,13 @@ public class ComponentInteractionListener extends ListenerAdapter {
 
             EmbedBuilder embed = new EmbedBuilder()
                 .setTitle("🏢 Selecione uma Squad")
-                .setDescription("Escolha a squad para criar o log:")
+                .setDescription("Escolha a squad para o seu log:")
                 .setColor(0x0099FF);
 
             event.editMessageEmbeds(embed.build())
                 .setActionRow(squadMenuBuilder.build())
                 .queue();
                 
-            state.step = FormStep.SQUAD;
-            
         } catch (Exception e) {
             logger.error("[SHOW_SQUAD_SELECTION] Erro ao carregar squads: {}", e.getMessage());
             event.editMessage("❌ Erro ao carregar squads. Tente novamente.")
@@ -296,8 +383,8 @@ public class ComponentInteractionListener extends ListenerAdapter {
                 .queue();
         }
     }
-
-    private void showSquadSelectionWithHook(InteractionHook hook, FormState state) {
+    
+    private void showSquadSelectionWithHook(InteractionHook hook) {
         logger.info("[SHOW_SQUAD_SELECTION_HOOK] Mostrando seleção de squads");
         
         try {
@@ -313,7 +400,7 @@ public class ComponentInteractionListener extends ListenerAdapter {
                 return;
             }
 
-            StringSelectMenu.Builder squadMenuBuilder = StringSelectMenu.create("squad-select")
+            StringSelectMenu.Builder squadMenuBuilder = StringSelectMenu.create(SELECT_SQUAD)
                     .setPlaceholder("Selecione uma squad");
 
             for (int i = 0; i < squadsArray.length(); i++) {
@@ -327,15 +414,13 @@ public class ComponentInteractionListener extends ListenerAdapter {
 
             EmbedBuilder embed = new EmbedBuilder()
                 .setTitle("🏢 Selecione uma Squad")
-                .setDescription("Escolha a squad para criar o log:")
+                .setDescription("Escolha a squad para o seu log:")
                 .setColor(0x0099FF);
 
             hook.editOriginalEmbeds(embed.build())
                 .setActionRow(squadMenuBuilder.build())
                 .queue();
                 
-            state.step = FormStep.SQUAD;
-            
         } catch (Exception e) {
             logger.error("[SHOW_SQUAD_SELECTION_HOOK] Erro ao carregar squads: {}", e.getMessage());
             hook.editOriginal("❌ Erro ao carregar squads. Tente novamente.")
@@ -344,20 +429,133 @@ public class ComponentInteractionListener extends ListenerAdapter {
                 .queue();
         }
     }
+    
+    private void showUserSelection(ButtonInteractionEvent event, String squadId) {
+        logger.info("[SHOW_USER_SELECTION] Mostrando seleção de usuários para squad: {}", squadId);
+        
+        try {
+            String squadsJson = squadLogService.getSquads();
+            JSONObject obj = new JSONObject(squadsJson);
+            JSONArray squadsArray = obj.optJSONArray("items");
+            JSONObject selectedSquad = null;
+            
+            for (int i = 0; i < squadsArray.length(); i++) {
+                JSONObject squad = squadsArray.getJSONObject(i);
+                if (String.valueOf(squad.get("id")).equals(squadId)) {
+                    selectedSquad = squad;
+                    break;
+                }
+            }
 
-    private void showQuestionarioSelection(ButtonInteractionEvent event, FormState state) {
-        logger.info("[SHOW_QUESTIONARIO_SELECTION] Mostrando seleção de questionários");
+            StringSelectMenu.Builder userMenuBuilder = StringSelectMenu.create(SELECT_USER)
+                    .setPlaceholder("Selecione uma pessoa");
+
+            if (selectedSquad != null) {
+                userMenuBuilder.addOption("All team", squadId);
+                JSONArray userSquads = selectedSquad.optJSONArray("user_squads");
+                if (userSquads != null) {
+                    for (int i = 0; i < userSquads.length(); i++) {
+                        JSONObject userSquad = userSquads.getJSONObject(i);
+                        JSONObject user = userSquad.optJSONObject("user");
+                        if (user != null) {
+                            String name = user.optString("first_name", "") + " " + user.optString("last_name", "");
+                            String userIdStr = String.valueOf(user.opt("id"));
+                            if (!name.trim().isEmpty()) {
+                                userMenuBuilder.addOption(name, userIdStr);
+                            }
+                        }
+                    }
+                }
+            }
+
+            EmbedBuilder embed = new EmbedBuilder()
+                .setTitle("👤 Selecione uma Pessoa")
+                .setDescription("Escolha quem irá responder:")
+                .setColor(0x0099FF);
+
+            event.editMessageEmbeds(embed.build())
+                .setActionRow(userMenuBuilder.build())
+                .queue();
+                
+        } catch (Exception e) {
+            logger.error("[SHOW_USER_SELECTION] Erro: {}", e.getMessage());
+            EmbedBuilder errorEmbed = new EmbedBuilder()
+                .setTitle("❌ Erro ao carregar usuários")
+                .setColor(0xFF0000);
+            event.editMessageEmbeds(errorEmbed.build()).setComponents().queue();
+        }
+    }
+    
+    private void showTypeSelection(ButtonInteractionEvent event) {
+        logger.info("[SHOW_TYPE_SELECTION] Mostrando seleção de tipos");
+        
+        try {
+            String logTypesJson = squadLogService.getSquadLogTypes();
+            JSONArray logTypesArray = new JSONArray(logTypesJson);
+
+            StringSelectMenu.Builder typeMenuBuilder = StringSelectMenu.create(SELECT_TYPE)
+                    .setPlaceholder("Selecione o tipo");
+            buildSelectMenu(logTypesArray, typeMenuBuilder);
+
+            EmbedBuilder embed = new EmbedBuilder()
+                .setTitle("📝 Selecione um Tipo")
+                .setDescription("Escolha o tipo do log:")
+                .setColor(0x0099FF);
+
+            event.editMessageEmbeds(embed.build())
+                .setActionRow(typeMenuBuilder.build())
+                .queue();
+                
+        } catch (Exception e) {
+            logger.error("[SHOW_TYPE_SELECTION] Erro: {}", e.getMessage());
+            EmbedBuilder errorEmbed = new EmbedBuilder()
+                .setTitle("❌ Erro ao carregar tipos")
+                .setColor(0xFF0000);
+            event.editMessageEmbeds(errorEmbed.build()).setComponents().queue();
+        }
+    }
+    
+    private void showCategorySelection(ButtonInteractionEvent event) {
+        logger.info("[SHOW_CATEGORY_SELECTION] Mostrando seleção de categorias");
+        
+        try {
+            String categoriesJson = squadLogService.getSquadCategories();
+            JSONArray categoriesArray = new JSONArray(categoriesJson);
+
+            StringSelectMenu.Builder categoryMenuBuilder = StringSelectMenu.create(SELECT_CATEGORY)
+                    .setPlaceholder("Selecione as categorias")
+                    .setMinValues(1)
+                    .setMaxValues(categoriesArray.length());
+            buildSelectMenu(categoriesArray, categoryMenuBuilder);
+
+            EmbedBuilder embed = new EmbedBuilder()
+                .setTitle("🏷️ Selecione as Categorias")
+                .setDescription("Escolha uma ou mais categorias:")
+                .setColor(0x0099FF);
+
+            event.editMessageEmbeds(embed.build())
+                .setActionRow(categoryMenuBuilder.build())
+                .queue();
+                
+        } catch (Exception e) {
+            logger.error("[SHOW_CATEGORY_SELECTION] Erro: {}", e.getMessage());
+            EmbedBuilder errorEmbed = new EmbedBuilder()
+                .setTitle("❌ Erro ao carregar categorias")
+                .setColor(0xFF0000);
+            event.editMessageEmbeds(errorEmbed.build()).setComponents().queue();
+        }
+    }
+    
+    
+    
+    private void showLogSelection(ButtonInteractionEvent event) {
+        logger.info("[SHOW_LOG_SELECTION] Mostrando seleção de logs");
         
         try {
             String squadLogsJson = squadLogService.getSquadLogAll();
-            logger.info("[SHOW_QUESTIONARIO_SELECTION] Response da API: {}", squadLogsJson);
-            
             JSONObject obj = new JSONObject(squadLogsJson);
             JSONArray squadLogsArray = obj.optJSONArray("items");
             
-            logger.info("[SHOW_QUESTIONARIO_SELECTION] Array de logs: {} items encontrados", 
-                squadLogsArray != null ? squadLogsArray.length() : 0);
-
             if (squadLogsArray == null || squadLogsArray.length() == 0) {
                 event.editMessage("❌ Nenhum questionário encontrado.")
                     .setEmbeds()
@@ -366,10 +564,10 @@ public class ComponentInteractionListener extends ListenerAdapter {
                 return;
             }
 
-            StringSelectMenu.Builder questionarioMenuBuilder = StringSelectMenu.create("squad-logs-select-update")
+            StringSelectMenu.Builder logMenuBuilder = StringSelectMenu.create(SELECT_LOG)
                     .setPlaceholder("Selecione um questionário");
 
-            buildSelectMenuUpdate(squadLogsArray, questionarioMenuBuilder);
+            buildSelectMenuUpdate(squadLogsArray, logMenuBuilder);
 
             EmbedBuilder embed = new EmbedBuilder()
                 .setTitle("📋 Selecione um Questionário")
@@ -377,31 +575,26 @@ public class ComponentInteractionListener extends ListenerAdapter {
                 .setColor(0x0099FF);
 
             event.editMessageEmbeds(embed.build())
-                .setActionRow(questionarioMenuBuilder.build())
+                .setActionRow(logMenuBuilder.build())
                 .queue();
                 
         } catch (Exception e) {
-            logger.error("[SHOW_QUESTIONARIO_SELECTION] Erro ao carregar questionários: {}", e.getMessage());
+            logger.error("[SHOW_LOG_SELECTION] Erro ao carregar questionários: {}", e.getMessage());
             event.editMessage("❌ Erro ao carregar questionários. Tente novamente.")
                 .setEmbeds()
                 .setComponents()
                 .queue();
         }
     }
-
-    private void showQuestionarioSelectionWithHook(InteractionHook hook, FormState state) {
-        logger.info("[SHOW_QUESTIONARIO_SELECTION_HOOK] Mostrando seleção de questionários");
+    
+    private void showLogSelectionWithHook(InteractionHook hook) {
+        logger.info("[SHOW_LOG_SELECTION_HOOK] Mostrando seleção de logs");
         
         try {
             String squadLogsJson = squadLogService.getSquadLogAll();
-            logger.info("[SHOW_QUESTIONARIO_SELECTION_HOOK] Response da API: {}", squadLogsJson);
-            
             JSONObject obj = new JSONObject(squadLogsJson);
             JSONArray squadLogsArray = obj.optJSONArray("items");
             
-            logger.info("[SHOW_QUESTIONARIO_SELECTION_HOOK] Array de logs: {} items encontrados", 
-                squadLogsArray != null ? squadLogsArray.length() : 0);
-
             if (squadLogsArray == null || squadLogsArray.length() == 0) {
                 hook.editOriginal("❌ Nenhum questionário encontrado.")
                     .setEmbeds()
@@ -410,10 +603,10 @@ public class ComponentInteractionListener extends ListenerAdapter {
                 return;
             }
 
-            StringSelectMenu.Builder questionarioMenuBuilder = StringSelectMenu.create("squad-logs-select-update")
+            StringSelectMenu.Builder logMenuBuilder = StringSelectMenu.create(SELECT_LOG)
                     .setPlaceholder("Selecione um questionário");
 
-            buildSelectMenuUpdate(squadLogsArray, questionarioMenuBuilder);
+            buildSelectMenuUpdate(squadLogsArray, logMenuBuilder);
 
             EmbedBuilder embed = new EmbedBuilder()
                 .setTitle("📋 Selecione um Questionário")
@@ -421,19 +614,937 @@ public class ComponentInteractionListener extends ListenerAdapter {
                 .setColor(0x0099FF);
 
             hook.editOriginalEmbeds(embed.build())
-                .setActionRow(questionarioMenuBuilder.build())
+                .setActionRow(logMenuBuilder.build())
                 .queue();
                 
         } catch (Exception e) {
-            logger.error("[SHOW_QUESTIONARIO_SELECTION_HOOK] Erro ao carregar questionários: {}", e.getMessage());
+            logger.error("[SHOW_LOG_SELECTION_HOOK] Erro ao carregar questionários: {}", e.getMessage());
             hook.editOriginal("❌ Erro ao carregar questionários. Tente novamente.")
                 .setEmbeds()
                 .setComponents()
                 .queue();
         }
     }
+    
+    
+    
+    private void showCreateSummary(ButtonInteractionEvent event, FormState state) {
+        logger.info("[SHOW_CREATE_SUMMARY] Mostrando resumo de criação");
+        
+        EmbedBuilder embed = new EmbedBuilder()
+            .setTitle("📋 Resumo do que foi preenchido")
+            .setDescription("Verifique todos os dados antes de criar o log:")
+            .setColor(0x0099FF);
+        
+        embed.addField("🏢 Squad", state.squadName != null ? state.squadName : "Não selecionado", false);
+        embed.addField("👤 Pessoa", state.userName != null ? state.userName : "Não selecionado", false);
+        embed.addField("📂 Tipo", state.typeName != null ? state.typeName : "Não selecionado", false);
+        embed.addField("🏷️ Categorias", !state.categoryNames.isEmpty() ? String.join(", ", state.categoryNames) : "Nenhuma selecionada", false);
+        embed.addField("📝 Descrição", state.description != null ? state.description : "Não informado", false);
+        embed.addField("📅 Data de Início", state.startDate != null ? formatToBrazilianDate(state.startDate) : "Não informado", false);
+        embed.addField("📅 Data de Fim", state.endDate != null ? formatToBrazilianDate(state.endDate) : "Não informado", false);
+        
+        event.editMessageEmbeds(embed.build())
+            .setActionRow(
+                Button.success(BTN_CRIAR_LOG, "✅ Criar"),
+                Button.secondary(BTN_EDITAR_LOG, "✏️ Editar")
+            )
+            .queue();
+    }
+    
+    private void showUpdateSummary(ButtonInteractionEvent event, FormState state) {
+        logger.info("[SHOW_UPDATE_SUMMARY] Mostrando resumo de atualização");
+        
+        EmbedBuilder embed = new EmbedBuilder()
+            .setTitle("📋 Resumo do Questionário Selecionado")
+            .setDescription("Dados atuais do questionário:")
+            .setColor(0x0099FF);
+        
+        embed.addField("🏢 Squad", state.squadName != null ? state.squadName : "Não informado", false);
+        embed.addField("👤 Pessoa", state.userName != null ? state.userName : "Não informado", false);
+        embed.addField("📂 Tipo", state.typeName != null ? state.typeName : "Não informado", false);
+        embed.addField("🏷️ Categorias", !state.categoryNames.isEmpty() ? String.join(", ", state.categoryNames) : "Não informado", false);
+        embed.addField("📝 Descrição", state.description != null ? state.description : "Não informado", false);
+        embed.addField("📅 Data de Início", state.startDate != null ? formatToBrazilianDate(state.startDate) : "Não informado", false);
+        embed.addField("📅 Data de Fim", state.endDate != null ? formatToBrazilianDate(state.endDate) : "Não informado", false);
+        
+        
+        event.editMessageEmbeds(embed.build())
+            .setActionRow(
+                Button.success(BTN_CRIAR_LOG, "💾 Salvar"),
+                Button.secondary(BTN_EDITAR_LOG, "✏️ Alterar"),
+                Button.primary(BTN_VOLTAR_LOGS, "↩️ Voltar")
+            )
+            .queue();
+    }
+    
+    
+    
+    private void showEditFieldsMenu(ButtonInteractionEvent event) {
+        logger.info("[SHOW_EDIT_FIELDS_MENU] Mostrando menu de edição de campos");
+        
+        EmbedBuilder embed = new EmbedBuilder()
+            .setTitle("⚙️ Selecione o campo para editar")
+            .setDescription("Escolha qual campo você deseja modificar:")
+            .setColor(0x0099FF);
 
+        event.editMessageEmbeds(embed.build())
+            .setComponents(
+                ActionRow.of(
+                    Button.secondary(BTN_EDIT_SQUAD, "🏢 Squad"),
+                    Button.secondary(BTN_EDIT_PESSOA, "👤 Pessoa"),
+                    Button.secondary(BTN_EDIT_TIPO, "📝 Tipo"),
+                    Button.secondary(BTN_EDIT_CATEGORIAS, "🏷️ Categorias")
+                ),
+                ActionRow.of(
+                    Button.secondary(BTN_EDIT_DESCRICAO, "📄 Descrição"),
+                    Button.secondary(BTN_EDIT_DATAS, "📅 Datas"),
+                    Button.primary(BTN_VOLTAR_RESUMO, "↩️ Voltar ao resumo")
+                )
+            )
+            .queue();
+    }
+    
+    
+    
+    private void showWhatToDoMenu(InteractionHook hook) {
+        logger.info("[SHOW_WHAT_TO_DO] Mostrando menu 'O que deseja fazer?'");
+        
+        EmbedBuilder embed = new EmbedBuilder()
+            .setTitle("🎉 O que deseja fazer?")
+            .setDescription("Escolha uma das opções abaixo:")
+            .setColor(0x0099FF);
+
+        hook.editOriginalEmbeds(embed.build())
+            .setActionRow(
+                Button.primary(BTN_CRIAR_NOVO, "📝 Criar novo Log"),
+                Button.secondary(BTN_ATUALIZAR_EXISTENTE, "✏️ Atualizar Log existente"),
+                Button.danger(BTN_SAIR, "🚪 Sair")
+            )
+            .queue();
+    }
+    
+    
+
+    @Override
+    public void onStringSelectInteraction(StringSelectInteractionEvent event) {
+        String selectId = event.getComponentId();
+        long discordUserId = event.getUser().getIdLong();
+        logger.info("[STRING_SELECT] Usuário: {} | Select: {} | Valor: {}", 
+                   discordUserId, selectId, event.getValues().get(0));
+
+        FormState state = userFormState.computeIfAbsent(discordUserId, k -> new FormState());
+
+        switch (selectId) {
+            case SELECT_SQUAD -> handleSquadSelection(event, state);
+            case SELECT_USER -> handleUserSelection(event, state);
+            case SELECT_TYPE -> handleTypeSelection(event, state);
+            case SELECT_CATEGORY -> handleCategorySelection(event, state);
+            case SELECT_LOG -> handleLogSelection(event, state);
+            default -> {
+                logger.warn("[STRING_SELECT] ID não reconhecido: {}", selectId);
+                event.reply("❌ Seleção não reconhecida.").setEphemeral(true).queue();
+            }
+        }
+    }
+
+    private void handleSquadSelection(StringSelectInteractionEvent event, FormState state) {
+        String selectedSquadId = event.getValues().get(0);
+        logger.info("[HANDLE_SQUAD_SELECTION] Squad selecionada: {}", selectedSquadId);
+        
+        try {
+            String squadsJson = squadLogService.getSquads();
+            JSONObject obj = new JSONObject(squadsJson);
+            JSONArray squadsArray = obj.optJSONArray("items");
+            
+            if (squadsArray != null) {
+                for (int i = 0; i < squadsArray.length(); i++) {
+                    JSONObject squad = squadsArray.getJSONObject(i);
+                    if (String.valueOf(squad.get("id")).equals(selectedSquadId)) {
+                        state.squadId = selectedSquadId;
+                        state.squadName = squad.optString("name", "");
+                        break;
+                    }
+                }
+            }
+            
+            event.deferEdit().queue();
+            
+            EmbedBuilder confirmEmbed = new EmbedBuilder()
+                .setTitle("✅ Squad selecionada com sucesso!")
+                .setDescription("Squad: **" + state.squadName + "**")
+                .setColor(0x00FF00);
+            
+            event.getHook().editOriginalEmbeds(confirmEmbed.build())
+                .setComponents()
+                .queue();
+            
+            CompletableFuture.delayedExecutor(2, TimeUnit.SECONDS).execute(() -> {
+                
+                if (state.isEditing && !state.isCreating) {
+                    showSummaryFromModalForUpdateWithHook(event.getHook(), state);
+                } else {
+                    
+                    showUserSelection(event.getHook(), state, state.squadId);
+                }
+            });
+            
+        } catch (Exception e) {
+            logger.error("[HANDLE_SQUAD_SELECTION] Erro: {}", e.getMessage());
+            
+            
+            EmbedBuilder errorEmbed = new EmbedBuilder()
+                .setTitle("❌ Erro na seleção")
+                .setDescription("Erro ao processar seleção da squad.")
+                .setColor(0xFF0000);
+            
+            event.getHook().editOriginalEmbeds(errorEmbed.build())
+                .setComponents()
+                .queue();
+        }
+    }
+    
+    private void handleUserSelection(StringSelectInteractionEvent event, FormState state) {
+        String selectedUserId = event.getValues().get(0);
+        logger.info("[HANDLE_USER_SELECTION] Usuário selecionado: {}", selectedUserId);
+        
+        try {
+            
+            if (selectedUserId.equals(state.squadId)) {
+                state.userId = selectedUserId;
+                state.userName = "All team";
+                logger.info("[HANDLE_USER_SELECTION] All team selecionado para squad: {}", state.squadId);
+            } else {
+                
+                String squadsJson = squadLogService.getSquads();
+                JSONObject obj = new JSONObject(squadsJson);
+                JSONArray squadsArray = obj.optJSONArray("items");
+                
+                if (squadsArray != null) {
+                    for (int i = 0; i < squadsArray.length(); i++) {
+                        JSONObject squad = squadsArray.getJSONObject(i);
+                        if (String.valueOf(squad.get("id")).equals(state.squadId)) {
+                            JSONArray userSquads = squad.optJSONArray("user_squads");
+                            if (userSquads != null) {
+                                for (int j = 0; j < userSquads.length(); j++) {
+                                    JSONObject userSquad = userSquads.getJSONObject(j);
+                                    JSONObject user = userSquad.optJSONObject("user");
+                                    if (user != null && String.valueOf(user.get("id")).equals(selectedUserId)) {
+                                        state.userId = selectedUserId;
+                                        state.userName = user.optString("first_name", "") + " " + user.optString("last_name", "");
+                                        break;
+                                    }
+                                }
+                            }
+                            break;
+                        }
+                    }
+                }
+            }
+            
+            event.deferEdit().queue();
+            
+            EmbedBuilder confirmEmbed = new EmbedBuilder()
+                .setTitle("✅ Pessoa selecionada com sucesso!")
+                .setDescription("Pessoa: **" + state.userName + "**")
+                .setColor(0x00FF00);
+            
+            event.getHook().editOriginalEmbeds(confirmEmbed.build())
+                .setComponents()
+                .queue();
+            
+            CompletableFuture.delayedExecutor(2, TimeUnit.SECONDS).execute(() -> {
+                
+                if (state.isEditing && !state.isCreating) {
+                    showSummaryFromModalForUpdateWithHook(event.getHook(), state);
+                } else {
+                    
+                    showTypeSelection(event.getHook(), state);
+                }
+            });
+            
+        } catch (Exception e) {
+            logger.error("[HANDLE_USER_SELECTION] Erro: {}", e.getMessage());
+            
+            
+            EmbedBuilder errorEmbed = new EmbedBuilder()
+                .setTitle("❌ Erro na seleção")
+                .setDescription("Erro ao processar seleção do usuário.")
+                .setColor(0xFF0000);
+            
+            event.getHook().editOriginalEmbeds(errorEmbed.build())
+                .setComponents()
+                .queue();
+        }
+    }
+
+    private void handleTypeSelection(StringSelectInteractionEvent event, FormState state) {
+        String selectedTypeId = event.getValues().get(0);
+        logger.info("[HANDLE_TYPE_SELECTION] Tipo selecionado: {}", selectedTypeId);
+        
+        try {
+            String typesJson = squadLogService.getSquadLogTypes();
+            JSONArray typesArray = new JSONArray(typesJson);
+            
+            for (int i = 0; i < typesArray.length(); i++) {
+                JSONObject type = typesArray.getJSONObject(i);
+                if (String.valueOf(type.get("id")).equals(selectedTypeId)) {
+                    state.typeId = selectedTypeId;
+                    state.typeName = type.optString("name", "");
+                    break;
+                }
+            }
+            
+            event.deferEdit().queue();
+            
+            EmbedBuilder confirmEmbed = new EmbedBuilder()
+                .setTitle("✅ Tipo selecionado com sucesso!")
+                .setDescription("Tipo: **" + state.typeName + "**")
+                .setColor(0x00FF00);
+            
+            event.getHook().editOriginalEmbeds(confirmEmbed.build())
+                .setComponents()
+                .queue();
+            
+            CompletableFuture.delayedExecutor(2, TimeUnit.SECONDS).execute(() -> {
+                
+                if (state.isEditing && !state.isCreating) {
+                    showSummaryFromModalForUpdateWithHook(event.getHook(), state);
+                } else {
+                    
+                    showCategorySelection(event.getHook(), state);
+                }
+            });
+            
+        } catch (Exception e) {
+            logger.error("[HANDLE_TYPE_SELECTION] Erro: {}", e.getMessage());
+            
+            
+            EmbedBuilder errorEmbed = new EmbedBuilder()
+                .setTitle("❌ Erro na seleção")
+                .setDescription("Erro ao processar seleção do tipo.")
+                .setColor(0xFF0000);
+            
+            event.getHook().editOriginalEmbeds(errorEmbed.build())
+                .setComponents()
+                .queue();
+        }
+    }
+
+    private void handleCategorySelection(StringSelectInteractionEvent event, FormState state) {
+        List<String> selectedCategoryIds = event.getValues();
+        logger.info("[HANDLE_CATEGORY_SELECTION] Categorias selecionadas: {}", selectedCategoryIds);
+        
+        try {
+            String categoriesJson = squadLogService.getSquadCategories();
+            JSONArray categoriesArray = new JSONArray(categoriesJson);
+            
+            state.categoryIds.clear();
+            state.categoryNames.clear();
+            
+            for (String categoryId : selectedCategoryIds) {
+                for (int i = 0; i < categoriesArray.length(); i++) {
+                    JSONObject category = categoriesArray.getJSONObject(i);
+                    if (String.valueOf(category.get("id")).equals(categoryId)) {
+                        state.categoryIds.add(categoryId);
+                        state.categoryNames.add(category.optString("name", ""));
+                        break;
+                    }
+                }
+            }
+            
+            
+            logger.info("[HANDLE_CATEGORY_SELECTION] Estado: isEditing={}, isCreating={}", state.isEditing, state.isCreating);
+            
+            
+            if (state.isEditing && !state.isCreating) {
+                logger.info("[HANDLE_CATEGORY_SELECTION] Modo edição - voltando ao resumo");
+                event.deferEdit().queue();
+                
+                EmbedBuilder confirmEmbed = new EmbedBuilder()
+                    .setTitle("✅ Categorias selecionadas com sucesso!")
+                    .setDescription("Categorias: **" + String.join(", ", state.categoryNames) + "**")
+                    .setColor(0x00FF00);
+                
+                event.getHook().editOriginalEmbeds(confirmEmbed.build())
+                    .setComponents()
+                    .queue();
+                
+                CompletableFuture.delayedExecutor(2, TimeUnit.SECONDS).execute(() -> {
+                    showSummaryFromModalForUpdateWithHook(event.getHook(), state);
+                });
+                
+            } else {
+                
+                logger.info("[HANDLE_CATEGORY_SELECTION] Modo criação - abrindo modal");
+                
+                TextInput descriptionInput = TextInput.create("description", "Descrição", TextInputStyle.PARAGRAPH)
+                    .setPlaceholder("Digite a descrição do log...")
+                    .setMaxLength(1000)
+                    .setRequired(true)
+                    .build();
+
+                TextInput startDateInput = TextInput.create("start_date", "Data de Início (DD-MM-AAAA)", TextInputStyle.SHORT)
+                    .setPlaceholder("Ex: 20-06-1986")
+                    .setMaxLength(10)
+                    .setRequired(true)
+                    .build();
+
+                TextInput endDateInput = TextInput.create("end_date", "Data de Fim (DD-MM-AAAA) - Opcional", TextInputStyle.SHORT)
+                    .setPlaceholder("Ex: 25-06-1986 (deixe vazio se não houver)")
+                    .setMaxLength(10)
+                    .setRequired(false)
+                    .build();
+
+                Modal modal = Modal.create("create-complete-modal", "📝 Finalizar Criação do Log")
+                    .addActionRow(descriptionInput)
+                    .addActionRow(startDateInput)
+                    .addActionRow(endDateInput)
+                    .build();
+
+                
+                try {
+                    event.replyModal(modal).queue();
+                    logger.info("[HANDLE_CATEGORY_SELECTION] Modal aberto com sucesso!");
+                } catch (Exception modalError) {
+                    logger.error("[HANDLE_CATEGORY_SELECTION] Erro ao abrir modal: {}", modalError.getMessage());
+                    
+                    event.deferEdit().queue();
+                    EmbedBuilder errorEmbed = new EmbedBuilder()
+                        .setTitle("❌ Erro ao abrir modal")
+                        .setDescription("Erro ao processar seleção das categorias.")
+                        .setColor(0xFF0000);
+                    event.getHook().editOriginalEmbeds(errorEmbed.build()).setComponents().queue();
+                }
+            }
+            
+        } catch (Exception e) {
+            logger.error("[HANDLE_CATEGORY_SELECTION] Erro: {}", e.getMessage());
+            
+            
+            EmbedBuilder errorEmbed = new EmbedBuilder()
+                .setTitle("❌ Erro na seleção")
+                .setDescription("Erro ao processar seleção das categorias.")
+                .setColor(0xFF0000);
+            
+            
+            if (event.getHook() != null) {
+                event.getHook().editOriginalEmbeds(errorEmbed.build())
+                    .setComponents()
+                    .queue();
+            }
+        }
+    }
+
+    private void handleLogSelection(StringSelectInteractionEvent event, FormState state) {
+        String selectedLogId = event.getValues().get(0);
+        logger.info("[HANDLE_LOG_SELECTION] Log selecionado: {}", selectedLogId);
+        
+        try {
+            String squadLogsJson = squadLogService.getSquadLogAll();
+            JSONObject obj = new JSONObject(squadLogsJson);
+            JSONArray squadLogsArray = obj.optJSONArray("items");
+            
+            if (squadLogsArray != null) {
+                for (int i = 0; i < squadLogsArray.length(); i++) {
+                    JSONObject log = squadLogsArray.getJSONObject(i);
+                    if (String.valueOf(log.get("id")).equals(selectedLogId)) {
+                        state.squadLogId = Long.valueOf(selectedLogId);
+                        state.isEditing = true;
+                        
+                        state.description = log.optString("description", "");
+                        state.startDate = log.optString("start_date", "");
+                        state.endDate = log.optString("end_date", null);
+                        
+                        JSONObject squad = log.optJSONObject("squad");
+                        if (squad != null) {
+                            state.squadId = String.valueOf(squad.get("id"));
+                            state.squadName = squad.optString("name", "");
+                        }
+                        
+                        JSONObject user = log.optJSONObject("user");
+                        if (user != null) {
+                            state.userId = String.valueOf(user.get("id"));
+                            state.userName = user.optString("name", "");
+                        }
+                        
+                        JSONObject type = log.optJSONObject("type");
+                        if (type != null) {
+                            state.typeId = String.valueOf(type.get("id"));
+                            state.typeName = type.optString("name", "");
+                        }
+                        
+                        JSONArray categories = log.optJSONArray("categories");
+                        state.categoryIds.clear();
+                        state.categoryNames.clear();
+                        if (categories != null) {
+                            for (int j = 0; j < categories.length(); j++) {
+                                JSONObject category = categories.getJSONObject(j);
+                                state.categoryIds.add(String.valueOf(category.get("id")));
+                                state.categoryNames.add(category.optString("name", ""));
+                            }
+                        }
+                        break;
+                    }
+                }
+            }
+            
+            event.deferEdit().queue();
+            showUpdateSummaryWithHook(event.getHook(), state);
+            
+        } catch (Exception e) {
+            logger.error("[HANDLE_LOG_SELECTION] Erro: {}", e.getMessage());
+            event.reply("❌ Erro ao carregar dados do questionário.").setEphemeral(true).queue();
+        }
+    }
+
+    private void showUpdateSummaryWithHook(InteractionHook hook, FormState state) {
+        logger.info("[SHOW_UPDATE_SUMMARY_HOOK] Mostrando resumo de atualização");
+        
+        EmbedBuilder embed = new EmbedBuilder()
+            .setTitle("📋 Resumo do Questionário Selecionado")
+            .setDescription("Dados atuais do questionário:")
+            .setColor(0x0099FF);
+        
+        embed.addField("🏢 Squad", state.squadName != null ? state.squadName : "Não informado", false);
+        embed.addField("👤 Pessoa", state.userName != null ? state.userName : "Não informado", false);
+        embed.addField("📂 Tipo", state.typeName != null ? state.typeName : "Não informado", false);
+        embed.addField("🏷️ Categorias", !state.categoryNames.isEmpty() ? String.join(", ", state.categoryNames) : "Não informado", false);
+        embed.addField("📝 Descrição", state.description != null ? state.description : "Não informado", false);
+        embed.addField("📅 Data de Início", state.startDate != null ? formatToBrazilianDate(state.startDate) : "Não informado", false);
+        embed.addField("📅 Data de Fim", state.endDate != null ? formatToBrazilianDate(state.endDate) : "Não informado", false);
+        
+        
+        hook.editOriginalEmbeds(embed.build())
+            .setActionRow(
+                Button.success(BTN_CRIAR_LOG, "💾 Salvar"),
+                Button.secondary(BTN_EDITAR_LOG, "✏️ Alterar"),
+                Button.primary(BTN_VOLTAR_LOGS, "↩️ Voltar")
+            )
+            .queue();
+    }
+
+    
+    
+
+    @Override
+    public void onModalInteraction(ModalInteractionEvent event) {
+        String modalId = event.getModalId();
+        long discordUserId = event.getUser().getIdLong();
+        logger.info("[MODAL_INTERACTION] Usuário: {} | Modal: {}", discordUserId, modalId);
+
+        FormState state = userFormState.computeIfAbsent(discordUserId, k -> new FormState());
+
+        switch (modalId) {
+            case "create-complete-modal" -> handleCreateCompleteModal(event, state);
+            case MODAL_DESCRIPTION -> handleDescriptionModal(event, state);
+            case MODAL_START_DATE -> handleStartDateModal(event, state);
+            case MODAL_END_DATE -> handleEndDateModal(event, state);
+            case MODAL_EDIT_DESCRIPTION -> handleEditDescriptionModal(event, state);
+            case MODAL_EDIT_DATES -> handleEditDatesModal(event, state);
+            default -> {
+                logger.warn("[MODAL_INTERACTION] ID não reconhecido: {}", modalId);
+                event.reply("❌ Modal não reconhecido.").setEphemeral(true).queue();
+            }
+        }
+    }
+
+    private void handleCreateCompleteModal(ModalInteractionEvent event, FormState state) {
+        String description = event.getValue("description").getAsString();
+        String startDate = event.getValue("start_date").getAsString();
+        String endDate = event.getValue("end_date").getAsString().trim();
+        
+        logger.info("[HANDLE_CREATE_COMPLETE_MODAL] Dados recebidos - Descrição: {} | Data início: {} | Data fim: {}", 
+                   description, startDate, endDate);
+        
+        
+        if (!isValidBrazilianDate(startDate)) {
+            event.reply("❌ Data de início inválida! Use o formato DD-MM-AAAA (ex: 20-06-1986)")
+                .setEphemeral(true).queue();
+            return;
+        }
+        
+        
+        if (!endDate.isEmpty() && !isValidBrazilianDate(endDate)) {
+            event.reply("❌ Data de fim inválida! Use o formato DD-MM-AAAA (ex: 20-06-1986)")
+                .setEphemeral(true).queue();
+            return;
+        }
+        
+        
+        state.description = description;
+        state.startDate = convertToIsoDate(startDate);
+        state.endDate = endDate.isEmpty() ? null : convertToIsoDate(endDate);
+        
+        event.deferEdit().queue();
+        showCreateSummaryWithHook(event.getHook(), state);
+    }
+
+    private void handleDescriptionModal(ModalInteractionEvent event, FormState state) {
+        String description = event.getValue("description").getAsString();
+        logger.info("[HANDLE_DESCRIPTION_MODAL] Descrição recebida: {}", description);
+        
+        state.description = description;
+        
+        event.deferEdit().queue();
+        
+        EmbedBuilder embed = new EmbedBuilder()
+            .setTitle("✅ Descrição adicionada!")
+            .setDescription("**Descrição:** " + description)
+            .setColor(0x00FF00);
+        
+        event.getHook().editOriginalEmbeds(embed.build())
+            .setComponents(ActionRow.of(
+                Button.primary(BTN_OPEN_START_DATE_MODAL, "📅 Inserir Data de Início")
+            ))
+            .queue();
+    }
+
+    private void handleStartDateModal(ModalInteractionEvent event, FormState state) {
+        String startDate = event.getValue("start_date").getAsString();
+        logger.info("[HANDLE_START_DATE_MODAL] Data de início recebida: {}", startDate);
+        
+        if (!isValidBrazilianDate(startDate)) {
+            event.reply("❌ Data inválida! Use o formato DD-MM-AAAA (ex: 20-06-1986)")
+                .setEphemeral(true).queue();
+            return;
+        }
+        
+        state.startDate = convertToIsoDate(startDate);
+        
+        event.deferEdit().queue();
+        
+        EmbedBuilder embed = new EmbedBuilder()
+            .setTitle("✅ Data de início adicionada!")
+            .setDescription("**Data de início:** " + startDate)
+            .setColor(0x00FF00);
+        
+        event.getHook().editOriginalEmbeds(embed.build())
+            .setComponents(ActionRow.of(
+                Button.success(BTN_HAS_END_DATE_YES, "✅ Sim, há data de fim"),
+                Button.secondary(BTN_HAS_END_DATE_NO, "❌ Não há data de fim")
+            ))
+            .queue();
+    }
+
+    private void handleEndDateModal(ModalInteractionEvent event, FormState state) {
+        String endDate = event.getValue("end_date").getAsString().trim();
+        logger.info("[HANDLE_END_DATE_MODAL] Data de fim recebida: {}", endDate);
+        
+        if (!endDate.isEmpty()) {
+            if (!isValidBrazilianDate(endDate)) {
+                event.reply("❌ Data inválida! Use o formato DD-MM-AAAA (ex: 20-06-1986)")
+                    .setEphemeral(true).queue();
+                return;
+            }
+            state.endDate = convertToIsoDate(endDate);
+        } else {
+            state.endDate = null;
+        }
+        
+        event.deferEdit().queue();
+        showCreateSummaryWithHook(event.getHook(), state);
+    }
+
+    private void handleEditDescriptionModal(ModalInteractionEvent event, FormState state) {
+        String description = event.getValue("description").getAsString();
+        logger.info("[HANDLE_EDIT_DESCRIPTION_MODAL] Nova descrição: {}", description);
+        
+        state.description = description;
+        
+        event.deferEdit().queue();
+        
+        
+        if (state.isCreating) {
+            
+            logger.info("[HANDLE_EDIT_DESCRIPTION_MODAL] Voltando ao resumo de criação (isCreating=true)");
+            showCreateSummaryWithHook(event.getHook(), state);
+        } else {
+            
+            logger.info("[HANDLE_EDIT_DESCRIPTION_MODAL] Voltando ao resumo de edição (isCreating=false)");
+            showSummaryFromModalForUpdateWithHook(event.getHook(), state);
+        }
+    }
+
+    private void handleEditDatesModal(ModalInteractionEvent event, FormState state) {
+        String startDate = event.getValue("start_date").getAsString();
+        String endDate = event.getValue("end_date").getAsString().trim();
+        
+        logger.info("[HANDLE_EDIT_DATES_MODAL] Datas recebidas - Início: {} | Fim: {}", startDate, endDate);
+        
+        if (!isValidBrazilianDate(startDate)) {
+            event.reply("❌ Data de início inválida! Use o formato DD-MM-AAAA (ex: 20-06-1986)")
+                .setEphemeral(true).queue();
+            return;
+        }
+        
+        if (!endDate.isEmpty() && !isValidBrazilianDate(endDate)) {
+            event.reply("❌ Data de fim inválida! Use o formato DD-MM-AAAA (ex: 20-06-1986)")
+                .setEphemeral(true).queue();
+            return;
+        }
+        
+        state.startDate = convertToIsoDate(startDate);
+        state.endDate = endDate.isEmpty() ? null : convertToIsoDate(endDate);
+        
+        event.deferEdit().queue();
+        
+        
+        if (state.isCreating) {
+            
+            logger.info("[HANDLE_EDIT_DATES_MODAL] Voltando ao resumo de criação (isCreating=true)");
+            showCreateSummaryWithHook(event.getHook(), state);
+        } else {
+            
+            logger.info("[HANDLE_EDIT_DATES_MODAL] Voltando ao resumo de edição (isCreating=false)");
+            showSummaryFromModalForUpdateWithHook(event.getHook(), state);
+        }
+    }
+
+    
+
+    private void showInstantModalButton(InteractionHook hook) {
+        logger.info("[SHOW_INSTANT_MODAL_BUTTON] Exibindo botão para modal instantâneo");
+        
+        EmbedBuilder embed = new EmbedBuilder()
+            .setTitle("📝 Dados do Log")
+            .setDescription("**Próximo:** Preencher descrição e datas")
+            .setColor(0x0099FF);
+        
+        Button instantButton = Button.success("open-create-complete-modal-btn", "📝 Continuar ➤");
+        
+        hook.editOriginalEmbeds(embed.build())
+            .setComponents(ActionRow.of(instantButton))
+            .queue();
+    }
+    
+    private void showAutoModalButton(InteractionHook hook) {
+        logger.info("[SHOW_AUTO_MODAL_BUTTON] Exibindo botão automático para modal");
+        
+        EmbedBuilder embed = new EmbedBuilder()
+            .setTitle("📝 Formulário de Dados")
+            .setDescription("**Clique para preencher:**\n• Descrição do log\n• Data de início (DD-MM-AAAA)\n• Data de fim (opcional)")
+            .setColor(0x0099FF);
+        
+        Button autoModalButton = Button.success("open-create-complete-modal-btn", "📝 Abrir Formulário");
+        
+        hook.editOriginalEmbeds(embed.build())
+            .setComponents(ActionRow.of(autoModalButton))
+            .queue();
+    }
+    
+    private void showModalPrompt(InteractionHook hook) {
+        logger.info("[SHOW_MODAL_PROMPT] Exibindo prompt para modal único de criação");
+        
+        EmbedBuilder embed = new EmbedBuilder()
+            .setTitle("📝 Próximo Passo: Dados Finais")
+            .setDescription("Agora vamos preencher:\n" +
+                          "• **Descrição** do log\n" +
+                          "• **Data de início** (DD-MM-AAAA)\n" +
+                          "• **Data de fim** (opcional)\n\n" +
+                          "👇 **Clique para abrir o formulário:**")
+            .setColor(0x0099FF);
+        
+        Button openModalButton = Button.success("open-create-complete-modal-btn", "📝 Abrir Formulário");
+        
+        hook.editOriginalEmbeds(embed.build())
+            .setComponents(ActionRow.of(openModalButton))
+            .queue();
+    }
+
+    private void openDescriptionModal(InteractionHook hook) {
+        logger.info("[OPEN_DESCRIPTION_MODAL] Abrindo modal de descrição");
+        
+        EmbedBuilder embed = new EmbedBuilder()
+            .setTitle("📝 Modal de Descrição")
+            .setDescription("Por favor, digite a descrição do log:")
+            .setColor(0x0099FF);
+        
+        hook.editOriginalEmbeds(embed.build())
+            .setComponents(ActionRow.of(
+                Button.primary("open-description-modal-temp", "📝 Abrir Modal de Descrição")
+            ))
+            .queue();
+    }
+
+
+    private void showEditFieldsMenuWithHook(InteractionHook hook) {
+        logger.info("[SHOW_EDIT_FIELDS_MENU_HOOK] Mostrando menu de edição de campos");
+        
+        EmbedBuilder embed = new EmbedBuilder()
+            .setTitle("⚙️ Selecione o campo para editar")
+            .setDescription("Escolha qual campo você deseja modificar:")
+            .setColor(0x0099FF);
+
+        hook.editOriginalEmbeds(embed.build())
+            .setComponents(
+                ActionRow.of(
+                    Button.secondary(BTN_EDIT_SQUAD, "🏢 Squad"),
+                    Button.secondary(BTN_EDIT_PESSOA, "👤 Pessoa"),
+                    Button.secondary(BTN_EDIT_TIPO, "📝 Tipo"),
+                    Button.secondary(BTN_EDIT_CATEGORIAS, "🏷️ Categorias")
+                ),
+                ActionRow.of(
+                    Button.secondary(BTN_EDIT_DESCRICAO, "📄 Descrição"),
+                    Button.secondary(BTN_EDIT_DATAS, "📅 Datas"),
+                    Button.primary(BTN_VOLTAR_RESUMO, "↩️ Voltar ao resumo")
+                )
+            )
+            .queue();
+    }
+
+    
+    
+    
+    
+    private static class FormState {
+        String squadId;
+        String squadName;
+        String userId;
+        String userName;
+        String typeId;
+        String typeName;
+        List<String> categoryIds = new ArrayList<>();
+        List<String> categoryNames = new ArrayList<>();
+        String description;
+        String startDate;
+        String endDate;
+        Long squadLogId;
+        boolean isEditing = false;
+        boolean isCreating = false;
+    }
+    
+    
+    private static final DateTimeFormatter BRAZILIAN_DATE_FORMATTER = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+    
+    private boolean isValidBrazilianDate(String date) {
+        if (date == null || date.trim().isEmpty()) {
+            return false;
+        }
+        
+        try {
+            LocalDate.parse(date.trim(), BRAZILIAN_DATE_FORMATTER);
+            return true;
+        } catch (DateTimeParseException e) {
+            logger.warn("[VALIDATE_DATE] Data inválida: {}", date);
+            return false;
+        }
+    }
+    
+    private String convertToIsoDate(String brazilianDate) {
+        try {
+            LocalDate date = LocalDate.parse(brazilianDate.trim(), BRAZILIAN_DATE_FORMATTER);
+            return date.toString(); 
+        } catch (DateTimeParseException e) {
+            logger.error("[CONVERT_TO_ISO] Erro ao converter data brasileira: {}", brazilianDate);
+            return null;
+        }
+    }
+    
+    private String formatToBrazilianDate(String isoDate) {
+        if (isoDate == null || isoDate.trim().isEmpty()) {
+            return null;
+        }
+        
+        try {
+            LocalDate date = LocalDate.parse(isoDate.trim());
+            return date.format(BRAZILIAN_DATE_FORMATTER);
+        } catch (DateTimeParseException e) {
+            logger.error("[FORMAT_TO_BRAZILIAN] Erro ao formatar data ISO: {}", isoDate);
+            return isoDate; 
+        }
+    }
+    
+    
+    private void buildSelectMenuUpdate(JSONArray squadLogsArray, StringSelectMenu.Builder menuBuilder) {
+        for (int i = 0; i < squadLogsArray.length() && i < 25; i++) {
+            JSONObject log = squadLogsArray.getJSONObject(i);
+            
+            String logId = String.valueOf(log.get("id"));
+            String description = log.optString("description", "Sem descrição");
+            
+            
+            if (description.length() > 50) {
+                description = description.substring(0, 47) + "...";
+            }
+            
+            
+            JSONObject squad = log.optJSONObject("squad");
+            String squadName = squad != null ? squad.optString("name", "Squad desconhecida") : "Squad desconhecida";
+            
+            String optionLabel = squadName + " - " + description;
+            if (optionLabel.length() > 100) {
+                optionLabel = optionLabel.substring(0, 97) + "...";
+            }
+            
+            menuBuilder.addOption(optionLabel, logId);
+        }
+    }
+    
+    
+    private JSONObject createSquadLogPayload(FormState state) {
+        JSONObject payload = new JSONObject();
+        
+        try {
+            payload.put("squad_id", Long.valueOf(state.squadId));
+            payload.put("user_id", Long.valueOf(state.userId));
+            payload.put("squad_log_type_id", Long.valueOf(state.typeId)); 
+            payload.put("description", state.description);
+            payload.put("start_date", state.startDate);
+            
+            if (state.endDate != null && !state.endDate.trim().isEmpty()) {
+                payload.put("end_date", state.endDate);
+            }
+            
+            JSONArray categoriesArray = new JSONArray();
+            for (String categoryId : state.categoryIds) {
+                categoriesArray.put(Long.valueOf(categoryId));
+            }
+            payload.put("squad_category_ids", categoriesArray); 
+            
+            logger.info("[CREATE_PAYLOAD] Payload criado: {}", payload.toString());
+            
+        } catch (Exception e) {
+            logger.error("[CREATE_PAYLOAD] Erro ao criar payload: {}", e.getMessage());
+        }
+        
+        return payload;
+    }
+    
+    private JSONObject updateSquadLogPayload(FormState state) {
+        JSONObject payload = new JSONObject();
+        
+        try {
+            payload.put("squad_id", Long.valueOf(state.squadId));
+            payload.put("user_id", Long.valueOf(state.userId));
+            payload.put("squad_log_type_id", Long.valueOf(state.typeId)); 
+            payload.put("description", state.description);
+            payload.put("start_date", state.startDate);
+            
+            if (state.endDate != null && !state.endDate.trim().isEmpty()) {
+                payload.put("end_date", state.endDate);
+            }
+            
+            JSONArray categoriesArray = new JSONArray();
+            for (String categoryId : state.categoryIds) {
+                categoriesArray.put(Long.valueOf(categoryId));
+            }
+            payload.put("squad_category_ids", categoriesArray); 
+            
+            logger.info("[UPDATE_PAYLOAD] Payload criado: {}", payload.toString());
+            
+        } catch (Exception e) {
+            logger.error("[UPDATE_PAYLOAD] Erro ao criar payload: {}", e.getMessage());
+        }
+        
+        return payload;
+    }
+
+    
+    
+    
     private void createSquadLog(ButtonInteractionEvent event, FormState state) {
+        logger.info("[CREATE_SQUAD_LOG] Iniciando criação de log para usuário: {}", event.getUser().getIdLong());
         
         EmbedBuilder creatingEmbed = new EmbedBuilder()
             .setTitle("⏳ Criando Log...")
@@ -442,24 +1553,21 @@ public class ComponentInteractionListener extends ListenerAdapter {
         event.editMessageEmbeds(creatingEmbed.build())
             .setComponents()
             .queue(hook -> {
-                
                 CompletableFuture.delayedExecutor(2, TimeUnit.SECONDS).execute(() -> {
                     try {
-                        
-                        String payload = createSquadLogPayload(state);
-                        logger.info("[CREATE_SQUAD_LOG] Payload criado: {}", payload);
+                        JSONObject payload = createSquadLogPayload(state);
+                        logger.info("[CREATE_SQUAD_LOG] Payload criado: {}", payload.toString());
 
-                        ResponseEntity<String> response = squadLogService.createSquadLog(payload);
-                        logger.info("[CREATE_SQUAD_LOG] Response da API: {} - {}", response.getStatusCode(), response.getBody());
+                        ResponseEntity<String> response = squadLogService.createSquadLog(payload.toString());
+                        logger.info("[CREATE_SQUAD_LOG] Response da API: {}", response.getBody());
 
                         EmbedBuilder successEmbed = new EmbedBuilder()
                             .setTitle("✅ Log criado com sucesso!")
                             .setColor(0x00FF00);
                         
                         hook.editOriginalEmbeds(successEmbed.build()).queue(message -> {
-                            
                             CompletableFuture.delayedExecutor(2, TimeUnit.SECONDS).execute(() -> {
-                                showPostCreationMenu(hook);
+                                showWhatToDoMenu(hook);
                             });
                         });
 
@@ -476,22 +1584,52 @@ public class ComponentInteractionListener extends ListenerAdapter {
                 });
             });
     }
+    
+    private void updateSquadLog(ButtonInteractionEvent event, FormState state) {
+        logger.info("[UPDATE_SQUAD_LOG] Iniciando atualização de log para usuário: {}", event.getUser().getIdLong());
+        
+        EmbedBuilder updatingEmbed = new EmbedBuilder()
+            .setTitle("⏳ Salvando alterações...")
+            .setColor(0xFFFF00);
+        
+        event.editMessageEmbeds(updatingEmbed.build())
+            .setComponents()
+            .queue(hook -> {
+                CompletableFuture.delayedExecutor(2, TimeUnit.SECONDS).execute(() -> {
+                    try {
+                        JSONObject payload = updateSquadLogPayload(state);
+                        logger.info("[UPDATE_SQUAD_LOG] Payload criado: {}", payload.toString());
 
-    private void showPostCreationMenu(net.dv8tion.jda.api.interactions.InteractionHook hook) {
-        EmbedBuilder embed = new EmbedBuilder()
-            .setTitle("🎉 O que você gostaria de fazer agora?")
-            .setColor(0x0099FF);
+                        ResponseEntity<String> response = squadLogService.updateSquadLog(state.squadLogId, payload.toString());
+                        logger.info("[UPDATE_SQUAD_LOG] Response da API: {}", response.getBody());
 
-        hook.editOriginalEmbeds(embed.build())
-            .setActionRow(
-                Button.primary("criar-novo-log", "📝 Criar novo Log"),
-                Button.secondary("alterar-log-existente", "✏️ Alterar Log existente"),
-                Button.danger("sair", "🚪 Sair")
-            )
-            .queue();
+                        EmbedBuilder successEmbed = new EmbedBuilder()
+                            .setTitle("✅ Log atualizado com sucesso!")
+                            .setColor(0x00FF00);
+                        
+                        hook.editOriginalEmbeds(successEmbed.build()).queue(message -> {
+                            CompletableFuture.delayedExecutor(2, TimeUnit.SECONDS).execute(() -> {
+                                showWhatToDoMenu(hook);
+                            });
+                        });
+
+                        userFormState.remove(event.getUser().getIdLong());
+                        
+                    } catch (Exception e) {
+                        logger.error("[UPDATE_SQUAD_LOG] Erro ao atualizar log: {}", e.getMessage());
+                        EmbedBuilder errorEmbed = new EmbedBuilder()
+                            .setTitle("❌ Erro ao atualizar log")
+                            .setDescription("Tente novamente mais tarde.")
+                            .setColor(0xFF0000);
+                        hook.editOriginalEmbeds(errorEmbed.build()).setComponents().queue();
+                    }
+                });
+            });
     }
-
-    private void exitBot(ButtonInteractionEvent event, long discordUserId) {
+    
+    private void exitBot(ButtonInteractionEvent event) {
+        long discordUserId = event.getUser().getIdLong();
+        logger.info("[EXIT_BOT] Usuário saindo: {}", discordUserId);
         
         EmbedBuilder exitingEmbed = new EmbedBuilder()
             .setTitle("⏳ Saindo...")
@@ -500,22 +1638,44 @@ public class ComponentInteractionListener extends ListenerAdapter {
         event.editMessageEmbeds(exitingEmbed.build())
             .setComponents()
             .queue(hook -> {
-                
                 CompletableFuture.delayedExecutor(2, TimeUnit.SECONDS).execute(() -> {
                     EmbedBuilder thanksEmbed = new EmbedBuilder()
                         .setTitle("🙏 Obrigado por usar o Bot TeamBoarding!")
                         .setColor(0x0099FF);
                     
                     hook.editOriginalEmbeds(thanksEmbed.build()).queue(message -> {
-                        
                         CompletableFuture.delayedExecutor(2, TimeUnit.SECONDS).execute(() -> {
                             hook.deleteOriginal().queue();
-                            
                             userFormState.remove(discordUserId);
                         });
                     });
                 });
             });
+    }
+
+    private void showFinalOptionsMenu(InteractionHook hook, long discordUserId) {
+        try {
+            logger.info("[FINAL_OPTIONS] Mostrando menu final para usuário: {}", discordUserId);
+            
+            EmbedBuilder embed = new EmbedBuilder()
+                .setTitle("🎉 O que gostaria de fazer agora?")
+                .setDescription("Escolha uma das opções abaixo:")
+                .setColor(0x0099FF);
+            
+            hook.editOriginalEmbeds(embed.build())
+                .setActionRow(
+                    Button.primary("criar-novo-log", "📝 Criar Novo Log"),
+                    Button.secondary("alterar-log-existente", "✏️ Alterar Log Existente"),
+                    Button.danger("sair", "🚪 Sair")
+                )
+                .queue(
+                    success -> logger.info("[FINAL_OPTIONS] Menu final exibido com sucesso"),
+                    error -> logger.error("[FINAL_OPTIONS] Erro ao exibir menu: {}", error.getMessage())
+                );
+                
+        } catch (Exception e) {
+            logger.error("[SHOW_FINAL_OPTIONS] Erro: {}", e.getMessage());
+        }
     }
 
     private void exitBotWithHook(InteractionHook hook, long discordUserId) {
@@ -569,7 +1729,7 @@ public class ComponentInteractionListener extends ListenerAdapter {
     }
 
     private void editSquad(ButtonInteractionEvent event, FormState state) {
-        showSquadSelection(event, state);
+        showSquadSelection(event);
     }
 
     private void editPessoa(ButtonInteractionEvent event, FormState state) {
@@ -768,214 +1928,17 @@ public class ComponentInteractionListener extends ListenerAdapter {
         embed.addField("📅 Data de início", formatToBrazilianDate(state.startDate), false);
         embed.addField("📅 Data de fim", state.endDate != null ? formatToBrazilianDate(state.endDate) : "Não informado", false);
 
-        // Usar "Salvar" se estiver editando, "Criar" se estiver criando novo
+        
         String buttonText = state.isEditing ? "💾 Salvar" : "✅ Criar";
         
         event.editMessageEmbeds(embed.build())
             .setActionRow(
                 Button.success("criar-log", buttonText),
-                Button.secondary("alterar-log", "✏️ Editar")
+                Button.secondary(BTN_EDITAR_LOG, "✏️ Editar")
             )
             .queue();
     }
 
-    @Override
-    public void onStringSelectInteraction(StringSelectInteractionEvent event) {
-        long discordUserId = event.getUser().getIdLong();
-        String componentId = event.getComponentId();
-        List<String> selectedValues = event.getValues();
-        
-        logger.info("[SELECT_INTERACTION] Usuário: {} | Componente: {} | Valores: {} | Guild: {}", 
-                   discordUserId, componentId, selectedValues, 
-                   event.getGuild() != null ? event.getGuild().getId() : "DM");
-        
-        FormState state = userFormState.computeIfAbsent(discordUserId, k -> new FormState());
-        
-        switch (componentId) {
-            case "squad-select" -> {
-                String squadId = event.getValues().getFirst();
-                String squadName = event.getSelectedOptions().getFirst().getLabel();
-                logger.info("[SQUAD_SELECT] Usuário: {} | Squad selecionada: {} (ID: {})", 
-                           discordUserId, squadName, squadId);
-                state.squadId = squadId;
-                state.squadName = squadName;
-
-                EmbedBuilder successEmbed = new EmbedBuilder()
-                    .setTitle("✅ Squad selecionada com sucesso!")
-                    .setDescription("Squad: **" + squadName + "**")
-                    .setColor(0x00FF00); 
-                
-                // Mostrar sucesso e depois carregar usuários
-                event.editMessageEmbeds(successEmbed.build())
-                    .setComponents()
-                    .queue();
-
-                // Aguardar 2 segundos e então carregar usuários
-                CompletableFuture.delayedExecutor(2, TimeUnit.SECONDS).execute(() -> {
-                    try {
-                        showUserSelection(event.getHook(), state, squadId);
-                    } catch (Exception e) {
-                        logger.error("[SQUAD_SELECT] Erro ao mostrar usuários: {}", e.getMessage());
-                        event.getHook().editOriginal("❌ Erro ao carregar usuários. Tente novamente.").queue();
-                    }
-                });
-                state.step = FormStep.USER;
-            }
-
-            case "user-select" -> {
-                String selectedUserId = event.getValues().getFirst();
-                String selectedUserName = event.getSelectedOptions().getFirst().getLabel();
-                logger.info("[USER_SELECT] Usuário: {} | Pessoa selecionada: {} (ID: {})", 
-                           discordUserId, selectedUserName, selectedUserId);
-                state.userId = selectedUserId;
-                state.userName = selectedUserName;
-
-                EmbedBuilder successEmbed = new EmbedBuilder()
-                    .setTitle("✅ Pessoa selecionada com sucesso!")
-                    .setDescription("Pessoa: **" + selectedUserName + "**")
-                    .setColor(0x00FF00); 
-                
-                event.editMessageEmbeds(successEmbed.build())
-                    .setComponents()
-                    .queue(hook -> {
-                        
-                        CompletableFuture.delayedExecutor(2, TimeUnit.SECONDS).execute(() -> {
-                            if (state.isEditing) {
-                                
-                                state.isEditing = false; 
-                                showSummaryFromModalWithHook(hook, state);
-                            } else {
-                                
-                                EmbedBuilder processingEmbed = new EmbedBuilder()
-                                    .setTitle("⏳ Processando...")
-                                    .setColor(0xFFFF00); 
-                                
-                                hook.editOriginalEmbeds(processingEmbed.build()).queue(message -> {
-                                    
-                                    CompletableFuture.delayedExecutor(2, TimeUnit.SECONDS).execute(() -> {
-                                        showTypeSelection(hook, state);
-                                    });
-                                });
-                            }
-                        });
-                    });
-                state.step = FormStep.TYPE;
-            }
-
-            case "type-select" -> {
-                String typeId = event.getValues().getFirst();
-                String typeName = event.getSelectedOptions().getFirst().getLabel();
-                logger.info("[TYPE_SELECT] Usuário: {} | Tipo selecionado: {} (ID: {})", 
-                           discordUserId, typeName, typeId);
-                state.typeId = typeId;
-                state.typeName = typeName;
-
-                EmbedBuilder successEmbed = new EmbedBuilder()
-                    .setTitle("✅ Tipo selecionado com sucesso!")
-                    .setDescription("Tipo: **" + typeName + "**")
-                    .setColor(0x00FF00); 
-                
-                if (state.isEditing) {
-                    // Se estiver editando, apenas mostrar sucesso e voltar ao resumo
-                    state.isEditing = false; 
-                    event.editMessageEmbeds(successEmbed.build())
-                        .setComponents()
-                        .queue(hook -> {
-                            CompletableFuture.delayedExecutor(2, TimeUnit.SECONDS).execute(() -> {
-                                showSummaryFromModalWithHook(hook, state);
-                            });
-                        });
-                } else {
-                    // Se estiver criando, mostrar sucesso e depois abrir modal de descrição
-                    event.editMessageEmbeds(successEmbed.build())
-                        .setComponents()
-                        .queue();
-
-                    // Aguardar 2 segundos e então mostrar seleção de categorias
-                    CompletableFuture.delayedExecutor(2, TimeUnit.SECONDS).execute(() -> {
-                        try {
-                            showCategorySelection(event.getHook(), state);
-                        } catch (Exception e) {
-                            logger.error("[TYPE_SELECT] Erro ao mostrar categorias: {}", e.getMessage());
-                            event.getHook().editOriginal("❌ Erro ao carregar categorias. Tente novamente.").queue();
-                        }
-                    });
-                }
-                state.step = FormStep.CATEGORY;
-            }
-
-            case "category-select" -> {
-                List<String> selectedIds = event.getSelectedOptions().stream()
-                    .map(opt -> opt.getValue())
-                    .toList();
-                List<String> selectedNames = event.getSelectedOptions().stream()
-                    .map(opt -> opt.getLabel())
-                    .toList();
-                
-                logger.info("[CATEGORY_SELECT] Usuário: {} | Categorias selecionadas: {} | IDs: {}", 
-                           discordUserId, selectedNames, selectedIds);
-                    
-                state.categoryIds = selectedIds;
-                state.categoryNames = selectedNames;
-
-                EmbedBuilder successEmbed = new EmbedBuilder()
-                    .setTitle("✅ Categorias selecionadas com sucesso!")
-                    .setDescription("Categorias: **" + String.join(", ", selectedNames) + "**")
-                    .setColor(0x00FF00); 
-                
-                if (state.isEditing) {
-                    // Se estiver editando, apenas mostrar sucesso e voltar ao resumo
-                    state.isEditing = false; 
-                    event.editMessageEmbeds(successEmbed.build())
-                        .setComponents()
-                        .queue(hook -> {
-                            CompletableFuture.delayedExecutor(2, TimeUnit.SECONDS).execute(() -> {
-                                showSummaryFromModalWithHook(hook, state);
-                            });
-                        });
-                } else {
-                    // Se estiver criando, abrir modal de descrição
-                    TextInput descriptionInput = TextInput.create("description", "Descrição", TextInputStyle.PARAGRAPH)
-                            .setPlaceholder("Descreva o que foi feito...")
-                            .setMinLength(10)
-                            .setMaxLength(1000)
-                            .build();
-
-                    Modal descriptionModal = Modal.create("description-modal-create", "📝 Adicionar Descrição")
-                            .addActionRow(descriptionInput)
-                            .build();
-
-                    // Abrir modal diretamente sem editar mensagem primeiro
-                    event.replyModal(descriptionModal).queue();
-                }
-                state.step = FormStep.DESCRIPTION;
-            }
-
-            case "squad-logs-select-update" -> {
-                try {
-                    String squadLogId = event.getValues().getFirst();
-                    logger.info("[ATUALIZAR_SQUAD] Carregando dados do questionário ID: {} para usuário: {}", squadLogId, discordUserId);
-                    
-                    JSONObject squadLog = new JSONObject(squadLogService.getSquadLogId(squadLogId));
-                    logger.info("[ATUALIZAR_SQUAD] Montando resumo dos dados para ser alterado");
-                    
-                    showSummaryUpdate(event, squadLog);
-                    
-                } catch (Exception e) {
-                    logger.error("[ATUALIZAR_SQUAD] Erro ao carregar questionário: {}", e.getMessage());
-                    event.editMessage("❌ Erro ao carregar questionário. Tente novamente.")
-                        .setEmbeds()
-                        .setComponents()
-                        .queue();
-                }
-            }
-
-            default -> {
-                logger.warn("[SELECT_UNKNOWN] Select desconhecido: {} | Usuário: {}", componentId, discordUserId);
-                event.reply("❌ Seleção não reconhecida.").setEphemeral(true).queue();
-            }
-        }
-    }
 
     private void handleOpenDescriptionModal(ButtonInteractionEvent event, FormState state) {
         TextInput descriptionInput = TextInput.create("description", "Descrição", TextInputStyle.PARAGRAPH)
@@ -991,317 +1954,6 @@ public class ComponentInteractionListener extends ListenerAdapter {
         event.replyModal(modal).queue();
     }
 
-    @Override
-    public void onModalInteraction(ModalInteractionEvent event) {
-        long discordUserId = event.getUser().getIdLong();
-        String modalId = event.getModalId();
-        
-        logger.info("[MODAL_INTERACTION] Usuário: {} | Modal: {}", discordUserId, modalId);
-        
-        FormState state = userFormState.get(discordUserId);
-        if (state == null) {
-            event.reply("❌ Formulário não encontrado ou expirado.").setEphemeral(true).queue();
-            return;
-        }
-
-        switch (modalId) {
-            case "description-modal-create" -> {
-                String description = event.getValue("description").getAsString().trim();
-                logger.info("[MODAL_DESCRIPTION_CREATE] Usuário: {} | Descrição: {}", discordUserId, description);
-                
-                state.description = description;
-                state.step = FormStep.START_DATE;
-
-                // Abrir modal de datas automaticamente
-                TextInput startDateInput = TextInput.create("start_date", "Data de Início (DD-MM-AAAA)", TextInputStyle.SHORT)
-                        .setPlaceholder("Ex: 20-06-1986")
-                        .setMinLength(10)
-                        .setMaxLength(10)
-                        .build();
-
-                TextInput endDateInput = TextInput.create("end_date", "Data de Fim (DD-MM-AAAA) - OPCIONAL", TextInputStyle.SHORT)
-                        .setPlaceholder("Ex: 20-06-1986 (deixe em branco se não houver)")
-                        .setRequired(false)
-                        .setMaxLength(10)
-                        .build();
-
-                Modal datesModal = Modal.create("dates-modal-create", "📅 Adicionar Datas")
-                        .addActionRow(startDateInput)
-                        .addActionRow(endDateInput)
-                        .build();
-
-                // SOLUÇÃO REAL: Mostrar mensagem de sucesso e editar a mensagem original com botão de datas
-                // Como não podemos abrir modal diretamente de modal, vamos editar a mensagem original
-                event.reply("✅ Descrição salva com sucesso!").setEphemeral(true).queue();
-                
-                // Editar a mensagem original para mostrar o próximo passo
-                EmbedBuilder embed = new EmbedBuilder()
-                    .setTitle("📝 Descrição Adicionada")
-                    .setDescription("**Descrição:** " + description + "\n\n📅 **Próximo passo:** Clique no botão abaixo para inserir as datas")
-                    .setColor(0x00FF00);
-
-                // Usar o hook da interação original (não do modal) para editar a mensagem
-                InteractionHook originalHook = event.getInteraction().getHook();
-                if (originalHook != null) {
-                    originalHook.editOriginalEmbeds(embed.build())
-                        .setComponents(ActionRow.of(
-                            Button.primary("open-dates-modal-auto", "📅 Inserir Datas")
-                        ))
-                        .queue(
-                            success -> logger.info("[DESCRIPTION_SUCCESS] Mensagem editada com botão de datas para usuário: {}", discordUserId),
-                            error -> logger.error("[DESCRIPTION_SUCCESS] Erro ao editar mensagem: {}", error.getMessage())
-                        );
-                } else {
-                    logger.error("[DESCRIPTION_SUCCESS] Hook original não encontrado para usuário: {}", discordUserId);
-                }
-            }
-
-            case "dates-modal-create" -> {
-                String startDate = event.getValue("start_date").getAsString().trim();
-                String endDate = event.getValue("end_date") != null ? event.getValue("end_date").getAsString().trim() : "";
-                
-                logger.info("[MODAL_DATES_CREATE] Usuário: {} | Data início: {} | Data fim: {}", 
-                           discordUserId, startDate, endDate.isEmpty() ? "Não informado" : endDate);
-
-                // Validar data de início
-                if (!isValidBrazilianDate(startDate)) {
-                    event.reply("❌ Data de início inválida! Use o formato DD-MM-AAAA (ex: 20-06-1986)")
-                            .setEphemeral(true).queue();
-                    return;
-                }
-
-                // Validar data de fim se fornecida
-                if (!endDate.isEmpty() && !isValidBrazilianDate(endDate)) {
-                    event.reply("❌ Data de fim inválida! Use o formato DD-MM-AAAA (ex: 20-06-1986)")
-                            .setEphemeral(true).queue();
-                    return;
-                }
-
-                // Salvar datas no estado
-                state.startDate = convertToIsoDate(startDate);
-                state.endDate = endDate.isEmpty() ? null : convertToIsoDate(endDate);
-                state.step = FormStep.END_DATE;
-
-                logger.info("[MODAL_DATES_CREATE] Datas convertidas - Início: {} | Fim: {}", 
-                           state.startDate, state.endDate != null ? state.endDate : "Não informado");
-
-                // Mostrar resumo final
-                showSummaryFromModal(event, state);
-            }
-
-
-            case "end-date-modal-create" -> {
-                String endDate = event.getValue("end_date").getAsString().trim();
-                logger.info("[MODAL_END_DATE_CREATE] Usuário: {} | Data fim: {}", discordUserId, endDate);
-
-                if (!endDate.isEmpty() && !isValidBrazilianDate(endDate)) {
-                    event.reply("❌ Data de fim inválida! Use o formato DD-MM-AAAA (ex: 20-06-1986)")
-                            .setEphemeral(true).queue();
-                    return;
-                }
-                
-                if (endDate.isEmpty()) {
-                    state.endDate = null;
-                    logger.info("[MODAL_END_DATE_CREATE] Usuário: {} | Sem data fim", discordUserId);
-                } else {
-                    state.endDate = convertToIsoDate(endDate);
-                }
-                
-                state.step = FormStep.REVIEW;
-                showSummaryFromModal(event, state);
-            }
-
-
-            case "dates-modal-edit" -> {
-                String newStartDate = event.getValue("start_date").getAsString().trim();
-                String newEndDate = event.getValue("end_date").getAsString().trim();
-                
-                logger.info("[MODAL_DATES_EDIT] Usuário: {} | Nova data início: {} | Nova data fim: {}", 
-                           discordUserId, newStartDate, newEndDate);
-
-                if (!isValidBrazilianDate(newStartDate)) {
-                    event.reply("❌ Data de início inválida! Use o formato DD-MM-AAAA (ex: 20-06-1986)")
-                            .setEphemeral(true).queue();
-                    return;
-                }
-                
-                state.startDate = convertToIsoDate(newStartDate);
-
-                if (newEndDate.isEmpty()) {
-                    state.endDate = null;
-                    logger.info("[MODAL_DATES_EDIT] Usuário: {} | Data fim removida", discordUserId);
-                } else {
-                    if (!isValidBrazilianDate(newEndDate)) {
-                        event.reply("❌ Data de fim inválida! Use o formato DD-MM-AAAA (ex: 20-06-1986)")
-                                .setEphemeral(true).queue();
-                        return;
-                    }
-                    state.endDate = convertToIsoDate(newEndDate);
-                }
-
-                EmbedBuilder embed = new EmbedBuilder()
-                    .setTitle("✅ Datas atualizadas com sucesso!")
-                    .setDescription("**Data de início:** " + newStartDate + 
-                                  (newEndDate.isEmpty() ? "\n**Data de fim:** Removida" : "\n**Data de fim:** " + newEndDate))
-                    .setColor(0x00FF00);
-                
-                event.deferEdit().queue();
-                event.getHook().editOriginalEmbeds(embed.build())
-                    .setComponents()
-                    .queue();
-
-                CompletableFuture.delayedExecutor(2, TimeUnit.SECONDS).execute(() -> {
-                    showSummaryFromModalWithHook(event.getHook(), state);
-                });
-            }
-
-            case "description-modal-edit" -> {
-                String newDescription = event.getValue("description").getAsString().trim();
-                logger.info("[MODAL_DESCRIPTION_EDIT] Usuário: {} | Nova descrição: {}", discordUserId, newDescription);
-                
-                state.description = newDescription;
-
-                EmbedBuilder embed = new EmbedBuilder()
-                    .setTitle("✅ Descrição atualizada com sucesso!")
-                    .setDescription("**Nova descrição:** " + newDescription)
-                    .setColor(0x00FF00);
-                
-                event.deferEdit().queue();
-                event.getHook().editOriginalEmbeds(embed.build())
-                    .setComponents()
-                    .queue();
-
-                CompletableFuture.delayedExecutor(2, TimeUnit.SECONDS).execute(() -> {
-                    showSummaryFromModalForUpdateWithHook(event.getHook(), state);
-                });
-            }
-
-            case "start-date-modal-edit" -> {
-                String newStartDate = event.getValue("start_date").getAsString().trim();
-                String hasEndDate = event.getValue("has_end_date").getAsString().trim();
-                
-                logger.info("[MODAL_START_DATE_EDIT] Usuário: {} | Nova data início: {} | Tem data fim: {}", 
-                           discordUserId, newStartDate, hasEndDate);
-                
-                if (!isValidBrazilianDate(newStartDate)) {
-                    EmbedBuilder errorEmbed = new EmbedBuilder()
-                        .setTitle("❌ Data de início inválida!")
-                        .setDescription("Use o formato DD-MM-AAAA (ex: 20-06-1986)")
-                        .setColor(0xFF0000);
-                    
-                    event.deferEdit().queue();
-                    event.getHook().editOriginalEmbeds(errorEmbed.build())
-                        .setComponents()
-                        .queue();
-                    return;
-                }
-
-                if (!isYesResponse(hasEndDate) && !isNoResponse(hasEndDate)) {
-                    EmbedBuilder errorEmbed = new EmbedBuilder()
-                        .setTitle("❌ Resposta inválida!")
-                        .setDescription("Digite: sim, s, não, nao ou n")
-                        .setColor(0xFF0000);
-                    
-                    event.deferEdit().queue();
-                    event.getHook().editOriginalEmbeds(errorEmbed.build())
-                        .setComponents()
-                        .queue();
-                    return;
-                }
-                
-                state.startDate = convertToIsoDate(newStartDate);
-                
-                if (isYesResponse(hasEndDate)) {
-                    
-                    EmbedBuilder embed = new EmbedBuilder()
-                        .setTitle("✅ Data de início atualizada com sucesso!")
-                        .setDescription("**Data de início:** " + newStartDate)
-                        .setColor(0x00FF00);
-                    
-                    event.deferEdit().queue();
-                    event.getHook().editOriginalEmbeds(embed.build())
-                        .setActionRow(Button.primary("open-end-date-modal-modify", "📅 Alterar Data de Fim"))
-                        .queue();
-                } else {
-                    
-                    state.endDate = null;
-                    
-                    EmbedBuilder embed = new EmbedBuilder()
-                        .setTitle("✅ Data de início atualizada e data de fim removida!")
-                        .setDescription("**Data de início:** " + newStartDate)
-                        .setColor(0x00FF00);
-                    
-                    event.deferEdit().queue();
-                    event.getHook().editOriginalEmbeds(embed.build())
-                        .setComponents()
-                        .queue();
-
-                    CompletableFuture.delayedExecutor(2, TimeUnit.SECONDS).execute(() -> {
-                        showSummaryFromModalWithHook(event.getHook(), state);
-                    });
-                }
-            }
-
-            case "end-date-modal-edit" -> {
-                String newEndDate = event.getValue("end_date").getAsString().trim();
-                logger.info("[MODAL_END_DATE_EDIT] Usuário: {} | Nova data fim: {}", discordUserId, newEndDate);
-
-                if (newEndDate.isEmpty()) {
-                    state.endDate = null;
-                    logger.info("[MODAL_END_DATE_EDIT] Usuário: {} | Data fim removida", discordUserId);
-                    
-                    EmbedBuilder embed = new EmbedBuilder()
-                        .setTitle("✅ Data de fim removida com sucesso!")
-                        .setDescription("A data de fim foi removida do log.")
-                        .setColor(0x00FF00);
-                    
-                    event.deferEdit().queue();
-                    event.getHook().editOriginalEmbeds(embed.build())
-                        .setComponents()
-                        .queue();
-
-                    CompletableFuture.delayedExecutor(2, TimeUnit.SECONDS).execute(() -> {
-                        showSummaryFromModalWithHook(event.getHook(), state);
-                    });
-                } else {
-                    
-                    if (!isValidBrazilianDate(newEndDate)) {
-                        EmbedBuilder errorEmbed = new EmbedBuilder()
-                            .setTitle("❌ Data de fim inválida!")
-                            .setDescription("Use o formato DD-MM-AAAA (ex: 20-06-1986)")
-                            .setColor(0xFF0000);
-                        
-                        event.deferEdit().queue();
-                        event.getHook().editOriginalEmbeds(errorEmbed.build())
-                            .setComponents()
-                            .queue();
-                        return;
-                    }
-                    
-                    state.endDate = convertToIsoDate(newEndDate);
-                    
-                    EmbedBuilder embed = new EmbedBuilder()
-                        .setTitle("✅ Data de fim atualizada com sucesso!")
-                        .setDescription("**Data de fim:** " + newEndDate)
-                        .setColor(0x00FF00);
-                    
-                    event.deferEdit().queue();
-                    event.getHook().editOriginalEmbeds(embed.build())
-                        .setComponents()
-                        .queue();
-
-                    CompletableFuture.delayedExecutor(2, TimeUnit.SECONDS).execute(() -> {
-                        showSummaryFromModalWithHook(event.getHook(), state);
-                    });
-                }
-            }
-
-            default -> {
-                logger.warn("[MODAL_UNKNOWN] Modal desconhecido: {} | Usuário: {}", modalId, discordUserId);
-                event.reply("❌ Modal não reconhecido.").setEphemeral(true).queue();
-            }
-        }
-    }
 
     private void showSummaryFromModal(ModalInteractionEvent event, FormState state) {
         EmbedBuilder embed = new EmbedBuilder();
@@ -1315,14 +1967,14 @@ public class ComponentInteractionListener extends ListenerAdapter {
         embed.addField("📅 Data de início", formatToBrazilianDate(state.startDate), false);
         embed.addField("📅 Data de fim", state.endDate != null ? formatToBrazilianDate(state.endDate) : "Não informado", false);
 
-        // Usar "Salvar" se estiver editando, "Criar" se estiver criando novo
+        
         String buttonText = state.isEditing ? "💾 Salvar" : "✅ Criar";
         
         event.editMessage("✅ Dados inseridos com sucesso!")
                 .setEmbeds(embed.build())
                 .setActionRow(
                         Button.success("criar-log", buttonText),
-                        Button.secondary("alterar-log", "✏️ Editar")
+                        Button.secondary(BTN_EDITAR_LOG, "✏️ Editar")
                 )
                 .queue();
     }
@@ -1339,14 +1991,14 @@ public class ComponentInteractionListener extends ListenerAdapter {
         embed.addField("📅 Data de início", formatToBrazilianDate(state.startDate), false);
         embed.addField("📅 Data de fim", state.endDate != null ? formatToBrazilianDate(state.endDate) : "Não informado", false);
 
-        // Usar "Salvar" se estiver editando, "Criar" se estiver criando novo
+        
         String buttonText = state.isEditing ? "💾 Salvar" : "✅ Criar";
         
         hook.editOriginal("✅ Dados inseridos com sucesso!")
                 .setEmbeds(embed.build())
                 .setActionRow(
                         Button.success("criar-log", buttonText),
-                        Button.secondary("alterar-log", "✏️ Editar")
+                        Button.secondary(BTN_EDITAR_LOG, "✏️ Editar")
                 )
                 .queue();
     }
@@ -1435,14 +2087,14 @@ public class ComponentInteractionListener extends ListenerAdapter {
         embed.addField("📅 Data de início", state.startDate != null ? formatToBrazilianDate(state.startDate) : "Não informado", false);
         embed.addField("📅 Data de fim", state.endDate != null ? formatToBrazilianDate(state.endDate) : "Não informado", false);
 
-        // Usar "Salvar" se estiver editando, "Criar" se estiver criando novo
+        
         String buttonText = state.isEditing ? "💾 Salvar" : "✅ Criar";
         
         hook.editOriginalEmbeds(embed.build())
             .setComponents(
                 ActionRow.of(
                     Button.success("criar-log", buttonText),
-                    Button.secondary("alterar-log", "✏️ Alterar")
+                    Button.secondary(BTN_EDITAR_LOG, "✏️ Alterar")
                 )
             )
             .queue();
@@ -1526,7 +2178,7 @@ public class ComponentInteractionListener extends ListenerAdapter {
                 state.categoryNames.add("Não informado");
             }
 
-            // Definir que estamos no modo de edição
+            
             state.isEditing = true;
             logger.info("[SHOW_SUMMARY_UPDATE] Estado isEditing definido como true para usuário: {}", discordUserId);
 
@@ -1567,84 +2219,8 @@ public class ComponentInteractionListener extends ListenerAdapter {
         }
     }
 
-    private static void buildSelectMenuUpdate(JSONArray squadLogsArray, StringSelectMenu.Builder menuBuilder) {
-        for (int i = 0; i < squadLogsArray.length(); i++) {
-            JSONObject squadLog = squadLogsArray.getJSONObject(i);
-            String id = String.valueOf(squadLog.getInt("id"));
-            String description = squadLog.optString("description", "");
-            String person = squadLog.getJSONObject("user").getString("first_name") + " " + 
-                          squadLog.getJSONObject("user").getString("last_name");
-            String addedBy = squadLog.getJSONObject("register_user").getString("first_name") + " " + 
-                           squadLog.getJSONObject("register_user").getString("last_name");
-            String type = squadLog.getJSONObject("squad_log_type").getString("name");
-            String project = squadLog.getJSONObject("squad").getJSONObject("project").getString("name");
-            String startDate = squadLog.getString("start_date");
-            
-            if (!description.isEmpty()) {
-                String optionDescription = id + " | " + project + " | " + person + " | " + addedBy + " | " + type + " | " + startDate;
-                menuBuilder.addOption(description.length() > 100 ? description.substring(0, 97) + "..." : description, 
-                                    id, optionDescription);
-            }
-        }
-    }
 
-    private static final DateTimeFormatter BRAZILIAN_DATE_FORMATTER = DateTimeFormatter.ofPattern("dd-MM-yyyy");
-    private static final Pattern BRAZILIAN_DATE_PATTERN = Pattern.compile("\\d{2}-\\d{2}-\\d{4}");
 
-    private boolean isValidBrazilianDate(String date) {
-        if (date == null || !BRAZILIAN_DATE_PATTERN.matcher(date).matches()) {
-            return false;
-        }
-        try {
-            LocalDate.parse(date, BRAZILIAN_DATE_FORMATTER);
-            return true;
-        } catch (DateTimeParseException e) {
-            return false;
-        }
-    }
-
-    private String convertToIsoDate(String brazilianDate) {
-        try {
-            LocalDate date = LocalDate.parse(brazilianDate, BRAZILIAN_DATE_FORMATTER);
-            return date.toString(); 
-        } catch (DateTimeParseException e) {
-            logger.error("[CONVERT_TO_ISO] Erro ao converter data brasileira: {}", brazilianDate);
-            return brazilianDate; 
-        }
-    }
-
-    private String formatToBrazilianDate(String isoDate) {
-        if (isoDate == null) return null;
-        try {
-            LocalDate date = LocalDate.parse(isoDate);
-            return date.format(BRAZILIAN_DATE_FORMATTER);
-        } catch (DateTimeParseException e) {
-            logger.error("[FORMAT_TO_BRAZILIAN] Erro ao formatar data ISO: {}", isoDate);
-            return isoDate; 
-        }
-    }
-
-    public static class FormState {
-        public String squadId;
-        public String squadName;
-        public String userId;
-        public String userName;
-        public String typeId;
-        public String typeName;
-        public List<String> categoryIds = new ArrayList<>();
-        public List<String> categoryNames = new ArrayList<>();
-        public String description;
-        public String startDate;
-        public String endDate;
-        public FormStep step = FormStep.SQUAD;
-        public boolean isEditing = false; 
-        public Long squadLogId; 
-    }
-
-    public enum FormStep {
-        SQUAD, USER, TYPE, CATEGORY, DESCRIPTION, START_DATE, HAS_END, END_DATE, REVIEW,
-        DESCRIPTION_MODIFY, START_DATE_MODIFY, END_DATE_MODIFY
-    }
 
     private String buildSquadLogPayload(String squadId, String userId, String typeId, 
                                       List<String> categoryIds, String description, 
@@ -1675,114 +2251,6 @@ public class ComponentInteractionListener extends ListenerAdapter {
                 state.description, state.startDate, state.endDate);
     }
 
-    private String createSquadLogPayload(FormState state) {
-        JSONObject payload = new JSONObject();
 
-        payload.put("squad_id", Long.parseLong(state.squadId));
-        payload.put("user_id", Long.parseLong(state.userId));
-        payload.put("squad_log_type_id", Long.parseLong(state.typeId));
-        payload.put("description", state.description);
-        payload.put("start_date", state.startDate);
-
-        if (state.endDate != null) {
-            payload.put("end_date", state.endDate);
-        }
-
-        JSONArray categoriesArray = new JSONArray();
-        if (state.categoryIds != null) {
-            for (String categoryId : state.categoryIds) {
-                categoriesArray.put(Long.parseLong(categoryId));
-            }
-        }
-        payload.put("squad_category_ids", categoriesArray);
-        
-        return payload.toString();
-    }
-
-    private String updateSquadLogPayload(FormState state) {
-        JSONObject payload = new JSONObject();
-
-        if (state.squadId != null) {
-            payload.put("squad_id", Long.parseLong(state.squadId));
-        }
-        if (state.userId != null) {
-            payload.put("user_id", Long.parseLong(state.userId));
-        }
-        if (state.typeId != null) {
-            payload.put("squad_log_type_id", Long.parseLong(state.typeId));
-        }
-        if (state.description != null) {
-            payload.put("description", state.description);
-        }
-        if (state.startDate != null) {
-            payload.put("start_date", state.startDate);
-        }
-
-        if (state.endDate != null) {
-            payload.put("end_date", state.endDate);
-        } else {
-            payload.put("end_date", JSONObject.NULL);
-        }
-
-        if (state.categoryIds != null) {
-            JSONArray categoriesArray = new JSONArray();
-            for (String categoryId : state.categoryIds) {
-                categoriesArray.put(Long.parseLong(categoryId));
-            }
-            payload.put("squad_category_ids", categoriesArray);
-        }
-        
-        return payload.toString();
-    }
-
-    private void updateSquadLog(ButtonInteractionEvent event, FormState state) {
-        
-        EmbedBuilder updatingEmbed = new EmbedBuilder()
-            .setTitle("⏳ Atualizando Log...")
-            .setColor(0xFFFF00);
-        
-        event.editMessageEmbeds(updatingEmbed.build())
-            .setComponents()
-            .queue(hook -> {
-                
-                CompletableFuture.delayedExecutor(2, TimeUnit.SECONDS).execute(() -> {
-                    try {
-                        
-                        String payload = updateSquadLogPayload(state);
-                        logger.info("[UPDATE_SQUAD_LOG] Payload criado: {}", payload);
-
-                        if (state.squadLogId == null) {
-                            throw new IllegalStateException("ID do squad log não encontrado para atualização");
-                        }
-
-                        ResponseEntity<String> response = squadLogService.updateSquadLog(state.squadLogId, payload);
-                        logger.info("[UPDATE_SQUAD_LOG] Response da API: {} - {}", response.getStatusCode(), response.getBody());
-
-                        EmbedBuilder successEmbed = new EmbedBuilder()
-                            .setTitle("✅ Log atualizado com sucesso!")
-                            .setDescription("O que você gostaria de fazer agora?")
-                            .setColor(0x00FF00);
-                        
-                        hook.editOriginalEmbeds(successEmbed.build())
-                            .setActionRow(
-                                Button.primary("criar", "📝 Criar novo Log"),
-                                Button.secondary("atualizar", "✏️ Atualizar Log existente"),
-                                Button.danger("sair", "🚪 Sair")
-                            )
-                            .queue();
-
-                        userFormState.remove(event.getUser().getIdLong());
-                        
-                    } catch (Exception e) {
-                        logger.error("[UPDATE_SQUAD_LOG] Erro ao atualizar log: {}", e.getMessage());
-                        EmbedBuilder errorEmbed = new EmbedBuilder()
-                            .setTitle("❌ Erro ao atualizar log")
-                            .setDescription("Tente novamente mais tarde.")
-                            .setColor(0xFF0000);
-                        hook.editOriginalEmbeds(errorEmbed.build()).setComponents().queue();
-                    }
-                });
-            });
-    }
 
 }
