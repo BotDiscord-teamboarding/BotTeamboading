@@ -1,40 +1,55 @@
 package com.meli.teamboardingBot.dto;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import lombok.ToString;
-
 import java.time.LocalDateTime;
-import java.util.List;
-@Getter
-@Setter
-@NoArgsConstructor
-@ToString
+
 public class SquadMemberDTO {
     
-    @JsonProperty("user")
     private SquadUserDTO user;
-    
-    @JsonProperty("role_id")
     private String roleId;
-    
-    @JsonProperty("role")
     private RoleDTO role;
-    
-    @JsonProperty("buddy_user_id")
     private Long buddyUserId;
-    
-    @JsonProperty("new_hire_in_orientation_mode_until")
     private LocalDateTime newHireInOrientationModeUntil;
-    
-    @JsonProperty("certificate_asset_id")
     private String certificateAssetId;
-    
-    @JsonProperty("certificate_cid")
     private String certificateCid;
-    
-    @JsonProperty("certificate_state")
     private String certificateState;
+    
+    public SquadMemberDTO() {}
+    
+    public SquadUserDTO getUser() { return user; }
+    public void setUser(SquadUserDTO user) { this.user = user; }
+    
+    public String getRoleId() { return roleId; }
+    public void setRoleId(String roleId) { this.roleId = roleId; }
+    
+    public RoleDTO getRole() { return role; }
+    public void setRole(RoleDTO role) { this.role = role; }
+    
+    public Long getBuddyUserId() { return buddyUserId; }
+    public void setBuddyUserId(Long buddyUserId) { this.buddyUserId = buddyUserId; }
+    
+    public LocalDateTime getNewHireInOrientationModeUntil() { return newHireInOrientationModeUntil; }
+    public void setNewHireInOrientationModeUntil(LocalDateTime newHireInOrientationModeUntil) { this.newHireInOrientationModeUntil = newHireInOrientationModeUntil; }
+    
+    public String getCertificateAssetId() { return certificateAssetId; }
+    public void setCertificateAssetId(String certificateAssetId) { this.certificateAssetId = certificateAssetId; }
+    
+    public String getCertificateCid() { return certificateCid; }
+    public void setCertificateCid(String certificateCid) { this.certificateCid = certificateCid; }
+    
+    public String getCertificateState() { return certificateState; }
+    public void setCertificateState(String certificateState) { this.certificateState = certificateState; }
+    
+    @Override
+    public String toString() {
+        return "SquadMemberDTO{" +
+                "user=" + user +
+                ", roleId='" + roleId + '\'' +
+                ", role=" + role +
+                ", buddyUserId=" + buddyUserId +
+                ", newHireInOrientationModeUntil=" + newHireInOrientationModeUntil +
+                ", certificateAssetId='" + certificateAssetId + '\'' +
+                ", certificateCid='" + certificateCid + '\'' +
+                ", certificateState='" + certificateState + '\'' +
+                '}';
+    }
 }

@@ -1,35 +1,46 @@
 package com.meli.teamboardingBot.dto;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import lombok.ToString;
-
 import java.util.List;
-@Getter
-@Setter
-@NoArgsConstructor
-@ToString
+
 public class ProjectDTO {
     
-    @JsonProperty("id")
     private Long id;
-    
-    @JsonProperty("name")
     private String name;
-    
-    @JsonProperty("description")
     private String description;
-    
-    @JsonProperty("squads")
     private List<SquadDTO> squads;
-    
-    @JsonProperty("technologies")
     private List<TechnologyDTO> technologies;
-    
-    @JsonProperty("referents")
     private List<Object> referents;
     
+    public ProjectDTO() {}
+    
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+    
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
+    
+    public List<SquadDTO> getSquads() { return squads; }
+    public void setSquads(List<SquadDTO> squads) { this.squads = squads; }
+    
+    public List<TechnologyDTO> getTechnologies() { return technologies; }
+    public void setTechnologies(List<TechnologyDTO> technologies) { this.technologies = technologies; }
+    
+    public List<Object> getReferents() { return referents; }
+    public void setReferents(List<Object> referents) { this.referents = referents; }
+    
+    @Override
+    public String toString() {
+        return "ProjectDTO{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", description='" + description + '\'' +
+                ", squads=" + squads +
+                ", technologies=" + technologies +
+                ", referents=" + referents +
+                '}';
+    }
 
 }

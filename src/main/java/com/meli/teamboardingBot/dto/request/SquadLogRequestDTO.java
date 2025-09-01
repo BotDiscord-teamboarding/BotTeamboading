@@ -1,4 +1,4 @@
 package com.meli.teamboardingBot.dto.request;
 
-public class squadLogRequstDto {
+public class SquadLogRequestDTO {
 }

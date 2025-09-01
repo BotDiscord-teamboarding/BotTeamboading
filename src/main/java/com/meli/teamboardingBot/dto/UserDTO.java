@@ -1,84 +1,125 @@
 package com.meli.teamboardingBot.dto;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import lombok.ToString;
-
 import java.util.List;
 
-
-@Getter
-@Setter
-@NoArgsConstructor
-@ToString
 public class UserDTO {
     
-    @JsonProperty("id")
     private Long id;
-    
-    @JsonProperty("first_name")
     private String firstName;
-    
-    @JsonProperty("last_name")
     private String lastName;
-    
-    @JsonProperty("email")
     private String email;
-    
-    @JsonProperty("enabled")
     private Boolean enabled;
-    
-    @JsonProperty("picture")
     private String picture;
-    
-    @JsonProperty("picture_deleted")
     private Boolean pictureDeleted;
-    
-    @JsonProperty("preferred_language_id")
     private String preferredLanguageId;
-    
-    @JsonProperty("preferred_language")
     private LanguageDTO preferredLanguage;
-    
-    @JsonProperty("is_pep_user")
     private Boolean isPepUser;
-    
-    @JsonProperty("is_obi_user")
     private Boolean isObiUser;
-    
-    @JsonProperty("clients")
     private List<ClientDTO> clients;
-    
-    @JsonProperty("user_profile_extra")
     private Object userProfileExtra;
-    
-    @JsonProperty("roles")
     private List<RoleDTO> roles;
-    
-    @JsonProperty("home_sections")
     private List<String> homeSections;
-    
-    @JsonProperty("user_squads")
     private List<UserSquadDTO> userSquads;
-    
-    @JsonProperty("algorand_wallet_address")
     private String algorandWalletAddress;
-    
-    @JsonProperty("first_login")
     private Boolean firstLogin;
-    
-    @JsonProperty("show_filters_help")
     private Boolean showFiltersHelp;
-    
-    @JsonProperty("menu_items")
     private List<String> menuItems;
-    
-    @JsonProperty("privacy_policy_version")
     private String privacyPolicyVersion;
-    
-    @JsonProperty("terms_and_conditions_version")
     private String termsAndConditionsVersion;
-
+    
+    public UserDTO() {}
+    
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    
+    public String getFirstName() { return firstName; }
+    public void setFirstName(String firstName) { this.firstName = firstName; }
+    
+    public String getLastName() { return lastName; }
+    public void setLastName(String lastName) { this.lastName = lastName; }
+    
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
+    
+    public Boolean getEnabled() { return enabled; }
+    public void setEnabled(Boolean enabled) { this.enabled = enabled; }
+    
+    public String getPicture() { return picture; }
+    public void setPicture(String picture) { this.picture = picture; }
+    
+    public Boolean getPictureDeleted() { return pictureDeleted; }
+    public void setPictureDeleted(Boolean pictureDeleted) { this.pictureDeleted = pictureDeleted; }
+    
+    public String getPreferredLanguageId() { return preferredLanguageId; }
+    public void setPreferredLanguageId(String preferredLanguageId) { this.preferredLanguageId = preferredLanguageId; }
+    
+    public LanguageDTO getPreferredLanguage() { return preferredLanguage; }
+    public void setPreferredLanguage(LanguageDTO preferredLanguage) { this.preferredLanguage = preferredLanguage; }
+    
+    public Boolean getIsPepUser() { return isPepUser; }
+    public void setIsPepUser(Boolean isPepUser) { this.isPepUser = isPepUser; }
+    
+    public Boolean getIsObiUser() { return isObiUser; }
+    public void setIsObiUser(Boolean isObiUser) { this.isObiUser = isObiUser; }
+    
+    public List<ClientDTO> getClients() { return clients; }
+    public void setClients(List<ClientDTO> clients) { this.clients = clients; }
+    
+    public Object getUserProfileExtra() { return userProfileExtra; }
+    public void setUserProfileExtra(Object userProfileExtra) { this.userProfileExtra = userProfileExtra; }
+    
+    public List<RoleDTO> getRoles() { return roles; }
+    public void setRoles(List<RoleDTO> roles) { this.roles = roles; }
+    
+    public List<String> getHomeSections() { return homeSections; }
+    public void setHomeSections(List<String> homeSections) { this.homeSections = homeSections; }
+    
+    public List<UserSquadDTO> getUserSquads() { return userSquads; }
+    public void setUserSquads(List<UserSquadDTO> userSquads) { this.userSquads = userSquads; }
+    
+    public String getAlgorandWalletAddress() { return algorandWalletAddress; }
+    public void setAlgorandWalletAddress(String algorandWalletAddress) { this.algorandWalletAddress = algorandWalletAddress; }
+    
+    public Boolean getFirstLogin() { return firstLogin; }
+    public void setFirstLogin(Boolean firstLogin) { this.firstLogin = firstLogin; }
+    
+    public Boolean getShowFiltersHelp() { return showFiltersHelp; }
+    public void setShowFiltersHelp(Boolean showFiltersHelp) { this.showFiltersHelp = showFiltersHelp; }
+    
+    public List<String> getMenuItems() { return menuItems; }
+    public void setMenuItems(List<String> menuItems) { this.menuItems = menuItems; }
+    
+    public String getPrivacyPolicyVersion() { return privacyPolicyVersion; }
+    public void setPrivacyPolicyVersion(String privacyPolicyVersion) { this.privacyPolicyVersion = privacyPolicyVersion; }
+    
+    public String getTermsAndConditionsVersion() { return termsAndConditionsVersion; }
+    public void setTermsAndConditionsVersion(String termsAndConditionsVersion) { this.termsAndConditionsVersion = termsAndConditionsVersion; }
+    
+    @Override
+    public String toString() {
+        return "UserDTO{" +
+                "id=" + id +
+                ", firstName='" + firstName + '\'' +
+                ", lastName='" + lastName + '\'' +
+                ", email='" + email + '\'' +
+                ", enabled=" + enabled +
+                ", picture='" + picture + '\'' +
+                ", pictureDeleted=" + pictureDeleted +
+                ", preferredLanguageId='" + preferredLanguageId + '\'' +
+                ", preferredLanguage=" + preferredLanguage +
+                ", isPepUser=" + isPepUser +
+                ", isObiUser=" + isObiUser +
+                ", clients=" + clients +
+                ", userProfileExtra=" + userProfileExtra +
+                ", roles=" + roles +
+                ", homeSections=" + homeSections +
+                ", userSquads=" + userSquads +
+                ", algorandWalletAddress='" + algorandWalletAddress + '\'' +
+                ", firstLogin=" + firstLogin +
+                ", showFiltersHelp=" + showFiltersHelp +
+                ", menuItems=" + menuItems +
+                ", privacyPolicyVersion='" + privacyPolicyVersion + '\'' +
+                ", termsAndConditionsVersion='" + termsAndConditionsVersion + '\'' +
+                '}';
+    }
 }

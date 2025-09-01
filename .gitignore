@@ -23,9 +23,3 @@
 hs_err_pid*
 replay_pid*
 
-
-# Maven build directory
-target/
-
-start-bot.sh
-start-bot.bat
