@@ -27,21 +27,32 @@ public class ClientAuthBoarding {
     @Value("${api.password}")
     private String password;
 
-    private String clientId = "string";
-    private String clientSecret = "string";
+    @Value("${api.client.id:}")
+    private String clientId;
+
+    @Value("${api.client.secret:}")
+    private String clientSecret;
     private final String authUrl = "/auth/login";
 
     private final Logger logger = LoggerFactory.getLogger(ClientAuthBoarding.class);
     private final RestTemplate restTemplate = new RestTemplate();
 
+    private AuthTokenResponseDTO cachedToken;
+    private long tokenExpirationTime;
+
     public AuthTokenResponseDTO getToken() {
+
         MultiValueMap<String, String> requestBody = new LinkedMultiValueMap<>();
         requestBody.add("grant_type", "password");
         requestBody.add("username", username);
         requestBody.add("password", password);
         requestBody.add("scope", "");
-        requestBody.add("client_id", clientId);
-        requestBody.add("client_secret", clientSecret);
+        if (clientId != null && !clientId.trim().isEmpty()) {
+            requestBody.add("client_id", clientId);
+        }
+        if (clientSecret != null && !clientSecret.trim().isEmpty()) {
+            requestBody.add("client_secret", clientSecret);
+        }
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
@@ -55,6 +66,10 @@ public class ClientAuthBoarding {
         try {
             AuthTokenResponseDTO response = restTemplate.exchange(apiUrl + authUrl, HttpMethod.POST, request, AuthTokenResponseDTO.class).getBody();
             logger.info("Autenticação realizada com sucesso");
+
+            cachedToken = response;
+            tokenExpirationTime = System.currentTimeMillis() + (3600 * 1000L);
+
             return response;
         } catch (Exception e) {
             logger.error("Erro na autenticação: {}", e.getMessage());

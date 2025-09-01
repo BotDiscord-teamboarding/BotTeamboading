@@ -8,7 +8,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -49,16 +48,26 @@ public class ClientBoarding {
 
     public String getSquads() {
         AuthTokenResponseDTO token = getAuthToken();
+        logger.info("Token obtido: {}", token.getAccessToken() != null ? "Token presente" : "Token nulo");
+
         HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(token.getAccessToken());
+        headers.set("Authorization", "Bearer " + token.getAccessToken());
+        headers.setAccept(List.of(MediaType.APPLICATION_JSON));
         HttpEntity<Void> request = new HttpEntity<>(headers);
-        
+
         String fullUrl = apiUrl + SQUAD_LIST_PATH;
         logger.info("Fazendo requisição para buscar squads: {}", fullUrl);
-        
-        ResponseEntity<String> response = restTemplate.exchange(
-                fullUrl, HttpMethod.GET, request, String.class);
-        return response.getBody();
+        logger.info("Authorization header: Bearer [TOKEN_OCULTO]");
+
+        try {
+            ResponseEntity<String> response = restTemplate.exchange(
+                    fullUrl, HttpMethod.GET, request, String.class);
+            logger.info("Requisição de squads bem-sucedida");
+            return response.getBody();
+        } catch (Exception e) {
+            logger.error("Erro na requisição de squads: {}", e.getMessage());
+            throw e;
+        }
     }
 
     public String getSquadLogTypes() {
@@ -84,46 +93,76 @@ public class ClientBoarding {
 
     public ResponseEntity<String> createSquadLog(String payload) {
         AuthTokenResponseDTO token = getAuthToken();
+        logger.info("Token obtido para create: {}", token.getAccessToken() != null ? "Token presente" : "Token nulo");
+
         HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(token.getAccessToken());
+        headers.set("Authorization", "Bearer " + token.getAccessToken());
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setAccept(List.of(MediaType.APPLICATION_JSON));
         HttpEntity<String> request = new HttpEntity<>(payload, headers);
-        
+
         String fullUrl = apiUrl + SQUAD_LOG_PATH;
         logger.info("Fazendo requisição para criar squad log: {}", fullUrl);
-        logger.debug("Payload: {}", payload);
-        
-        return restTemplate.exchange(fullUrl, HttpMethod.POST, request, String.class);
+        logger.info("Payload para create: {}", payload);
+        logger.info("Authorization header: Bearer [TOKEN_OCULTO]");
+
+        try {
+            ResponseEntity<String> response = restTemplate.exchange(fullUrl, HttpMethod.POST, request, String.class);
+            logger.info("Squad log criado com sucesso");
+            return response;
+        } catch (Exception e) {
+            logger.error("Erro ao criar squad log: {}", e.getMessage());
+            throw e;
+        }
     }
 
     public ResponseEntity<String> updateSquadLog(Long squadLogId, String payload) {
         AuthTokenResponseDTO token = getAuthToken();
+        logger.info("Token obtido para update: {}", token.getAccessToken() != null ? "Token presente" : "Token nulo");
+
         HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(token.getAccessToken());
+        headers.set("Authorization", "Bearer " + token.getAccessToken());
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setAccept(List.of(MediaType.APPLICATION_JSON));
         HttpEntity<String> request = new HttpEntity<>(payload, headers);
-        
+
         String fullUrl = apiUrl + SQUAD_LOG_PATH + "/" + squadLogId;
         logger.info("Fazendo requisição para atualizar squad log {}: {}", squadLogId, fullUrl);
-        logger.debug("Payload: {}", payload);
-        
-        return restTemplate.exchange(fullUrl, HttpMethod.PUT, request, String.class);
+        logger.info("Payload para update: {}", payload);
+        logger.info("Authorization header: Bearer [TOKEN_OCULTO]");
+
+        try {
+            ResponseEntity<String> response = restTemplate.exchange(fullUrl, HttpMethod.PUT, request, String.class);
+            logger.info("Squad log {} atualizado com sucesso", squadLogId);
+            return response;
+        } catch (Exception e) {
+            logger.error("Erro ao atualizar squad log {}: {}", squadLogId, e.getMessage());
+            throw e;
+        }
     }
 
     public String getSquadLogAll() {
         AuthTokenResponseDTO token = getAuthToken();
+        logger.info("Token obtido para squad logs: {}", token.getAccessToken() != null ? "Token presente" : "Token nulo");
+
         HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(token.getAccessToken());
+        headers.set("Authorization", "Bearer " + token.getAccessToken());
+        headers.setAccept(List.of(MediaType.APPLICATION_JSON));
         HttpEntity<Void> request = new HttpEntity<>(headers);
 
         String fullUrl = apiUrl + SQUAD_LOG_LIST_ALL_PATH;
         logger.info("Fazendo requisição para buscar todas as squads log: {}", fullUrl);
+        logger.info("Authorization header: Bearer [TOKEN_OCULTO]");
 
-        ResponseEntity<String> response = restTemplate.exchange(
-                fullUrl, HttpMethod.GET, request, String.class);
-        return response.getBody();
+        try {
+            ResponseEntity<String> response = restTemplate.exchange(
+                    fullUrl, HttpMethod.GET, request, String.class);
+            logger.info("Requisição de squad logs bem-sucedida");
+            return response.getBody();
+        } catch (Exception e) {
+            logger.error("Erro na requisição de squad logs: {}", e.getMessage());
+            throw e;
+        }
     }
 
     public String getSquadLogId(String id) {
