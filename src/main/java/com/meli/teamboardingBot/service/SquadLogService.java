@@ -12,11 +12,15 @@ import java.util.List;
 @Service
 public class SquadLogService {
 
+    private final ClientBoarding clientBoarding;
+
     @Autowired
-    private ClientBoarding clientBoarding;
+    public SquadLogService(ClientBoarding clientBoarding) {
+        this.clientBoarding = clientBoarding;
+    }
 
     public String getSquads() {
-        return  clientBoarding.getSquads();
+        return clientBoarding.getSquads();
     }
 
     public String getSquadLogTypes() {
@@ -36,7 +40,7 @@ public class SquadLogService {
     }
 
     public String getSquadLogAll() {
-        return  clientBoarding.getSquadLogAll();
+        return clientBoarding.getSquadLogAll();
     }
 
     public String getSquadLogId(String id) {
