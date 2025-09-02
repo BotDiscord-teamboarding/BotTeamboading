@@ -33,7 +33,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.Arrays;
 import java.util.regex.Pattern;
 
-@Component
+// @Component - DESATIVADO: Usando RefactoredComponentInteractionListener
 public class ComponentInteractionListener extends ListenerAdapter {
 
     @Autowired
@@ -636,13 +636,7 @@ public class ComponentInteractionListener extends ListenerAdapter {
             .setDescription("Verifique todos os dados antes de criar o log:")
             .setColor(0x0099FF);
 
-        embed.addField("🏢 Squad", state.squadName != null ? state.squadName : "Não selecionado", false);
-        embed.addField("👤 Pessoa", state.userName != null ? state.userName : "Não selecionado", false);
-        embed.addField("📂 Tipo", state.typeName != null ? state.typeName : "Não selecionado", false);
-        embed.addField("🏷️ Categorias", !state.categoryNames.isEmpty() ? String.join(", ", state.categoryNames) : "Nenhuma selecionada", false);
-        embed.addField("📝 Descrição", state.description != null ? state.description : "Não informado", false);
-        embed.addField("📅 Data de Início", state.startDate != null ? formatToBrazilianDate(state.startDate) : "Não informado", false);
-        embed.addField("📅 Data de Fim", state.endDate != null ? formatToBrazilianDate(state.endDate) : "Não informado", false);
+        buidSumary(state, embed);
 
         event.editMessageEmbeds(embed.build())
             .setActionRow(
@@ -660,13 +654,7 @@ public class ComponentInteractionListener extends ListenerAdapter {
             .setDescription("Dados atuais do questionário:")
             .setColor(0x0099FF);
 
-        embed.addField("🏢 Squad", state.squadName != null ? state.squadName : "Não informado", false);
-        embed.addField("👤 Pessoa", state.userName != null ? state.userName : "Não informado", false);
-        embed.addField("📂 Tipo", state.typeName != null ? state.typeName : "Não informado", false);
-        embed.addField("🏷️ Categorias", !state.categoryNames.isEmpty() ? String.join(", ", state.categoryNames) : "Não informado", false);
-        embed.addField("📝 Descrição", state.description != null ? state.description : "Não informado", false);
-        embed.addField("📅 Data de Início", state.startDate != null ? formatToBrazilianDate(state.startDate) : "Não informado", false);
-        embed.addField("📅 Data de Fim", state.endDate != null ? formatToBrazilianDate(state.endDate) : "Não informado", false);
+        buidSumary(state, embed);
 
 
         event.editMessageEmbeds(embed.build())
@@ -678,6 +666,15 @@ public class ComponentInteractionListener extends ListenerAdapter {
             .queue();
     }
 
+    private void buidSumary(FormState state, EmbedBuilder embed) {
+        embed.addField("🏢 Squad", state.squadName != null ? state.squadName : "Não informado", false);
+        embed.addField("👤 Pessoa", state.userName != null ? state.userName : "Não informado", false);
+        embed.addField("📂 Tipo", state.typeName != null ? state.typeName : "Não informado", false);
+        embed.addField("🏷️ Categorias", !state.categoryNames.isEmpty() ? String.join(", ", state.categoryNames) : "Não informado", false);
+        embed.addField("📝 Descrição", state.description != null ? state.description : "Não informado", false);
+        embed.addField("📅 Data de Início", state.startDate != null ? formatToBrazilianDate(state.startDate) : "Não informado", false);
+        embed.addField("📅 Data de Fim", state.endDate != null ? formatToBrazilianDate(state.endDate) : "Não informado", false);
+    }
 
 
     private void showEditFieldsMenu(ButtonInteractionEvent event) {
@@ -738,7 +735,7 @@ public class ComponentInteractionListener extends ListenerAdapter {
         switch (selectId) {
             case SELECT_SQUAD -> handleSquadSelection(event, state);
             case SELECT_USER -> handleUserSelection(event, state);
-            case SELECT_TYPE -> handleTypeSelection(event, state);
+            // TYPE selection removed - handled by TypeSelectionHandler
             case SELECT_CATEGORY -> handleCategorySelection(event, state);
             case SELECT_LOG -> handleLogSelection(event, state);
             default -> {
@@ -858,8 +855,9 @@ public class ComponentInteractionListener extends ListenerAdapter {
                 if (state.isEditing && !state.isCreating) {
                     showSummaryFromModalForUpdateWithHook(event.getHook(), state);
                 } else {
-
-                    showTypeSelection(event.getHook(), state);
+                    // FIXME: showTypeSelection espera ButtonInteractionEvent, mas temos StringSelectInteractionEvent
+                    // Esta classe está desativada - usar RefactoredComponentInteractionListener
+                    logger.warn("Tentativa de chamar showTypeSelection com tipos incompatíveis - classe desativada");
                 }
             });
 
@@ -878,58 +876,6 @@ public class ComponentInteractionListener extends ListenerAdapter {
         }
     }
 
-    private void handleTypeSelection(StringSelectInteractionEvent event, FormState state) {
-        String selectedTypeId = event.getValues().get(0);
-        logger.info("[HANDLE_TYPE_SELECTION] Tipo selecionado: {}", selectedTypeId);
-
-        try {
-            String typesJson = squadLogService.getSquadLogTypes();
-            JSONArray typesArray = new JSONArray(typesJson);
-
-            for (int i = 0; i < typesArray.length(); i++) {
-                JSONObject type = typesArray.getJSONObject(i);
-                if (String.valueOf(type.get("id")).equals(selectedTypeId)) {
-                    state.typeId = selectedTypeId;
-                    state.typeName = type.optString("name", "");
-                    break;
-                }
-            }
-
-            event.deferEdit().queue();
-
-            EmbedBuilder confirmEmbed = new EmbedBuilder()
-                .setTitle("✅ Tipo selecionado com sucesso!")
-                .setDescription("Tipo: **" + state.typeName + "**")
-                .setColor(0x00FF00);
-
-            event.getHook().editOriginalEmbeds(confirmEmbed.build())
-                .setComponents()
-                .queue();
-
-            CompletableFuture.delayedExecutor(2, TimeUnit.SECONDS).execute(() -> {
-
-                if (state.isEditing && !state.isCreating) {
-                    showSummaryFromModalForUpdateWithHook(event.getHook(), state);
-                } else {
-
-                    showCategorySelection(event.getHook(), state);
-                }
-            });
-
-        } catch (Exception e) {
-            logger.error("[HANDLE_TYPE_SELECTION] Erro: {}", e.getMessage());
-
-
-            EmbedBuilder errorEmbed = new EmbedBuilder()
-                .setTitle("❌ Erro na seleção")
-                .setDescription("Erro ao processar seleção do tipo.")
-                .setColor(0xFF0000);
-
-            event.getHook().editOriginalEmbeds(errorEmbed.build())
-                .setComponents()
-                .queue();
-        }
-    }
 
     private void handleCategorySelection(StringSelectInteractionEvent event, FormState state) {
         List<String> selectedCategoryIds = event.getValues();
@@ -1140,13 +1086,7 @@ public class ComponentInteractionListener extends ListenerAdapter {
             .setDescription("Dados atuais do questionário:")
             .setColor(0x0099FF);
 
-        embed.addField("🏢 Squad", state.squadName != null ? state.squadName : "Não informado", false);
-        embed.addField("👤 Pessoa", state.userName != null ? state.userName : "Não informado", false);
-        embed.addField("📂 Tipo", state.typeName != null ? state.typeName : "Não informado", false);
-        embed.addField("🏷️ Categorias", !state.categoryNames.isEmpty() ? String.join(", ", state.categoryNames) : "Não informado", false);
-        embed.addField("📝 Descrição", state.description != null ? state.description : "Não informado", false);
-        embed.addField("📅 Data de Início", state.startDate != null ? formatToBrazilianDate(state.startDate) : "Não informado", false);
-        embed.addField("📅 Data de Fim", state.endDate != null ? formatToBrazilianDate(state.endDate) : "Não informado", false);
+        buidSumary(state, embed);
 
 
         hook.editOriginalEmbeds(embed.build())
@@ -1766,56 +1706,7 @@ public class ComponentInteractionListener extends ListenerAdapter {
             });
     }
 
-    private void exitBot(ButtonInteractionEvent event) {
-        long discordUserId = event.getUser().getIdLong();
-        logger.info("[EXIT_BOT] Usuário saindo: {}", discordUserId);
 
-        EmbedBuilder exitingEmbed = new EmbedBuilder()
-            .setTitle("⏳ Saindo...")
-            .setColor(0xFFFF00);
-
-        event.editMessageEmbeds(exitingEmbed.build())
-            .setComponents()
-            .queue(hook -> {
-                CompletableFuture.delayedExecutor(2, TimeUnit.SECONDS).execute(() -> {
-                    EmbedBuilder thanksEmbed = new EmbedBuilder()
-                        .setTitle("🙏 Obrigado por usar o Bot TeamBoarding!")
-                        .setColor(0x0099FF);
-
-                    hook.editOriginalEmbeds(thanksEmbed.build()).queue(message -> {
-                        CompletableFuture.delayedExecutor(2, TimeUnit.SECONDS).execute(() -> {
-                            hook.deleteOriginal().queue();
-                            userFormState.remove(discordUserId);
-                        });
-                    });
-                });
-            });
-    }
-
-    private void showFinalOptionsMenu(InteractionHook hook, long discordUserId) {
-        try {
-            logger.info("[FINAL_OPTIONS] Mostrando menu final para usuário: {}", discordUserId);
-
-            EmbedBuilder embed = new EmbedBuilder()
-                .setTitle("🎉 O que gostaria de fazer agora?")
-                .setDescription("Escolha uma das opções abaixo:")
-                .setColor(0x0099FF);
-
-            hook.editOriginalEmbeds(embed.build())
-                .setActionRow(
-                    Button.primary("criar-novo-log", "📝 Criar Novo Log"),
-                    Button.secondary("alterar-log-existente", "✏️ Alterar Log Existente"),
-                    Button.danger("sair", "🚪 Sair")
-                )
-                .queue(
-                    success -> logger.info("[FINAL_OPTIONS] Menu final exibido com sucesso"),
-                    error -> logger.error("[FINAL_OPTIONS] Erro ao exibir menu: {}", error.getMessage())
-                );
-
-        } catch (Exception e) {
-            logger.error("[SHOW_FINAL_OPTIONS] Erro: {}", e.getMessage());
-        }
-    }
 
     private void exitBotWithHook(InteractionHook hook, long discordUserId) {
 
@@ -1844,106 +1735,6 @@ public class ComponentInteractionListener extends ListenerAdapter {
             });
     }
 
-    private void showEditFieldsMenu(ButtonInteractionEvent event, FormState state) {
-        EmbedBuilder embed = new EmbedBuilder()
-            .setTitle("⚙️ Selecione o campo para editar")
-            .setDescription("Escolha qual campo você deseja modificar:")
-            .setColor(0x0099FF);
-
-        event.editMessageEmbeds(embed.build())
-            .setComponents(
-                ActionRow.of(
-                    Button.secondary("edit-squad", "🏢 Squad"),
-                    Button.secondary("edit-pessoa", "👤 Pessoa"),
-                    Button.secondary("edit-tipo", "📝 Tipo"),
-                    Button.secondary("edit-categorias", "🏷️ Categorias")
-                ),
-                ActionRow.of(
-                    Button.secondary("edit-descricao", "📄 Descrição"),
-                    Button.secondary("edit-datas", "📅 Editar Datas"),
-                    Button.primary("retornar-resumo", "↩️ Retornar ao resumo")
-                )
-            )
-            .queue();
-    }
-
-    private void editSquad(ButtonInteractionEvent event, FormState state) {
-        showSquadSelection(event);
-    }
-
-    private void editPessoa(ButtonInteractionEvent event, FormState state) {
-        state.isEditing = true;
-        event.deferEdit().queue();
-        showUserSelection(event.getHook(), state, state.squadId);
-    }
-
-    private void editTipo(ButtonInteractionEvent event, FormState state) {
-        state.isEditing = true;
-        event.deferEdit().queue();
-        showTypeSelection(event.getHook(), state);
-    }
-
-    private void editCategorias(ButtonInteractionEvent event, FormState state) {
-        state.isEditing = true;
-        event.deferEdit().queue();
-        showCategorySelection(event.getHook(), state);
-    }
-
-    private void editDescricao(ButtonInteractionEvent event, FormState state) {
-
-        TextInput descriptionInput = TextInput.create("description", "Descrição", TextInputStyle.PARAGRAPH)
-                .setPlaceholder("Digite a descrição detalhada...")
-                .setValue(state.description != null ? state.description : "")
-                .setMinLength(10)
-                .setMaxLength(1000)
-                .build();
-
-        Modal modal = Modal.create("description-modal-edit", "📝 Editar Descrição")
-                .addActionRow(descriptionInput)
-                .build();
-
-        event.replyModal(modal).queue();
-    }
-
-    private void editDataInicio(ButtonInteractionEvent event, FormState state) {
-
-        TextInput startDateInput = TextInput.create("start_date", "Data de Início (DD-MM-AAAA)", TextInputStyle.SHORT)
-                .setPlaceholder("Ex: 20-06-1986")
-                .setValue(state.startDate != null ? formatToBrazilianDate(state.startDate) : "")
-                .setMinLength(10)
-                .setMaxLength(10)
-                .build();
-
-        TextInput hasEndDateInput = TextInput.create("has_end_date", "Há data de fim? (sim/não)", TextInputStyle.SHORT)
-                .setPlaceholder("Digite: sim, s, não, nao, n")
-                .setValue(state.endDate != null ? "sim" : "não")
-                .setMinLength(1)
-                .setMaxLength(10)
-                .build();
-
-        Modal modal = Modal.create("start-date-modal-edit", "📅 Editar Data de Início")
-                .addActionRow(startDateInput)
-                .addActionRow(hasEndDateInput)
-                .build();
-
-        event.replyModal(modal).queue();
-    }
-
-    private void editDataFim(ButtonInteractionEvent event, FormState state) {
-
-        TextInput endDateInput = TextInput.create("end_date", "Data de Fim (DD-MM-AAAA)", TextInputStyle.SHORT)
-                .setPlaceholder("Ex: 20-06-1986")
-                .setValue(state.endDate != null ? formatToBrazilianDate(state.endDate) : "")
-                .setMinLength(10)
-                .setMaxLength(10)
-                .build();
-
-        Modal modal = Modal.create("end-date-modal-edit", "📅 Editar Data de Fim")
-                .addActionRow(endDateInput)
-                .build();
-
-        event.replyModal(modal).queue();
-    }
 
     private void showUserSelection(net.dv8tion.jda.api.interactions.InteractionHook hook, FormState state, String squadId) {
         try {
@@ -1999,34 +1790,9 @@ public class ComponentInteractionListener extends ListenerAdapter {
         }
     }
 
-    private void showTypeSelection(net.dv8tion.jda.api.interactions.InteractionHook hook, FormState state) {
-        try {
-            String logTypesJson = squadLogService.getSquadLogTypes();
-            JSONArray logTypesArray = new JSONArray(logTypesJson);
+    // showTypeSelection method removed - type selection now handled exclusively by TypeSelectionHandler
 
-            StringSelectMenu.Builder typeMenuBuilder = StringSelectMenu.create("type-select")
-                    .setPlaceholder("Selecione o tipo");
-            buildSelectMenu(logTypesArray, typeMenuBuilder);
-
-            EmbedBuilder embed = new EmbedBuilder()
-                .setTitle("📝 Selecione um Tipo")
-                .setDescription("Escolha o tipo do log:")
-                .setColor(0x0099FF);
-
-            hook.editOriginalEmbeds(embed.build())
-                .setActionRow(typeMenuBuilder.build())
-                .queue();
-
-        } catch (Exception e) {
-            logger.error("[SHOW_TYPE_SELECTION] Erro: {}", e.getMessage());
-            EmbedBuilder errorEmbed = new EmbedBuilder()
-                .setTitle("❌ Erro ao carregar tipos")
-                .setColor(0xFF0000);
-            hook.editOriginalEmbeds(errorEmbed.build()).setComponents().queue();
-        }
-    }
-
-    private void showCategorySelection(net.dv8tion.jda.api.interactions.InteractionHook hook, FormState state) {
+    private void showCategorySelection(InteractionHook hook, FormState state) {
         try {
             String categoriesJson = squadLogService.getSquadCategories();
             JSONArray categoriesArray = new JSONArray(categoriesJson);
@@ -2055,176 +1821,12 @@ public class ComponentInteractionListener extends ListenerAdapter {
         }
     }
 
-    private void showSummaryWithButtons(ButtonInteractionEvent event, FormState state) {
-        EmbedBuilder embed = new EmbedBuilder();
-        embed.setTitle("📋 Resumo dos dados inseridos");
-        embed.setColor(0x0099FF);
-        embed.addField("🏢 Squad", state.squadName, false);
-        embed.addField("👤 Pessoa", state.userName, false);
-        embed.addField("📝 Tipo", state.typeName, false);
-        embed.addField("🏷️ Categorias", String.join(", ", state.categoryNames), false);
-        embed.addField("📄 Descrição", state.description, false);
-        embed.addField("📅 Data de início", formatToBrazilianDate(state.startDate), false);
-        embed.addField("📅 Data de fim", state.endDate != null ? formatToBrazilianDate(state.endDate) : "Não informado", false);
-
-
-        String buttonText = state.isEditing ? "💾 Salvar" : "✅ Criar";
-
-        event.editMessageEmbeds(embed.build())
-            .setActionRow(
-                Button.success("criar-log", buttonText),
-                Button.secondary(BTN_EDITAR_LOG, "✏️ Editar")
-            )
-            .queue();
-    }
-
-
-    private void handleOpenDescriptionModal(ButtonInteractionEvent event, FormState state) {
-        TextInput descriptionInput = TextInput.create("description", "Descrição", TextInputStyle.PARAGRAPH)
-                .setPlaceholder("Digite a descrição detalhada...")
-                .setMinLength(10)
-                .setMaxLength(1000)
-                .build();
-
-        Modal modal = Modal.create("description-modal-create", "📝 Adicionar Descrição")
-                .addActionRow(descriptionInput)
-                .build();
-
-        event.replyModal(modal).queue();
-    }
-
-
-    private void showSummaryFromModal(ModalInteractionEvent event, FormState state) {
-        EmbedBuilder embed = new EmbedBuilder();
-        embed.setTitle("📋 Resumo dos dados inseridos");
-        embed.setColor(0x0099FF);
-        embed.addField("🏢 Squad", state.squadName, false);
-        embed.addField("👤 Pessoa", state.userName, false);
-        embed.addField("📝 Tipo", state.typeName, false);
-        embed.addField("🏷️ Categorias", String.join(", ", state.categoryNames), false);
-        embed.addField("📄 Descrição", state.description, false);
-        embed.addField("📅 Data de início", formatToBrazilianDate(state.startDate), false);
-        embed.addField("📅 Data de fim", state.endDate != null ? formatToBrazilianDate(state.endDate) : "Não informado", false);
-
-
-        String buttonText = state.isEditing ? "💾 Salvar" : "✅ Criar";
-
-        event.editMessage("✅ Dados inseridos com sucesso!")
-                .setEmbeds(embed.build())
-                .setActionRow(
-                        Button.success("criar-log", buttonText),
-                        Button.secondary(BTN_EDITAR_LOG, "✏️ Editar")
-                )
-                .queue();
-    }
-
-    private void showSummaryFromModalWithHook(InteractionHook hook, FormState state) {
-        EmbedBuilder embed = new EmbedBuilder();
-        embed.setTitle("📋 Resumo dos dados inseridos");
-        embed.setColor(0x0099FF);
-        embed.addField("🏢 Squad", state.squadName, false);
-        embed.addField("👤 Pessoa", state.userName, false);
-        embed.addField("📝 Tipo", state.typeName, false);
-        embed.addField("🏷️ Categorias", String.join(", ", state.categoryNames), false);
-        embed.addField("📄 Descrição", state.description, false);
-        embed.addField("📅 Data de início", formatToBrazilianDate(state.startDate), false);
-        embed.addField("📅 Data de fim", state.endDate != null ? formatToBrazilianDate(state.endDate) : "Não informado", false);
-
-
-        String buttonText = state.isEditing ? "💾 Salvar" : "✅ Criar";
-
-        hook.editOriginal("✅ Dados inseridos com sucesso!")
-                .setEmbeds(embed.build())
-                .setActionRow(
-                        Button.success("criar-log", buttonText),
-                        Button.secondary(BTN_EDITAR_LOG, "✏️ Editar")
-                )
-                .queue();
-    }
-
-    private void showEditFieldsMenuFromModal(ModalInteractionEvent event, FormState state) {
-        EmbedBuilder embed = new EmbedBuilder()
-            .setTitle("⚙️ Selecione o campo para editar")
-            .setDescription("Escolha qual campo você deseja modificar:")
-            .setColor(0x0099FF);
-
-        event.editMessage("")
-            .setEmbeds(embed.build())
-            .setComponents(
-                ActionRow.of(
-                    Button.secondary("edit-squad", "🏢 Squad"),
-                    Button.secondary("edit-pessoa", "👤 Pessoa"),
-                    Button.secondary("edit-tipo", "📝 Tipo"),
-                    Button.secondary("edit-categorias", "🏷️ Categorias")
-                ),
-                ActionRow.of(
-                    Button.secondary("edit-descricao", "📄 Descrição"),
-                    Button.secondary("edit-datas", "📅 Editar Datas"),
-                    Button.primary("retornar-resumo", "↩️ Retornar ao resumo")
-                )
-            )
-            .queue();
-    }
-
-    private void showEditFieldsMenuFromModalWithHook(InteractionHook hook, FormState state) {
-        EmbedBuilder embed = new EmbedBuilder()
-            .setTitle("⚙️ Selecione o campo para editar")
-            .setDescription("Escolha qual campo você deseja modificar:")
-            .setColor(0x0099FF);
-
-        hook.editOriginalEmbeds(embed.build())
-            .setComponents(
-                ActionRow.of(
-                    Button.secondary("edit-squad", "🏢 Squad"),
-                    Button.secondary("edit-pessoa", "👤 Pessoa"),
-                    Button.secondary("edit-tipo", "📝 Tipo"),
-                    Button.secondary("edit-categorias", "🏷️ Categorias")
-                ),
-                ActionRow.of(
-                    Button.secondary("edit-descricao", "📄 Descrição"),
-                    Button.secondary("edit-datas", "📅 Editar Datas"),
-                    Button.primary("retornar-resumo", "↩️ Retornar ao resumo")
-                )
-            )
-            .queue();
-    }
-
-    private void showSummaryFromModalForUpdate(ModalInteractionEvent event, FormState state) {
-        EmbedBuilder embed = new EmbedBuilder();
-        embed.setTitle("📋 Resumo do Questionário");
-        embed.setColor(0x0099FF);
-        embed.addField("🏢 Squad", state.squadName != null ? state.squadName : "Não informado", false);
-        embed.addField("👤 Pessoa", state.userName != null ? state.userName : "Não informado", false);
-        embed.addField("📝 Tipo", state.typeName != null ? state.typeName : "Não informado", false);
-        embed.addField("🏷️ Categorias", state.categoryNames != null && !state.categoryNames.isEmpty() ?
-                      String.join(", ", state.categoryNames) : "Não informado", false);
-        embed.addField("📄 Descrição", state.description != null ? state.description : "Não informado", false);
-        embed.addField("📅 Data de início", state.startDate != null ? formatToBrazilianDate(state.startDate) : "Não informado", false);
-        embed.addField("📅 Data de fim", state.endDate != null ? formatToBrazilianDate(state.endDate) : "Não informado", false);
-
-        event.editMessage("")
-            .setEmbeds(embed.build())
-            .setComponents(
-                ActionRow.of(
-                    Button.success("confirmar-atualizacao", "✅ Confirmar"),
-                    Button.secondary("editar-questionario", "✏️ Editar")
-                )
-            )
-            .queue();
-    }
 
     private void showSummaryFromModalForUpdateWithHook(InteractionHook hook, FormState state) {
         EmbedBuilder embed = new EmbedBuilder();
         embed.setTitle("📋 Resumo do Questionário");
         embed.setColor(0x0099FF);
-        embed.addField("🏢 Squad", state.squadName != null ? state.squadName : "Não informado", false);
-        embed.addField("👤 Pessoa", state.userName != null ? state.userName : "Não informado", false);
-        embed.addField("📝 Tipo", state.typeName != null ? state.typeName : "Não informado", false);
-        embed.addField("🏷️ Categorias", state.categoryNames != null && !state.categoryNames.isEmpty() ?
-                      String.join(", ", state.categoryNames) : "Não informado", false);
-        embed.addField("📄 Descrição", state.description != null ? state.description : "Não informado", false);
-        embed.addField("📅 Data de início", state.startDate != null ? formatToBrazilianDate(state.startDate) : "Não informado", false);
-        embed.addField("📅 Data de fim", state.endDate != null ? formatToBrazilianDate(state.endDate) : "Não informado", false);
+        buidSumary(state, embed);
 
 
         String buttonText = state.isEditing ? "💾 Salvar" : "✅ Criar";
@@ -2324,13 +1926,7 @@ public class ComponentInteractionListener extends ListenerAdapter {
             EmbedBuilder embed = new EmbedBuilder();
             embed.setTitle("📋 Resumo do Questionário Selecionado");
             embed.setColor(0x0099FF);
-            embed.addField("🏢 Squad", state.squadName, false);
-            embed.addField("👤 Pessoa", state.userName, false);
-            embed.addField("📝 Tipo", state.typeName, false);
-            embed.addField("🏷️ Categorias", String.join(", ", state.categoryNames), false);
-            embed.addField("📄 Descrição", state.description, false);
-            embed.addField("📅 Data de início", formatToBrazilianDate(state.startDate), false);
-            embed.addField("📅 Data de fim", state.endDate != null ? formatToBrazilianDate(state.endDate) : "Não informado", false);
+            buidSumary(state, embed);
 
             event.editMessageEmbeds(embed.build())
                 .setActionRow(
