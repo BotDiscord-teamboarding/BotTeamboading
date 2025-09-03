@@ -25,8 +25,4 @@ replay_pid*
 
 target/
 .idea/
-**/.DS_Store
-
-target/
-.idea/
 .DS_Store
