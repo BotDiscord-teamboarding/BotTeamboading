@@ -50,13 +50,17 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
     private void handleCreateSquadLog(ButtonInteractionEvent event, FormState state) {
         logger.info("Criando squad log");
         
+        // Defer imediatamente para evitar timeout
+        event.deferEdit().queue();
+        
         if (!isStateValid(state)) {
-            event.reply("❌ Dados incompletos. Verifique se todos os campos foram preenchidos.")
-                .setEphemeral(true).queue();
+            EmbedBuilder errorEmbed = new EmbedBuilder()
+                .setTitle("❌ Dados Incompletos")
+                .setDescription("Verifique se todos os campos foram preenchidos.")
+                .setColor(0xFF0000);
+            event.getHook().editOriginalEmbeds(errorEmbed.build()).setComponents().queue();
             return;
         }
-        
-        event.deferEdit().queue();
         
         try {
             String payload = buildCreatePayload(state);
@@ -80,13 +84,17 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
     private void handleUpdateSquadLog(ButtonInteractionEvent event, FormState state) {
         logger.info("Atualizando squad log ID: {}", state.getSquadLogId());
         
+        // Defer imediatamente para evitar timeout
+        event.deferEdit().queue();
+        
         if (!isStateValid(state) || state.getSquadLogId() == null) {
-            event.reply("❌ Dados incompletos ou ID do log não encontrado.")
-                .setEphemeral(true).queue();
+            EmbedBuilder errorEmbed = new EmbedBuilder()
+                .setTitle("❌ Dados Incompletos")
+                .setDescription("Dados incompletos ou ID do log não encontrado.")
+                .setColor(0xFF0000);
+            event.getHook().editOriginalEmbeds(errorEmbed.build()).setComponents().queue();
             return;
         }
-        
-        event.deferEdit().queue();
         
         try {
             String payload = buildUpdatePayload(state);

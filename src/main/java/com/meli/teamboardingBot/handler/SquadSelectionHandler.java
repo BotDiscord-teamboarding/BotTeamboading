@@ -24,6 +24,9 @@ public class SquadSelectionHandler extends AbstractInteractionHandler {
     @Autowired
     private SquadLogService squadLogService;
     
+    @Autowired
+    private SummaryHandler summaryHandler;
+    
     @Override
     public boolean canHandle(String componentId) {
         return "criar".equals(componentId) || 
@@ -85,36 +88,26 @@ public class SquadSelectionHandler extends AbstractInteractionHandler {
                 }
             }
             
+
             event.deferEdit().queue();
-            
-            EmbedBuilder confirmEmbed = new EmbedBuilder()
-                .setTitle("✅ Squad selecionada com sucesso!")
-                .setDescription("Squad: **" + state.getSquadName() + "**")
-                .setColor(0x00FF00);
-            
-            event.getHook().editOriginalEmbeds(confirmEmbed.build())
-                .setComponents()
-                .queue();
             
             updateFormState(event.getUser().getIdLong(), state);
             
-            CompletableFuture.delayedExecutor(2, TimeUnit.SECONDS).execute(() -> {
-                if (state.getStep() == FormStep.SQUAD_MODIFY) {
-                    showSummary(event);
-                } else {
-                    state.setStep(FormStep.USER_SELECTION);
-                    updateFormState(event.getUser().getIdLong(), state);
-                    
-                    EmbedBuilder nextEmbed = new EmbedBuilder()
-                        .setTitle("👥 Próximo Passo: Seleção de Usuário")
-                        .setDescription("Agora vamos selecionar o usuário para o log.")
-                        .setColor(0x0099FF);
-                    
-                    event.getHook().editOriginalEmbeds(nextEmbed.build())
-                        .setActionRow(net.dv8tion.jda.api.interactions.components.buttons.Button.primary("select-user", "Selecionar Usuário"))
-                        .queue();
-                }
-            });
+            if (state.getStep() == FormStep.SQUAD_MODIFY) {
+                showSummary(event);
+            } else {
+                state.setStep(FormStep.USER_SELECTION);
+                updateFormState(event.getUser().getIdLong(), state);
+                
+                EmbedBuilder nextEmbed = new EmbedBuilder()
+                    .setTitle("👤 Próximo Passo: Seleção de Usuário")
+                    .setDescription("Agora vamos selecionar quem irá responder ao questionário.")
+                    .setColor(0x0099FF);
+                
+                event.getHook().editOriginalEmbeds(nextEmbed.build())
+                    .setActionRow(net.dv8tion.jda.api.interactions.components.buttons.Button.primary("select-user", "Selecionar Usuário"))
+                    .queue();
+            }
             
         } catch (Exception e) {
             logger.error("Erro na seleção de squad: {}", e.getMessage());
@@ -128,9 +121,14 @@ public class SquadSelectionHandler extends AbstractInteractionHandler {
             JSONObject obj = new JSONObject(squadsJson);
             JSONArray squadsArray = obj.optJSONArray("items");
             
+            event.deferEdit().queue();
+            
             if (squadsArray == null || squadsArray.length() == 0) {
-                event.editMessage("❌ Nenhuma squad encontrada.")
-                    .setEmbeds()
+                EmbedBuilder errorEmbed = new EmbedBuilder()
+                    .setTitle("❌ Nenhuma squad encontrada")
+                    .setDescription("Não há squads disponíveis no momento.")
+                    .setColor(0xFF0000);
+                event.getHook().editOriginalEmbeds(errorEmbed.build())
                     .setComponents()
                     .queue();
                 return;
@@ -153,23 +151,31 @@ public class SquadSelectionHandler extends AbstractInteractionHandler {
                 .setDescription("Escolha a squad para o seu log:")
                 .setColor(0x0099FF);
             
-            event.editMessageEmbeds(embed.build())
+            event.getHook().editOriginalEmbeds(embed.build())
                 .setActionRow(squadMenuBuilder.build())
                 .queue();
                 
         } catch (Exception e) {
             logger.error("Erro ao carregar squads: {}", e.getMessage());
-            event.editMessage("❌ Erro ao carregar squads. Tente novamente.")
-                .setEmbeds()
+            EmbedBuilder errorEmbed = new EmbedBuilder()
+                .setTitle("❌ Erro ao carregar squads")
+                .setDescription("Ocorreu um erro ao carregar as squads. Tente novamente.")
+                .setColor(0xFF0000);
+            event.getHook().editOriginalEmbeds(errorEmbed.build())
                 .setComponents()
                 .queue();
         }
     }
     
     private void showUserSelection(StringSelectInteractionEvent event, FormState state) {
+        // Método não utilizado - transição é feita via botão
     }
     
     private void showSummary(StringSelectInteractionEvent event) {
+        FormState state = getFormState(event.getUser().getIdLong());
+        if (state != null) {
+            summaryHandler.showUpdateSummary(event, state);
+        }
     }
     
     private void showError(StringSelectInteractionEvent event, String message) {

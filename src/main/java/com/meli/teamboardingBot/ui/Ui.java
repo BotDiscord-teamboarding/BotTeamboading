@@ -1,4 +1,4 @@
-package com.meli.teamboardingBot.discord.ui;
+package com.meli.teamboardingBot.ui;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 

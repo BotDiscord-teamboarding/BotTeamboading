@@ -92,19 +92,7 @@ public class CategorySelectionHandler extends AbstractInteractionHandler {
             
             if (state.getStep() == FormStep.CATEGORY_MODIFY) {
                 event.deferEdit().queue();
-                
-                EmbedBuilder confirmEmbed = new EmbedBuilder()
-                    .setTitle("✅ Categorias selecionadas com sucesso!")
-                    .setDescription("Categorias: **" + String.join(", ", state.getCategoryNames()) + "**")
-                    .setColor(0x00FF00);
-                
-                event.getHook().editOriginalEmbeds(confirmEmbed.build())
-                    .setComponents()
-                    .queue();
-                
-                CompletableFuture.delayedExecutor(2, TimeUnit.SECONDS).execute(() -> {
-                    showSummary(event);
-                });
+                showSummary(event);
             } else {
                 openDescriptionModal(event, state);
             }
@@ -117,20 +105,24 @@ public class CategorySelectionHandler extends AbstractInteractionHandler {
     
     private void showCategorySelection(ButtonInteractionEvent event) {
         try {
+            event.deferEdit().queue();
+            
             String categoriesJson = squadLogService.getSquadCategories();
             JSONArray categoriesArray = new JSONArray(categoriesJson);
             
             StringSelectMenu.Builder categoryMenuBuilder = StringSelectMenu.create("category-select")
                     .setPlaceholder("Selecione as categorias")
                     .setMinValues(1)
-                    .setMaxValues(categoriesArray.length());
+                    .setMaxValues(Math.min(categoriesArray.length(), 25)); // Discord limit
             
+            boolean hasCategories = false;
             for (int i = 0; i < categoriesArray.length(); i++) {
                 JSONObject category = categoriesArray.getJSONObject(i);
                 String categoryName = category.optString("name", "");
                 String categoryId = String.valueOf(category.get("id"));
                 if (!categoryName.isEmpty()) {
                     categoryMenuBuilder.addOption(categoryName, categoryId);
+                    hasCategories = true;
                 }
             }
             
@@ -139,16 +131,24 @@ public class CategorySelectionHandler extends AbstractInteractionHandler {
                 .setDescription("Escolha uma ou mais categorias:")
                 .setColor(0x0099FF);
             
-            event.editMessageEmbeds(embed.build())
-                .setActionRow(categoryMenuBuilder.build())
-                .queue();
+            if (hasCategories) {
+                event.getHook().editOriginalEmbeds(embed.build())
+                    .setActionRow(categoryMenuBuilder.build())
+                    .queue();
+            } else {
+                embed.setDescription("❌ Nenhuma categoria disponível no momento.");
+                event.getHook().editOriginalEmbeds(embed.build())
+                    .setComponents()
+                    .queue();
+            }
                 
         } catch (Exception e) {
             logger.error("Erro ao carregar categorias: {}", e.getMessage());
             EmbedBuilder errorEmbed = new EmbedBuilder()
                 .setTitle("❌ Erro ao carregar categorias")
+                .setDescription("Ocorreu um erro ao carregar as categorias. Tente novamente.")
                 .setColor(0xFF0000);
-            event.editMessageEmbeds(errorEmbed.build()).setComponents().queue();
+            event.getHook().editOriginalEmbeds(errorEmbed.build()).setComponents().queue();
         }
     }
     
@@ -185,7 +185,7 @@ public class CategorySelectionHandler extends AbstractInteractionHandler {
         } catch (Exception modalError) {
             logger.error("Erro ao abrir modal: {}", modalError.getMessage());
             
-            event.deferEdit().queue();
+            event.deferReply(true).queue();
             EmbedBuilder errorEmbed = new EmbedBuilder()
                 .setTitle("❌ Erro ao abrir modal")
                 .setDescription("Erro ao processar seleção das categorias.")

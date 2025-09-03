@@ -23,6 +23,9 @@ public class TypeSelectionHandler extends AbstractInteractionHandler {
     @Autowired
     private SquadLogService squadLogService;
     
+    @Autowired
+    private SummaryHandler summaryHandler;
+    
     @Override
     public boolean canHandle(String componentId) {
         return "type-select".equals(componentId) || 
@@ -79,36 +82,26 @@ public class TypeSelectionHandler extends AbstractInteractionHandler {
                 }
             }
             
+
             event.deferEdit().queue();
-            
-            EmbedBuilder confirmEmbed = new EmbedBuilder()
-                .setTitle("✅ Tipo selecionado com sucesso!")
-                .setDescription("Tipo: **" + state.getTypeName() + "**")
-                .setColor(0x00FF00);
-            
-            event.getHook().editOriginalEmbeds(confirmEmbed.build())
-                .setComponents()
-                .queue();
             
             updateFormState(event.getUser().getIdLong(), state);
             
-            CompletableFuture.delayedExecutor(2, TimeUnit.SECONDS).execute(() -> {
-                if (state.getStep() == FormStep.TYPE_MODIFY) {
-                    showSummary(event);
-                } else {
-                    state.setStep(FormStep.CATEGORY_SELECTION);
-                    updateFormState(event.getUser().getIdLong(), state);
-                    
-                    EmbedBuilder nextEmbed = new EmbedBuilder()
-                        .setTitle("🏷️ Próximo Passo: Seleção de Categoria")
-                        .setDescription("Agora vamos selecionar as categorias do log.")
-                        .setColor(0x0099FF);
-                    
-                    event.getHook().editOriginalEmbeds(nextEmbed.build())
-                        .setActionRow(net.dv8tion.jda.api.interactions.components.buttons.Button.primary("select-category", "Selecionar Categoria"))
-                        .queue();
-                }
-            });
+            if (state.getStep() == FormStep.TYPE_MODIFY) {
+                showSummary(event);
+            } else {
+                state.setStep(FormStep.CATEGORY_SELECTION);
+                updateFormState(event.getUser().getIdLong(), state);
+                
+                EmbedBuilder nextEmbed = new EmbedBuilder()
+                    .setTitle("🏷️ Próximo Passo: Seleção de Categoria")
+                    .setDescription("Agora vamos selecionar as categorias do log.")
+                    .setColor(0x0099FF);
+                
+                event.getHook().editOriginalEmbeds(nextEmbed.build())
+                    .setActionRow(net.dv8tion.jda.api.interactions.components.buttons.Button.primary("select-category", "Selecionar Categoria"))
+                    .queue();
+            }
             
         } catch (Exception e) {
             logger.error("Erro na seleção de tipo: {}", e.getMessage());
@@ -118,18 +111,22 @@ public class TypeSelectionHandler extends AbstractInteractionHandler {
     
     private void showTypeSelection(ButtonInteractionEvent event) {
         try {
+            event.deferEdit().queue();
+            
             String logTypesJson = squadLogService.getSquadLogTypes();
             JSONArray logTypesArray = new JSONArray(logTypesJson);
             
             StringSelectMenu.Builder typeMenuBuilder = StringSelectMenu.create("type-select")
                     .setPlaceholder("Selecione o tipo");
             
+            boolean hasTypes = false;
             for (int i = 0; i < logTypesArray.length(); i++) {
                 JSONObject type = logTypesArray.getJSONObject(i);
                 String typeName = type.optString("name", "");
                 String typeId = String.valueOf(type.get("id"));
                 if (!typeName.isEmpty()) {
                     typeMenuBuilder.addOption(typeName, typeId);
+                    hasTypes = true;
                 }
             }
             
@@ -138,16 +135,24 @@ public class TypeSelectionHandler extends AbstractInteractionHandler {
                 .setDescription("Escolha o tipo do log:")
                 .setColor(0x0099FF);
             
-            event.editMessageEmbeds(embed.build())
-                .setActionRow(typeMenuBuilder.build())
-                .queue();
+            if (hasTypes) {
+                event.getHook().editOriginalEmbeds(embed.build())
+                    .setActionRow(typeMenuBuilder.build())
+                    .queue();
+            } else {
+                embed.setDescription("❌ Nenhum tipo disponível no momento.");
+                event.getHook().editOriginalEmbeds(embed.build())
+                    .setComponents()
+                    .queue();
+            }
                 
         } catch (Exception e) {
             logger.error("Erro ao carregar tipos: {}", e.getMessage());
             EmbedBuilder errorEmbed = new EmbedBuilder()
                 .setTitle("❌ Erro ao carregar tipos")
+                .setDescription("Ocorreu um erro ao carregar os tipos. Tente novamente.")
                 .setColor(0xFF0000);
-            event.editMessageEmbeds(errorEmbed.build()).setComponents().queue();
+            event.getHook().editOriginalEmbeds(errorEmbed.build()).setComponents().queue();
         }
     }
     
@@ -155,6 +160,10 @@ public class TypeSelectionHandler extends AbstractInteractionHandler {
     }
     
     private void showSummary(StringSelectInteractionEvent event) {
+        FormState state = getFormState(event.getUser().getIdLong());
+        if (state != null) {
+            summaryHandler.showUpdateSummary(event, state);
+        }
     }
     
     private void showError(StringSelectInteractionEvent event, String message) {

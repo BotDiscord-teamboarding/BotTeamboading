@@ -115,12 +115,22 @@ public class ModalInputHandler extends AbstractInteractionHandler {
         String endDate = event.getValue("end_date") != null ? event.getValue("end_date").getAsString() : null;
         
         if (!isValidDate(startDate)) {
-            event.reply("❌ Data de início inválida. Use o formato DD-MM-AAAA.").setEphemeral(true).queue();
+            event.deferEdit().queue();
+            EmbedBuilder errorEmbed = new EmbedBuilder()
+                .setTitle("❌ Data Inválida")
+                .setDescription("Data de início inválida. Use o formato DD-MM-AAAA.")
+                .setColor(0xFF0000);
+            event.getHook().editOriginalEmbeds(errorEmbed.build()).setComponents().queue();
             return;
         }
         
         if (endDate != null && !endDate.isEmpty() && !isValidDate(endDate)) {
-            event.reply("❌ Data de fim inválida. Use o formato DD-MM-AAAA.").setEphemeral(true).queue();
+            event.deferEdit().queue();
+            EmbedBuilder errorEmbed = new EmbedBuilder()
+                .setTitle("❌ Data Inválida")
+                .setDescription("Data de fim inválida. Use o formato DD-MM-AAAA.")
+                .setColor(0xFF0000);
+            event.getHook().editOriginalEmbeds(errorEmbed.build()).setComponents().queue();
             return;
         }
         
@@ -131,7 +141,7 @@ public class ModalInputHandler extends AbstractInteractionHandler {
         
         updateFormState(event.getUser().getIdLong(), state);
         
-        event.deferReply().queue();
+        event.deferEdit().queue();
         showCreateSummary(event, state);
     }
     
@@ -143,7 +153,7 @@ public class ModalInputHandler extends AbstractInteractionHandler {
         
         updateFormState(event.getUser().getIdLong(), state);
         
-        event.deferReply().queue();
+        event.deferEdit().queue();
         showSummary(event, state);
     }
     
@@ -168,7 +178,7 @@ public class ModalInputHandler extends AbstractInteractionHandler {
         
         updateFormState(event.getUser().getIdLong(), state);
         
-        event.deferReply().queue();
+        event.deferEdit().queue();
         showSummary(event, state);
     }
     
@@ -274,7 +284,7 @@ public class ModalInputHandler extends AbstractInteractionHandler {
         
         updateFormState(event.getUser().getIdLong(), state);
         
-        event.deferReply().queue();
+        event.deferReply(true).queue();
         returnToFieldEditSummary(event, state);
     }
     
@@ -307,7 +317,7 @@ public class ModalInputHandler extends AbstractInteractionHandler {
         
         logger.info("Estado atualizado. Novas datas: startDate={}, endDate={}", state.getStartDate(), state.getEndDate());
         
-        event.deferReply().queue();
+        event.deferReply(true).queue();
         returnToFieldEditSummary(event, state);
     }
     
@@ -344,7 +354,8 @@ public class ModalInputHandler extends AbstractInteractionHandler {
         embed.addField("📅 Data Início", startDate, true);
         embed.addField("📅 Data Fim", endDate, true);
         
-        event.getHook().editOriginalEmbeds(embed.build())
+        event.getHook().editOriginal("")
+            .setEmbeds(embed.build())
             .setComponents(
                 ActionRow.of(
                     Button.secondary("edit-squad", "🏢 Squad"),

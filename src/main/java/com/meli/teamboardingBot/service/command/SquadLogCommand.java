@@ -1,6 +1,6 @@
-package com.meli.teamboardingBot.discord.command;
+package com.meli.teamboardingBot.service.command;
 
-import com.meli.teamboardingBot.discord.ui.Ui;
+import com.meli.teamboardingBot.ui.Ui;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import org.springframework.stereotype.Component;

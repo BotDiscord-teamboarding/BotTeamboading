@@ -1,4 +1,4 @@
-package com.meli.teamboardingBot.discord.command;
+package com.meli.teamboardingBot.service.command;
 
 import jakarta.annotation.PostConstruct;
 import net.dv8tion.jda.api.JDA;

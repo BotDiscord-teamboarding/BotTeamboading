@@ -44,4 +44,8 @@ public abstract class AbstractInteractionHandler implements InteractionHandler {
     protected void updateFormState(Long userId, FormState state) {
         formStateService.updateState(userId, state);
     }
+    
+    protected FormState getFormState(Long userId) {
+        return formStateService.getState(userId);
+    }
 }

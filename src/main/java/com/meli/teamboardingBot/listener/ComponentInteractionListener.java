@@ -1,4 +1,4 @@
-package com.meli.teamboardingBot.discord.listener;
+package com.meli.teamboardingBot.listener;
 
 import com.meli.teamboardingBot.handler.InteractionHandler;
 import com.meli.teamboardingBot.model.FormState;
@@ -15,14 +15,14 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 
 @Component
-public class RefactoredComponentInteractionListener extends ListenerAdapter {
+public class ComponentInteractionListener extends ListenerAdapter {
     
-    private final Logger logger = LoggerFactory.getLogger(RefactoredComponentInteractionListener.class);
+    private final Logger logger = LoggerFactory.getLogger(ComponentInteractionListener.class);
     private final List<InteractionHandler> handlers;
     private final FormStateService formStateService;
     
     @Autowired
-    public RefactoredComponentInteractionListener(List<InteractionHandler> handlers, FormStateService formStateService) {
+    public ComponentInteractionListener(List<InteractionHandler> handlers, FormStateService formStateService) {
         this.handlers = handlers;
         this.formStateService = formStateService;
         

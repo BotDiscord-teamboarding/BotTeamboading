@@ -1,6 +1,6 @@
-package com.meli.teamboardingBot.discord.listener;
+package com.meli.teamboardingBot.listener;
 
-import com.meli.teamboardingBot.discord.command.SquadLogCommand;
+import com.meli.teamboardingBot.service.command.SquadLogCommand;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.springframework.beans.factory.annotation.Autowired;

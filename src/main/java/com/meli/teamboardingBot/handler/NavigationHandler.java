@@ -74,7 +74,8 @@ public class NavigationHandler extends AbstractInteractionHandler {
         
         updateFormState(event.getUser().getIdLong(), newState);
         
-        event.deferEdit().queue();
+
+        event.deferReply(true).queue();
         showSquadSelectionWithHook(event.getHook());
     }
     
@@ -86,13 +87,15 @@ public class NavigationHandler extends AbstractInteractionHandler {
         
         updateFormState(event.getUser().getIdLong(), state);
         
-        event.deferEdit().queue();
+
+        event.deferReply(true).queue();
         showLogSelectionWithHook(event.getHook());
     }
     
     private void handleExitButton(ButtonInteractionEvent event, FormState state) {
         logger.info("Usuário saindo do bot");
-        event.deferEdit().queue();
+
+        event.deferReply(true).queue();
         exitBot(event.getHook(), event.getUser().getIdLong());
     }
     
