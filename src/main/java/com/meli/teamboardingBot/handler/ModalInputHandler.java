@@ -233,10 +233,10 @@ public class ModalInputHandler extends AbstractInteractionHandler {
         String description = state.getDescription() != null ? state.getDescription() : "Não informado";
         embed.addField("📄 Descrição", description, false);
         String startDateText = state.getStartDate() != null ?
-            state.getStartDate() : "Não informado";
+            formatToBrazilianDate(state.getStartDate()) : "Não informado";
         embed.addField("📅 Data de Início", startDateText, false);
         String endDateText = state.getEndDate() != null && !state.getEndDate().isEmpty() ?
-            state.getEndDate() : "Não informada";
+            formatToBrazilianDate(state.getEndDate()) : "Não informada";
         embed.addField("📅 Data de Fim", endDateText, false);
         return embed;
     }
@@ -245,8 +245,8 @@ public class ModalInputHandler extends AbstractInteractionHandler {
         String description = event.getValue("description").getAsString();
         state.setDescription(description);
         updateFormState(event.getUser().getIdLong(), state);
-        event.deferReply(true).queue();
-        returnToFieldEditSummary(event, state);
+        event.deferEdit().queue();
+        returnToFieldEditSummaryWithHook(event, state);
     }
     private void handleFieldEditDatesModal(ModalInteractionEvent event, FormState state) {
         logger.info("Processando edição de datas via modal de campo");
@@ -268,8 +268,8 @@ public class ModalInputHandler extends AbstractInteractionHandler {
         state.setEndDate(endDate);
         updateFormState(event.getUser().getIdLong(), state);
         logger.info("Estado atualizado. Novas datas: startDate={}, endDate={}", state.getStartDate(), state.getEndDate());
-        event.deferReply(true).queue();
-        returnToFieldEditSummary(event, state);
+        event.deferEdit().queue();
+        returnToFieldEditSummaryWithHook(event, state);
     }
     private void returnToFieldEditSummary(ModalInteractionEvent event, FormState state) {
         logger.info("Retornando ao resumo de edição após modal (descrição/datas)");
@@ -291,12 +291,55 @@ public class ModalInputHandler extends AbstractInteractionHandler {
             description = description.substring(0, 97) + "...";
         }
         embed.addField("📄 Descrição", description, false);
-        String startDate = state.getStartDate() != null ? state.getStartDate() : "Não informado";
-        String endDate = state.getEndDate() != null ? state.getEndDate() : "Não informado";
-        embed.addField("📅 Data Início", startDate, true);
-        embed.addField("📅 Data Fim", endDate, true);
+        String startDate = state.getStartDate() != null ? formatToBrazilianDate(state.getStartDate()) : "Não informado";
+        String endDate = state.getEndDate() != null ? formatToBrazilianDate(state.getEndDate()) : "Não informado";
+        embed.addField("📅 Data Início", startDate, false);
+        embed.addField("📅 Data Fim", endDate, false);
         event.getHook().editOriginal("")
             .setEmbeds(embed.build())
+            .setComponents(
+                ActionRow.of(
+                    Button.secondary("edit-squad", "🏢 Squad"),
+                    Button.secondary("edit-user", "👤 Pessoa"),
+                    Button.secondary("edit-type", "📝 Tipo")
+                ),
+                ActionRow.of(
+                    Button.secondary("edit-categories", "🏷️ Categorias"),
+                    Button.secondary("edit-description", "📄 Descrição"),
+                    Button.secondary("edit-dates", "📅 Datas")
+                ),
+                ActionRow.of(
+                    Button.success("confirmar-atualizacao", "✅ Salvar Alterações"),
+                    Button.danger("cancelar-edicao", "❌ Cancelar")
+                )
+            )
+            .queue();
+    }
+    private void returnToFieldEditSummaryWithHook(ModalInteractionEvent event, FormState state) {
+        logger.info("Retornando ao resumo de edição após modal (descrição/datas) via hook");
+        EmbedBuilder embed = new EmbedBuilder()
+            .setTitle("📝 Editar Squad Log")
+            .setDescription("Dados atuais do Squad Log. Selecione o campo que deseja editar:")
+            .setColor(0xFFAA00);
+        String squadName = state.getSquadName() != null ? state.getSquadName() : "Não informado";
+        embed.addField("🏢 Squad", squadName, false);
+        String userName = state.getUserName() != null ? state.getUserName() : "Não informado";
+        embed.addField("👤 Pessoa", userName, false);
+        String typeName = state.getTypeName() != null ? state.getTypeName() : "Não informado";
+        embed.addField("📝 Tipo", typeName, false);
+        String categoryNames = (!state.getCategoryNames().isEmpty()) ?
+            String.join(", ", state.getCategoryNames()) : "Não informado";
+        embed.addField("🏷️ Categorias", categoryNames, false);
+        String description = state.getDescription() != null ? state.getDescription() : "Não informado";
+        if (description.length() > 100) {
+            description = description.substring(0, 97) + "...";
+        }
+        embed.addField("📄 Descrição", description, false);
+        String startDate = state.getStartDate() != null ? formatToBrazilianDate(state.getStartDate()) : "Não informado";
+        String endDate = state.getEndDate() != null ? formatToBrazilianDate(state.getEndDate()) : "Não informado";
+        embed.addField("📅 Data Início", startDate, false);
+        embed.addField("📅 Data Fim", endDate, false);
+        event.getHook().editOriginalEmbeds(embed.build())
             .setComponents(
                 ActionRow.of(
                     Button.secondary("edit-squad", "🏢 Squad"),

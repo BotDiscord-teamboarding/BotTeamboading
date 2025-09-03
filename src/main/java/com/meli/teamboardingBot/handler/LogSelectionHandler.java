@@ -239,10 +239,10 @@ public class LogSelectionHandler extends AbstractInteractionHandler {
             description = description.substring(0, 97) + "...";
         }
         embed.addField("📄 Descrição", description, false);
-        String startDate = state.getStartDate() != null ? state.getStartDate() : "Não informado";
-        String endDate = state.getEndDate() != null ? state.getEndDate() : "Não informado";
-        embed.addField("📅 Data Início", startDate, true);
-        embed.addField("📅 Data Fim", endDate, true);
+        String startDate = state.getStartDate() != null ? formatToBrazilianDate(state.getStartDate()) : "Não informado";
+        String endDate = state.getEndDate() != null ? formatToBrazilianDate(state.getEndDate()) : "Não informado";
+        embed.addField("📅 Data Início", startDate, false);
+        embed.addField("📅 Data Fim", endDate, false);
         event.getHook().editOriginal("")
                 .setEmbeds(embed.build())
             .setComponents(
@@ -283,10 +283,10 @@ public class LogSelectionHandler extends AbstractInteractionHandler {
             description = description.substring(0, 97) + "...";
         }
         embed.addField("📄 Descrição", description, false);
-        String startDate = state.getStartDate() != null ? state.getStartDate() : "Não informado";
-        String endDate = state.getEndDate() != null ? state.getEndDate() : "Não informado";
-        embed.addField("📅 Data Início", startDate, true);
-        embed.addField("📅 Data Fim", endDate, true);
+        String startDate = state.getStartDate() != null ? formatToBrazilianDate(state.getStartDate()) : "Não informado";
+        String endDate = state.getEndDate() != null ? formatToBrazilianDate(state.getEndDate()) : "Não informado";
+        embed.addField("📅 Data Início", startDate, false);
+        embed.addField("📅 Data Fim", endDate, false);
         hook.editOriginal("")
                 .setEmbeds(embed.build())
             .setComponents(
