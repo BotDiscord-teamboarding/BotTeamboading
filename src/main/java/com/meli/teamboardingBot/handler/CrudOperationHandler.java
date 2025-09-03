@@ -110,8 +110,16 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
     }
     private String buildCreatePayload(FormState state) {
         JSONObject payload = new JSONObject();
+        
+        // Sempre incluir squad_id
         payload.put("squad_id", Integer.parseInt(state.getSquadId()));
-        payload.put("user_id", Integer.parseInt(state.getUserId()));
+        
+        // Se não for "All team", incluir user_id
+        // "All team" tem userId igual ao squadId
+        if (!state.getUserId().equals(state.getSquadId())) {
+            payload.put("user_id", Integer.parseInt(state.getUserId()));
+        }
+        
         payload.put("squad_log_type_id", Integer.parseInt(state.getTypeId()));
         payload.put("description", state.getDescription());
         payload.put("start_date", convertToApiDateFormat(state.getStartDate()));
@@ -121,14 +129,27 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
         payload.put("skill_categories", state.getCategoryIds().stream()
             .mapToInt(Integer::parseInt)
             .toArray());
+        
+        logger.info("Create payload: {}", payload.toString());
         return payload.toString();
     }
     private String buildUpdatePayload(FormState state) {
         logger.info("DEBUG buildUpdatePayload: squadId={}, userId={}, typeId={}, categoryIds={}",
                    state.getSquadId(), state.getUserId(), state.getTypeId(), state.getCategoryIds());
         JSONObject payload = new JSONObject();
+        
+        // Sempre incluir squad_id
         payload.put("squad_id", Integer.parseInt(state.getSquadId()));
-        payload.put("user_id", Integer.parseInt(state.getUserId()));
+        
+        // Se não for "All team", incluir user_id
+        // "All team" tem userId igual ao squadId
+        if (!state.getUserId().equals(state.getSquadId())) {
+            payload.put("user_id", Integer.parseInt(state.getUserId()));
+            logger.info("Incluindo user_id no payload: {}", state.getUserId());
+        } else {
+            logger.info("All team detectado - omitindo user_id do payload");
+        }
+        
         payload.put("squad_log_type_id", Integer.parseInt(state.getTypeId()));
         payload.put("description", state.getDescription());
         payload.put("start_date", convertToApiDateFormat(state.getStartDate()));
@@ -138,7 +159,8 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
         payload.put("skill_categories", state.getCategoryIds().stream()
             .mapToInt(Integer::parseInt)
             .toArray());
-        logger.info("Update payload (same as create): {}", payload.toString());
+        
+        logger.info("Update payload: {}", payload.toString());
         return payload.toString();
     }
     private String convertToApiDateFormat(String inputDate) {

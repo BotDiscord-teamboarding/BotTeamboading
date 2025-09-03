@@ -164,6 +164,10 @@ public class SquadSelectionHandler extends AbstractInteractionHandler {
                 .setColor(0x0099FF);
             StringSelectMenu.Builder menuBuilder = StringSelectMenu.create("user-select")
                 .setPlaceholder("Escolha um usuário...");
+            
+            // Adicionar opção "All team" com o ID da squad
+            menuBuilder.addOption("All team", squadId);
+            
             for (int i = 0; i < userSquads.length(); i++) {
                 JSONObject userSquad = userSquads.getJSONObject(i);
                 JSONObject user = userSquad.optJSONObject("user");
