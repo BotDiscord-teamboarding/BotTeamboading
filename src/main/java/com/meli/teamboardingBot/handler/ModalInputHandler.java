@@ -24,7 +24,10 @@ public class ModalInputHandler extends AbstractInteractionHandler {
                "edit-descricao".equals(componentId) ||
                "edit-datas".equals(componentId) ||
                "edit-description-modal".equals(componentId) ||
-               "edit-dates-modal".equals(componentId);
+               "edit-dates-modal".equals(componentId) ||
+               "retry-create-modal".equals(componentId) ||
+               "retry-edit-dates-modal".equals(componentId) ||
+               "retry-field-edit-dates-modal".equals(componentId);
     }
     @Override
     public void handleButton(ButtonInteractionEvent event, FormState state) {
@@ -33,6 +36,12 @@ public class ModalInputHandler extends AbstractInteractionHandler {
             handleEditDescriptionButton(event, state);
         } else if ("edit-datas".equals(buttonId)) {
             handleEditDatesButton(event, state);
+        } else if ("retry-create-modal".equals(buttonId)) {
+            handleRetryCreateModal(event, state);
+        } else if ("retry-edit-dates-modal".equals(buttonId)) {
+            handleRetryEditDatesModal(event, state);
+        } else if ("retry-field-edit-dates-modal".equals(buttonId)) {
+            handleRetryFieldEditDatesModal(event, state);
         }
     }
     @Override
@@ -101,21 +110,35 @@ public class ModalInputHandler extends AbstractInteractionHandler {
         String startDate = event.getValue("start_date").getAsString();
         String endDate = event.getValue("end_date") != null ? event.getValue("end_date").getAsString() : null;
         if (!isValidDate(startDate)) {
+            // Salvar dados temporariamente para preservar no retry
+            state.setDescription(description);
+            state.setEndDate(endDate);
+            updateFormState(event.getUser().getIdLong(), state);
+            
             event.deferEdit().queue();
             EmbedBuilder errorEmbed = new EmbedBuilder()
-                .setTitle("❌ Data Inválida")
-                .setDescription("Data de início inválida. Use o formato DD-MM-AAAA.")
+                .setTitle("❌ Data de Início Inválida")
+                .setDescription("Data de início inválida: `" + startDate + "`\n\nUse o formato **DD-MM-AAAA** (ex: 20-06-1986)")
                 .setColor(0xFF0000);
-            event.getHook().editOriginalEmbeds(errorEmbed.build()).setComponents().queue();
+            event.getHook().editOriginalEmbeds(errorEmbed.build())
+                .setActionRow(Button.primary("retry-create-modal", "🔄 Preencher Novamente"))
+                .queue();
             return;
         }
         if (endDate != null && !endDate.isEmpty() && !isValidDate(endDate)) {
+            // Salvar dados temporariamente para preservar no retry
+            state.setDescription(description);
+            state.setStartDate(startDate);
+            updateFormState(event.getUser().getIdLong(), state);
+            
             event.deferEdit().queue();
             EmbedBuilder errorEmbed = new EmbedBuilder()
-                .setTitle("❌ Data Inválida")
-                .setDescription("Data de fim inválida. Use o formato DD-MM-AAAA.")
+                .setTitle("❌ Data de Fim Inválida")
+                .setDescription("Data de fim inválida: `" + endDate + "`\n\nUse o formato **DD-MM-AAAA** (ex: 25-06-1986)")
                 .setColor(0xFF0000);
-            event.getHook().editOriginalEmbeds(errorEmbed.build()).setComponents().queue();
+            event.getHook().editOriginalEmbeds(errorEmbed.build())
+                .setActionRow(Button.primary("retry-create-modal", "🔄 Preencher Novamente"))
+                .queue();
             return;
         }
         state.setDescription(description);
@@ -139,11 +162,33 @@ public class ModalInputHandler extends AbstractInteractionHandler {
         String startDate = event.getValue("start_date").getAsString();
         String endDate = event.getValue("end_date") != null ? event.getValue("end_date").getAsString() : null;
         if (!isValidDate(startDate)) {
-            event.reply("❌ Data de início inválida. Use o formato DD-MM-AAAA.").setEphemeral(true).queue();
+            // Salvar dados temporariamente para preservar no retry
+            state.setEndDate(endDate);
+            updateFormState(event.getUser().getIdLong(), state);
+            
+            event.deferEdit().queue();
+            EmbedBuilder errorEmbed = new EmbedBuilder()
+                .setTitle("❌ Data de Início Inválida")
+                .setDescription("Data de início inválida: `" + startDate + "`\n\nUse o formato **DD-MM-AAAA** (ex: 20-06-1986)")
+                .setColor(0xFF0000);
+            event.getHook().editOriginalEmbeds(errorEmbed.build())
+                .setActionRow(Button.primary("retry-edit-dates-modal", "🔄 Preencher Novamente"))
+                .queue();
             return;
         }
         if (endDate != null && !endDate.isEmpty() && !isValidDate(endDate)) {
-            event.reply("❌ Data de fim inválida. Use o formato DD-MM-AAAA.").setEphemeral(true).queue();
+            // Salvar dados temporariamente para preservar no retry
+            state.setStartDate(startDate);
+            updateFormState(event.getUser().getIdLong(), state);
+            
+            event.deferEdit().queue();
+            EmbedBuilder errorEmbed = new EmbedBuilder()
+                .setTitle("❌ Data de Fim Inválida")
+                .setDescription("Data de fim inválida: `" + endDate + "`\n\nUse o formato **DD-MM-AAAA** (ex: 25-06-1986)")
+                .setColor(0xFF0000);
+            event.getHook().editOriginalEmbeds(errorEmbed.build())
+                .setActionRow(Button.primary("retry-edit-dates-modal", "🔄 Preencher Novamente"))
+                .queue();
             return;
         }
         state.setStartDate(startDate);
@@ -256,11 +301,33 @@ public class ModalInputHandler extends AbstractInteractionHandler {
             endDate = null;
         }
         if (!isValidDate(startDate)) {
-            event.reply("❌ Data de início inválida. Use o formato DD-MM-AAAA.").setEphemeral(true).queue();
+            // Salvar dados temporariamente para preservar no retry
+            state.setEndDate(endDate);
+            updateFormState(event.getUser().getIdLong(), state);
+            
+            event.deferEdit().queue();
+            EmbedBuilder errorEmbed = new EmbedBuilder()
+                .setTitle("❌ Data de Início Inválida")
+                .setDescription("Data de início inválida: `" + startDate + "`\n\nUse o formato **DD-MM-AAAA** (ex: 20-06-1986)")
+                .setColor(0xFF0000);
+            event.getHook().editOriginalEmbeds(errorEmbed.build())
+                .setActionRow(Button.primary("retry-field-edit-dates-modal", "🔄 Preencher Novamente"))
+                .queue();
             return;
         }
         if (endDate != null && !endDate.isEmpty() && !isValidDate(endDate)) {
-            event.reply("❌ Data de fim inválida. Use o formato DD-MM-AAAA.").setEphemeral(true).queue();
+            // Salvar dados temporariamente para preservar no retry
+            state.setStartDate(startDate);
+            updateFormState(event.getUser().getIdLong(), state);
+            
+            event.deferEdit().queue();
+            EmbedBuilder errorEmbed = new EmbedBuilder()
+                .setTitle("❌ Data de Fim Inválida")
+                .setDescription("Data de fim inválida: `" + endDate + "`\n\nUse o formato **DD-MM-AAAA** (ex: 25-06-1986)")
+                .setColor(0xFF0000);
+            event.getHook().editOriginalEmbeds(errorEmbed.build())
+                .setActionRow(Button.primary("retry-field-edit-dates-modal", "🔄 Preencher Novamente"))
+                .queue();
             return;
         }
         logger.info("Atualizando datas no estado: startDate={}, endDate={}", startDate, endDate);
@@ -358,6 +425,129 @@ public class ModalInputHandler extends AbstractInteractionHandler {
             )
             .queue();
     }
+    private void handleRetryCreateModal(ButtonInteractionEvent event, FormState state) {
+        logger.info("Reabrindo modal de criação após erro de data");
+        
+        TextInput.Builder descriptionBuilder = TextInput.create("description", "Descrição", TextInputStyle.PARAGRAPH)
+            .setPlaceholder("Digite a descrição do log...")
+            .setMaxLength(1000)
+            .setRequired(true);
+        if (state.getDescription() != null && !state.getDescription().trim().isEmpty()) {
+            descriptionBuilder.setValue(state.getDescription());
+        }
+        TextInput descriptionInput = descriptionBuilder.build();
+
+        TextInput startDateInput = TextInput.create("start_date", "Data de Início (DD-MM-AAAA)", TextInputStyle.SHORT)
+            .setPlaceholder("Ex: 20-06-1986")
+            .setMaxLength(10)
+            .setRequired(true)
+            .build();
+
+        TextInput.Builder endDateBuilder = TextInput.create("end_date", "Data de Fim (DD-MM-AAAA) - Opcional", TextInputStyle.SHORT)
+            .setPlaceholder("Ex: 25-06-1986 (deixe vazio se não houver)")
+            .setMaxLength(10)
+            .setRequired(false);
+        if (state.getEndDate() != null && !state.getEndDate().trim().isEmpty()) {
+            endDateBuilder.setValue(state.getEndDate());
+        }
+        TextInput endDateInput = endDateBuilder.build();
+
+        Modal modal = Modal.create("create-complete-modal", "📝 Finalizar Criação do Log")
+            .addActionRow(descriptionInput)
+            .addActionRow(startDateInput)
+            .addActionRow(endDateInput)
+            .build();
+
+        event.replyModal(modal).queue();
+    }
+
+    private void handleRetryEditDatesModal(ButtonInteractionEvent event, FormState state) {
+        logger.info("Reabrindo modal de edição de datas após erro");
+        
+        TextInput.Builder startDateBuilder = TextInput.create("start_date", "Data de Início (DD-MM-AAAA)", TextInputStyle.SHORT)
+            .setPlaceholder("Ex: 20-06-1986")
+            .setMaxLength(10)
+            .setRequired(true);
+        if (state.getStartDate() != null && !state.getStartDate().trim().isEmpty()) {
+            String formattedStartDate = formatToBrazilianDate(state.getStartDate());
+            if (!formattedStartDate.trim().isEmpty()) {
+                startDateBuilder.setValue(formattedStartDate);
+            }
+        }
+
+        TextInput.Builder endDateBuilder = TextInput.create("end_date", "Data de Fim (DD-MM-AAAA) - Opcional", TextInputStyle.SHORT)
+            .setPlaceholder("Ex: 25-06-1986 (deixe vazio se não houver)")
+            .setMaxLength(10)
+            .setRequired(false);
+        if (state.getEndDate() != null && !state.getEndDate().trim().isEmpty()) {
+            String formattedEndDate = formatToBrazilianDate(state.getEndDate());
+            if (!formattedEndDate.trim().isEmpty()) {
+                endDateBuilder.setValue(formattedEndDate);
+            }
+        }
+
+        Modal modal = Modal.create("modal-edit-dates", "📅 Editar Datas")
+            .addActionRow(startDateBuilder.build())
+            .addActionRow(endDateBuilder.build())
+            .build();
+
+        event.replyModal(modal).queue();
+    }
+
+    private void handleRetryFieldEditDatesModal(ButtonInteractionEvent event, FormState state) {
+        logger.info("Reabrindo modal de edição de datas de campo após erro");
+        
+        TextInput.Builder startDateBuilder = TextInput.create("start_date", "Data de Início (DD-MM-AAAA)", TextInputStyle.SHORT)
+            .setPlaceholder("Ex: 20-06-1986")
+            .setMaxLength(10)
+            .setRequired(true);
+        if (state.getStartDate() != null && !state.getStartDate().trim().isEmpty()) {
+            String convertedStartDate = convertApiDateToBrazilian(state.getStartDate());
+            if (!convertedStartDate.trim().isEmpty()) {
+                startDateBuilder.setValue(convertedStartDate);
+            }
+        }
+
+        TextInput.Builder endDateBuilder = TextInput.create("end_date", "Data de Fim (DD-MM-AAAA)", TextInputStyle.SHORT)
+            .setPlaceholder("Ex: 25-06-1986 (opcional)")
+            .setMaxLength(10)
+            .setRequired(false);
+        if (state.getEndDate() != null && !state.getEndDate().trim().isEmpty()) {
+            String convertedEndDate = convertApiDateToBrazilian(state.getEndDate());
+            if (!convertedEndDate.trim().isEmpty()) {
+                endDateBuilder.setValue(convertedEndDate);
+            }
+        }
+
+        Modal modal = Modal.create("edit-dates-modal", "📅 Editar Datas")
+            .addActionRow(startDateBuilder.build())
+            .addActionRow(endDateBuilder.build())
+            .build();
+
+        event.replyModal(modal).queue();
+    }
+
+    private String convertApiDateToBrazilian(String apiDate) {
+        if (apiDate == null || apiDate.isEmpty()) {
+            return "";
+        }
+        if (apiDate.matches("\\d{2}-\\d{2}-\\d{4}")) {
+            return apiDate;
+        }
+        if (apiDate.matches("\\d{4}-\\d{2}-\\d{2}")) {
+            String[] parts = apiDate.split("-");
+            return parts[2] + "-" + parts[1] + "-" + parts[0]; 
+        }
+        try {
+            java.time.LocalDate localDate = java.time.LocalDate.parse(apiDate);
+            java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("dd-MM-yyyy");
+            return localDate.format(formatter);
+        } catch (Exception e) {
+            logger.warn("Não foi possível converter a data da API: {}", apiDate);
+            return apiDate;
+        }
+    }
+
     @Override
     public int getPriority() {
         return 5;
