@@ -185,8 +185,8 @@ public class FieldEditHandler extends AbstractInteractionHandler {
         embed.addField("📄 Descrição", description, false);
         String startDate = state.getStartDate() != null ? formatToBrazilianDate(state.getStartDate()) : "Não informado";
         String endDate = state.getEndDate() != null ? formatToBrazilianDate(state.getEndDate()) : "Não informado";
-        embed.addField("📅 Data Início", startDate, true);
-        embed.addField("📅 Data Fim", endDate, true);
+        embed.addField("📅 Data Início", startDate, false);
+        embed.addField("📅 Data Fim", endDate, false);
         event.editMessageEmbeds(embed.build())
             .setComponents(
                 ActionRow.of(
@@ -231,8 +231,8 @@ public class FieldEditHandler extends AbstractInteractionHandler {
         embed.addField("📄 Descrição", description, false);
         String startDate = state.getStartDate() != null ? formatToBrazilianDate(state.getStartDate()) : "Não informado";
         String endDate = state.getEndDate() != null ? formatToBrazilianDate(state.getEndDate()) : "Não informado";
-        embed.addField("📅 Data Início", startDate, true);
-        embed.addField("📅 Data Fim", endDate, true);
+        embed.addField("📅 Data Início", startDate, false);
+        embed.addField("📅 Data Fim", endDate, false);
         hook.editOriginalEmbeds(embed.build())
             .setComponents(
                 ActionRow.of(
@@ -278,8 +278,8 @@ public class FieldEditHandler extends AbstractInteractionHandler {
         embed.addField("📄 Descrição", description, false);
         String startDate = state.getStartDate() != null ? formatToBrazilianDate(state.getStartDate()) : "Não informado";
         String endDate = state.getEndDate() != null ? formatToBrazilianDate(state.getEndDate()) : "Não informado";
-        embed.addField("📅 Data Início", startDate, true);
-        embed.addField("📅 Data Fim", endDate, true);
+        embed.addField("📅 Data Início", startDate, false);
+        embed.addField("📅 Data Fim", endDate, false);
         logger.info("Tentando editar mensagem original com resumo atualizado...");
         try {
             event.getHook().editOriginalEmbeds(embed.build())
@@ -310,7 +310,7 @@ public class FieldEditHandler extends AbstractInteractionHandler {
     private void handleEditSquad(ButtonInteractionEvent event, FormState state) {
         logger.info("Editando squad do log");
         try {
-            event.deferReply(true).queue();
+            event.deferEdit().queue();
             String squadsJson = squadLogService.getSquads();
             JSONObject obj = new JSONObject(squadsJson);
             JSONArray squadsArray = obj.optJSONArray("items");
@@ -350,9 +350,9 @@ public class FieldEditHandler extends AbstractInteractionHandler {
         }
     }
     private void handleEditUser(ButtonInteractionEvent event, FormState state) {
-        logger.info("Editando usuário do log");
+        logger.info("Editando usuário do log - Squad ID atual: {}", state.getSquadId());
         try {
-            event.deferReply(true).queue();
+            event.deferEdit().queue();
             String squadsJson = squadLogService.getSquads();
             JSONObject obj = new JSONObject(squadsJson);
             JSONArray squadsArray = obj.optJSONArray("items");
@@ -360,32 +360,57 @@ public class FieldEditHandler extends AbstractInteractionHandler {
                 net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu.create("edit-user-select")
                     .setPlaceholder("Selecione um novo usuário");
             boolean hasUsers = false;
+            
+            userMenuBuilder.addOption("All team", state.getSquadId());
+            hasUsers = true;
+            
             if (squadsArray != null) {
                 for (int i = 0; i < squadsArray.length(); i++) {
                     JSONObject squad = squadsArray.getJSONObject(i);
-                    JSONArray userSquads = squad.optJSONArray("user_squads");
-                    if (userSquads != null) {
-                        for (int j = 0; j < userSquads.length(); j++) {
-                            JSONObject userSquad = userSquads.getJSONObject(j);
-                            JSONObject user = userSquad.optJSONObject("user");
-                            if (user != null) {
-                                String userId = String.valueOf(user.get("id"));
-                                String userName = user.optString("name", "");
-                                if (userName != null && !userName.trim().isEmpty()) {
-                                    userMenuBuilder.addOption(userName, userId);
-                                    hasUsers = true;
-                                } else {
-                                    logger.warn("Usuário com ID {} tem nome vazio, pulando...", userId);
+                    String squadId = String.valueOf(squad.get("id"));
+                    
+                    if (squadId.equals(state.getSquadId())) {
+                        logger.info("Encontrada squad correspondente: {} (ID: {})", squad.optString("name", ""), squadId);
+                        JSONArray userSquads = squad.optJSONArray("user_squads");
+                        if (userSquads != null) {
+                            for (int j = 0; j < userSquads.length(); j++) {
+                                JSONObject userSquad = userSquads.getJSONObject(j);
+                                JSONObject user = userSquad.optJSONObject("user");
+                                if (user != null) {
+                                    String userId = String.valueOf(user.get("id"));
+                                    String firstName = user.optString("first_name", "");
+                                    String lastName = user.optString("last_name", "");
+                                    String fullName = user.optString("name", "");
+                                    
+                                    String userName;
+                                    if (!fullName.isEmpty()) {
+                                        userName = fullName;
+                                    } else if (!firstName.isEmpty() || !lastName.isEmpty()) {
+                                        userName = (firstName + " " + lastName).trim();
+                                    } else {
+                                        userName = "Usuário " + userId;
+                                    }
+                                    
+                                    if (!userName.trim().isEmpty()) {
+                                        userMenuBuilder.addOption(userName, userId);
+                                        hasUsers = true;
+                                        logger.info("Adicionado usuário: {} (ID: {})", userName, userId);
+                                    } else {
+                                        logger.warn("Usuário com ID {} tem nome vazio, pulando...", userId);
+                                    }
                                 }
                             }
                         }
+                        break;
                     }
                 }
             }
+            
             if (!hasUsers) {
-                event.getHook().editOriginal("❌ Nenhum usuário encontrado.").queue();
+                event.getHook().editOriginal("❌ Nenhum usuário encontrado na squad atual.").queue();
                 return;
             }
+            
             EmbedBuilder embed = new EmbedBuilder()
                 .setTitle("👤 Editar Pessoa")
                 .setDescription("Selecione a nova pessoa:")
@@ -395,13 +420,13 @@ public class FieldEditHandler extends AbstractInteractionHandler {
                 .queue();
         } catch (Exception e) {
             logger.error("Erro ao carregar usuários: {}", e.getMessage());
-            event.reply("❌ Erro ao carregar usuários.").setEphemeral(true).queue();
+            event.getHook().editOriginal("❌ Erro ao carregar usuários.").queue();
         }
     }
     private void handleEditType(ButtonInteractionEvent event, FormState state) {
         logger.info("Editando tipo do log");
         try {
-            event.deferReply(true).queue();
+            event.deferEdit().queue();
             String typesJson = squadLogService.getSquadLogTypes();
             logger.info("Resposta da API de tipos: {}", typesJson);
             if (typesJson == null || typesJson.trim().isEmpty()) {
@@ -454,7 +479,7 @@ public class FieldEditHandler extends AbstractInteractionHandler {
     }
     private void handleEditCategories(ButtonInteractionEvent event, FormState state) {
         logger.info("Editando categorias do log");
-        event.deferReply(true).queue();
+        event.deferEdit().queue();
         try {
             String categoriesJson = squadLogService.getSquadCategories();
             logger.info("Resposta da API de categorias: {}", categoriesJson);
@@ -550,9 +575,6 @@ public class FieldEditHandler extends AbstractInteractionHandler {
             .build();
         event.replyModal(modal).queue();
     }
-    /**
-     * Converts API date format (YYYY-MM-DD) to Brazilian format (DD-MM-YYYY)
-     */
     private String convertApiDateToBrazilian(String apiDate) {
         if (apiDate == null || apiDate.isEmpty()) {
             return "";
