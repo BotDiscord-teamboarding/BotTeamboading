@@ -23,7 +23,8 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
                "confirmar-atualizacao".equals(componentId) ||
                "criar-novo-log".equals(componentId) ||
                "atualizar-log-existente".equals(componentId) ||
-               "atualizar".equals(componentId);
+               "atualizar".equals(componentId) ||
+               "sair-bot".equals(componentId);
     }
     @Override
     public void handleButton(ButtonInteractionEvent event, FormState state) {
@@ -40,6 +41,8 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
             handleCreateNewLog(event);
         } else if ("atualizar-log-existente".equals(buttonId) || "atualizar".equals(buttonId)) {
             handleUpdateExistingLog(event);
+        } else if ("sair-bot".equals(buttonId)) {
+            handleExitBot(event);
         }
     }
     private void handleCreateSquadLog(ButtonInteractionEvent event, FormState state) {
@@ -167,7 +170,8 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
         event.editMessageEmbeds(embed.build())
             .setActionRow(
                 net.dv8tion.jda.api.interactions.components.buttons.Button.primary("criar-novo-log", "🆕 Criar Novo Squad-Log"),
-                net.dv8tion.jda.api.interactions.components.buttons.Button.secondary("atualizar-log-existente", "📝 Atualizar Squad-Log Existente")
+                net.dv8tion.jda.api.interactions.components.buttons.Button.secondary("atualizar-log-existente", "📝 Atualizar Squad-Log Existente"),
+                net.dv8tion.jda.api.interactions.components.buttons.Button.danger("sair-bot", "🚪 Sair")
             )
             .queue();
     }
@@ -181,7 +185,8 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
         event.getHook().editOriginalEmbeds(embed.build())
             .setActionRow(
                 net.dv8tion.jda.api.interactions.components.buttons.Button.primary("criar-novo-log", "🆕 Criar Novo Squad-Log"),
-                net.dv8tion.jda.api.interactions.components.buttons.Button.secondary("atualizar-log-existente", "📝 Atualizar Squad-Log Existente")
+                net.dv8tion.jda.api.interactions.components.buttons.Button.secondary("atualizar-log-existente", "📝 Atualizar Squad-Log Existente"),
+                net.dv8tion.jda.api.interactions.components.buttons.Button.danger("sair-bot", "🚪 Sair")
             )
             .queue();
     }
@@ -314,6 +319,48 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
         event.getHook().editOriginalEmbeds(embed.build())
             .setComponents()
             .queue();
+    }
+    private void handleExitBot(ButtonInteractionEvent event) {
+        logger.info("Usuário saindo do bot");
+        formStateService.removeState(event.getUser().getIdLong());
+        
+        event.deferEdit().queue();
+        
+        EmbedBuilder thankYouEmbed = new EmbedBuilder()
+            .setTitle("🙏 Obrigado por usar o Bot TeamBoarding!")
+            .setDescription("Esperamos que tenha tido uma ótima experiência. Até a próxima!")
+            .setColor(0x0099FF);
+        
+        event.getHook().editOriginalEmbeds(thankYouEmbed.build())
+            .setComponents()
+            .queue(success -> {
+                try {
+                    Thread.sleep(2000);
+                    
+                    EmbedBuilder exitingEmbed = new EmbedBuilder()
+                        .setTitle("👋 Saindo...")
+                        .setDescription("Finalizando sessão...")
+                        .setColor(0xFFAA00);
+                    
+                    event.getHook().editOriginalEmbeds(exitingEmbed.build())
+                        .setComponents()
+                        .queue(success2 -> {
+                            try {
+                                Thread.sleep(2000);
+                                event.getHook().deleteOriginal().queue(
+                                    deleteSuccess -> logger.info("Mensagem apagada com sucesso após saída do bot"),
+                                    deleteError -> logger.error("Erro ao apagar mensagem: {}", deleteError.getMessage())
+                                );
+                            } catch (InterruptedException e) {
+                                Thread.currentThread().interrupt();
+                                logger.error("Thread interrompida durante sleep final: {}", e.getMessage());
+                            }
+                        }, error2 -> logger.error("Erro ao mostrar mensagem 'Saindo...': {}", error2.getMessage()));
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    logger.error("Thread interrompida durante sleep inicial: {}", e.getMessage());
+                }
+            }, error -> logger.error("Erro ao mostrar mensagem de agradecimento: {}", error.getMessage()));
     }
     @Override
     public int getPriority() {
