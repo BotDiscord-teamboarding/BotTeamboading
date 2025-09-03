@@ -23,3 +23,10 @@
 hs_err_pid*
 replay_pid*
 
+target/
+.idea/
+**/.DS_Store
+
+target/
+.idea/
+.DS_Store
