@@ -34,9 +34,11 @@ public class SummaryHandler extends AbstractInteractionHandler {
     public void showCreateSummary(net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent event, FormState state) {
         logger.info("Mostrando resumo de criação");
         
+        event.deferEdit().queue();
+        
         EmbedBuilder embed = buildSummaryEmbed(state, "📋 Resumo do que foi preenchido", "Verifique todos os dados antes de criar o log:");
         
-        event.editMessageEmbeds(embed.build())
+        event.getHook().editOriginalEmbeds(embed.build())
             .setActionRow(
                 Button.success("criar-log", "✅ Criar"),
                 Button.secondary("editar-log", "✏️ Editar")
@@ -47,9 +49,11 @@ public class SummaryHandler extends AbstractInteractionHandler {
     public void showUpdateSummary(net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent event, FormState state) {
         logger.info("Mostrando resumo de atualização");
         
+        event.deferEdit().queue();
+        
         EmbedBuilder embed = buildSummaryEmbed(state, "📋 Resumo do Questionário Selecionado", "Dados atuais do questionário:");
         
-        event.editMessageEmbeds(embed.build())
+        event.getHook().editOriginalEmbeds(embed.build())
             .setActionRow(
                 Button.success("criar-log", "💾 Salvar"),
                 Button.secondary("editar-log", "✏️ Alterar"),

@@ -66,7 +66,7 @@ public class LogSelectionHandler extends AbstractInteractionHandler {
                        state.isEditing(), state.isCreating(), state.getSquadLogId());
 
             event.deferEdit().queue();
-            showUpdateSummary(event, state);
+            showUpdateSummaryWithHook(event.getHook(), state);
 
         } catch (Exception e) {
             logger.error("Erro na seleção de log: {}", e.getMessage());
@@ -300,7 +300,61 @@ public class LogSelectionHandler extends AbstractInteractionHandler {
         embed.addField("📅 Data Início", startDate, true);
         embed.addField("📅 Data Fim", endDate, true);
 
-        event.getHook().editOriginalEmbeds(embed.build())
+        event.getHook().editOriginal("")
+                .setEmbeds(embed.build())
+            .setComponents(
+                ActionRow.of(
+                    Button.secondary("edit-squad", "🏢 Squad"),
+                    Button.secondary("edit-user", "👤 Pessoa"),
+                    Button.secondary("edit-type", "📝 Tipo")
+                ),
+                ActionRow.of(
+                    Button.secondary("edit-categories", "🏷️ Categorias"),
+                    Button.secondary("edit-description", "📄 Descrição"),
+                    Button.secondary("edit-dates", "📅 Datas")
+                ),
+                ActionRow.of(
+                    Button.success("confirmar-atualizacao", "✅ Salvar Alterações"),
+                    Button.danger("cancelar-edicao", "❌ Cancelar")
+                )
+            )
+            .queue();
+    }
+    
+    private void showUpdateSummaryWithHook(net.dv8tion.jda.api.interactions.InteractionHook hook, FormState state) {
+        logger.info("Mostrando resumo para edição do squad log ID: {}", state.getSquadLogId());
+
+        EmbedBuilder embed = new EmbedBuilder()
+            .setTitle("📝 Editar Squad Log")
+            .setDescription("Dados atuais do Squad Log. Selecione o campo que deseja editar:")
+            .setColor(0xFFAA00);
+
+        String squadName = state.getSquadName() != null ? state.getSquadName() : "Não informado";
+        embed.addField("🏢 Squad", squadName, false);
+
+        String userName = state.getUserName() != null ? state.getUserName() : "Não informado";
+        embed.addField("👤 Pessoa", userName, false);
+
+        String typeName = state.getTypeName() != null ? state.getTypeName() : "Não informado";
+        embed.addField("📝 Tipo", typeName, false);
+
+        String categoryNames = (!state.getCategoryNames().isEmpty()) ?
+            String.join(", ", state.getCategoryNames()) : "Não informado";
+        embed.addField("🏷️ Categorias", categoryNames, false);
+
+        String description = state.getDescription() != null ? state.getDescription() : "Não informado";
+        if (description.length() > 100) {
+            description = description.substring(0, 97) + "...";
+        }
+        embed.addField("📄 Descrição", description, false);
+
+        String startDate = state.getStartDate() != null ? state.getStartDate() : "Não informado";
+        String endDate = state.getEndDate() != null ? state.getEndDate() : "Não informado";
+        embed.addField("📅 Data Início", startDate, true);
+        embed.addField("📅 Data Fim", endDate, true);
+
+        hook.editOriginal("")
+                .setEmbeds(embed.build())
             .setComponents(
                 ActionRow.of(
                     Button.secondary("edit-squad", "🏢 Squad"),

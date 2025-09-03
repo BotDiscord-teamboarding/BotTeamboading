@@ -23,6 +23,9 @@ public class UserSelectionHandler extends AbstractInteractionHandler {
     @Autowired
     private SquadLogService squadLogService;
     
+    @Autowired
+    private SummaryHandler summaryHandler;
+    
     @Override
     public boolean canHandle(String componentId) {
         return "user-select".equals(componentId) || 
@@ -74,36 +77,26 @@ public class UserSelectionHandler extends AbstractInteractionHandler {
                 loadUserFromSquad(state, selectedUserId);
             }
             
+
             event.deferEdit().queue();
-            
-            EmbedBuilder confirmEmbed = new EmbedBuilder()
-                .setTitle("✅ Pessoa selecionada com sucesso!")
-                .setDescription("Pessoa: **" + state.getUserName() + "**")
-                .setColor(0x00FF00);
-            
-            event.getHook().editOriginalEmbeds(confirmEmbed.build())
-                .setComponents()
-                .queue();
             
             updateFormState(event.getUser().getIdLong(), state);
             
-            CompletableFuture.delayedExecutor(2, TimeUnit.SECONDS).execute(() -> {
-                if (state.getStep() == FormStep.USER_MODIFY) {
-                    showSummary(event);
-                } else {
-                    state.setStep(FormStep.TYPE_SELECTION);
-                    updateFormState(event.getUser().getIdLong(), state);
-                    
-                    EmbedBuilder nextEmbed = new EmbedBuilder()
-                        .setTitle("📝 Próximo Passo: Seleção de Tipo")
-                        .setDescription("Agora vamos selecionar o tipo do log.")
-                        .setColor(0x0099FF);
-                    
-                    event.getHook().editOriginalEmbeds(nextEmbed.build())
-                        .setActionRow(net.dv8tion.jda.api.interactions.components.buttons.Button.primary("select-type", "Selecionar Tipo"))
-                        .queue();
-                }
-            });
+            if (state.getStep() == FormStep.USER_MODIFY) {
+                showSummary(event);
+            } else {
+                state.setStep(FormStep.TYPE_SELECTION);
+                updateFormState(event.getUser().getIdLong(), state);
+                
+                EmbedBuilder nextEmbed = new EmbedBuilder()
+                    .setTitle("📝 Próximo Passo: Seleção de Tipo")
+                    .setDescription("Agora vamos selecionar o tipo do log.")
+                    .setColor(0x0099FF);
+                
+                event.getHook().editOriginalEmbeds(nextEmbed.build())
+                    .setActionRow(net.dv8tion.jda.api.interactions.components.buttons.Button.primary("select-type", "Selecionar Tipo"))
+                    .queue();
+            }
             
         } catch (Exception e) {
             logger.error("Erro na seleção de usuário: {}", e.getMessage());
@@ -140,6 +133,8 @@ public class UserSelectionHandler extends AbstractInteractionHandler {
     
     private void showUserSelection(ButtonInteractionEvent event, String squadId) {
         try {
+            event.deferEdit().queue();
+            
             logger.info("Carregando usuários para squad: {}", squadId);
             
             String squadsJson = squadLogService.getSquads();
@@ -197,12 +192,21 @@ public class UserSelectionHandler extends AbstractInteractionHandler {
             
             EmbedBuilder embed = new EmbedBuilder()
                 .setTitle("👤 Selecione uma Pessoa")
-                .setDescription("Escolha quem irá responder ao questionário:")
                 .setColor(0x0099FF);
             
-            event.editMessageEmbeds(embed.build())
-                .setActionRow(userMenuBuilder.build())
-                .queue();
+            // Verificar se há usuários disponíveis (pelo menos "All team" + usuários)
+            if (userCount > 0) {
+                embed.setDescription("Escolha quem irá responder ao questionário:");
+                event.getHook().editOriginalEmbeds(embed.build())
+                    .setActionRow(userMenuBuilder.build())
+                    .queue();
+            } else {
+                // Apenas "All team" disponível
+                embed.setDescription("Apenas a opção 'All team' está disponível:");
+                event.getHook().editOriginalEmbeds(embed.build())
+                    .setActionRow(userMenuBuilder.build())
+                    .queue();
+            }
                 
         } catch (Exception e) {
             logger.error("Erro ao carregar usuários: {}", e.getMessage(), e);
@@ -211,20 +215,42 @@ public class UserSelectionHandler extends AbstractInteractionHandler {
     }
     
     private void showUserSelectionError(ButtonInteractionEvent event, String message) {
-        EmbedBuilder errorEmbed = new EmbedBuilder()
-            .setTitle("❌ Erro ao carregar usuários")
-            .setDescription(message)
-            .setColor(0xFF0000);
-        
-        event.editMessageEmbeds(errorEmbed.build())
-            .setComponents()
-            .queue();
+        try {
+            EmbedBuilder errorEmbed = new EmbedBuilder()
+                .setTitle("❌ Erro ao carregar usuários")
+                .setDescription(message)
+                .setColor(0xFF0000);
+            
+            event.getHook().editOriginalEmbeds(errorEmbed.build())
+                .setComponents()
+                .queue();
+        } catch (Exception e) {
+            logger.error("Erro ao mostrar erro de seleção de usuário: {}", e.getMessage());
+            // Fallback se hook não estiver disponível
+            try {
+                event.deferEdit().queue();
+                EmbedBuilder errorEmbed = new EmbedBuilder()
+                    .setTitle("❌ Erro ao carregar usuários")
+                    .setDescription(message)
+                    .setColor(0xFF0000);
+                event.getHook().editOriginalEmbeds(errorEmbed.build())
+                    .setComponents()
+                    .queue();
+            } catch (Exception ex) {
+                logger.error("Fallback também falhou: {}", ex.getMessage());
+            }
+        }
     }
     
     private void showTypeSelection(StringSelectInteractionEvent event) {
+        // Método não utilizado - transição é feita via botão
     }
     
     private void showSummary(StringSelectInteractionEvent event) {
+        FormState state = getFormState(event.getUser().getIdLong());
+        if (state != null) {
+            summaryHandler.showUpdateSummary(event, state);
+        }
     }
     
     private void showError(StringSelectInteractionEvent event, String message) {
