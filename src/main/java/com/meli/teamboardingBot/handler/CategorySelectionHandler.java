@@ -5,6 +5,7 @@ import com.meli.teamboardingBot.service.SquadLogService;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
+import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
 import net.dv8tion.jda.api.interactions.components.text.TextInput;
 import net.dv8tion.jda.api.interactions.components.text.TextInputStyle;
@@ -126,7 +127,9 @@ public class CategorySelectionHandler extends AbstractInteractionHandler {
                 .setTitle("❌ Erro ao carregar categorias")
                 .setDescription("Ocorreu um erro ao carregar as categorias. Tente novamente.")
                 .setColor(0xFF0000);
-            event.getHook().editOriginalEmbeds(errorEmbed.build()).setComponents().queue();
+            event.getHook().editOriginalEmbeds(errorEmbed.build())
+                .setActionRow(Button.primary("voltar-inicio", "🏠 Voltar ao Início"))
+                .queue();
         }
     }
     private void openDescriptionModal(StringSelectInteractionEvent event, FormState state) {

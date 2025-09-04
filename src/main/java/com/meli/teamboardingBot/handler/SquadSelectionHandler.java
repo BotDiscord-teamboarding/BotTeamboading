@@ -6,6 +6,7 @@ import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
+import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -99,7 +100,7 @@ public class SquadSelectionHandler extends AbstractInteractionHandler {
                     .setDescription("Não há squads disponíveis no momento.")
                     .setColor(0xFF0000);
                 event.getHook().editOriginalEmbeds(errorEmbed.build())
-                    .setComponents()
+                    .setActionRow(Button.primary("voltar-inicio", "🏠 Voltar ao Início"))
                     .queue();
                 return;
             }
@@ -127,7 +128,7 @@ public class SquadSelectionHandler extends AbstractInteractionHandler {
                 .setDescription("Ocorreu um erro ao carregar as squads. Tente novamente.")
                 .setColor(0xFF0000);
             event.getHook().editOriginalEmbeds(errorEmbed.build())
-                .setComponents()
+                .setActionRow(Button.primary("voltar-inicio", "🏠 Voltar ao Início"))
                 .queue();
         }
     }
@@ -165,7 +166,6 @@ public class SquadSelectionHandler extends AbstractInteractionHandler {
             StringSelectMenu.Builder menuBuilder = StringSelectMenu.create("user-select")
                 .setPlaceholder("Escolha um usuário...");
             
-            // Adicionar opção "All team" com o ID da squad
             menuBuilder.addOption("All team", squadId);
             
             for (int i = 0; i < userSquads.length(); i++) {
@@ -208,7 +208,7 @@ public class SquadSelectionHandler extends AbstractInteractionHandler {
             .setDescription(message)
             .setColor(0xFF0000);
         event.getHook().editOriginalEmbeds(errorEmbed.build())
-            .setComponents()
+            .setActionRow(Button.primary("voltar-inicio", "🏠 Voltar ao Início"))
             .queue();
     }
     @Override

@@ -5,6 +5,7 @@ import com.meli.teamboardingBot.service.SquadLogService;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
+import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -118,7 +119,9 @@ public class TypeSelectionHandler extends AbstractInteractionHandler {
                 .setTitle("❌ Erro ao carregar tipos")
                 .setDescription("Ocorreu um erro ao carregar os tipos. Tente novamente.")
                 .setColor(0xFF0000);
-            event.getHook().editOriginalEmbeds(errorEmbed.build()).setComponents().queue();
+            event.getHook().editOriginalEmbeds(errorEmbed.build())
+                .setActionRow(Button.primary("voltar-inicio", "🏠 Voltar ao Início"))
+                .queue();
         }
     }
     private void showCategorySelectionAfterType(StringSelectInteractionEvent event) {
@@ -159,7 +162,9 @@ public class TypeSelectionHandler extends AbstractInteractionHandler {
                 .setTitle("❌ Erro ao carregar categorias")
                 .setDescription("Ocorreu um erro ao carregar as categorias. Tente novamente.")
                 .setColor(0xFF0000);
-            event.getHook().editOriginalEmbeds(errorEmbed.build()).setComponents().queue();
+            event.getHook().editOriginalEmbeds(errorEmbed.build())
+                .setActionRow(Button.primary("voltar-inicio", "🏠 Voltar ao Início"))
+                .queue();
         }
     }
     private void showSummary(StringSelectInteractionEvent event) {
@@ -174,7 +179,7 @@ public class TypeSelectionHandler extends AbstractInteractionHandler {
             .setDescription(message)
             .setColor(0xFF0000);
         event.getHook().editOriginalEmbeds(errorEmbed.build())
-            .setComponents()
+            .setActionRow(Button.primary("voltar-inicio", "🏠 Voltar ao Início"))
             .queue();
     }
     @Override

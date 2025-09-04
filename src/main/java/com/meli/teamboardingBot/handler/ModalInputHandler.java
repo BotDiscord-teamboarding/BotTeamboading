@@ -110,7 +110,6 @@ public class ModalInputHandler extends AbstractInteractionHandler {
         String startDate = event.getValue("start_date").getAsString();
         String endDate = event.getValue("end_date") != null ? event.getValue("end_date").getAsString() : null;
         if (!isValidDate(startDate)) {
-            // Salvar dados temporariamente para preservar no retry
             state.setDescription(description);
             state.setEndDate(endDate);
             updateFormState(event.getUser().getIdLong(), state);
@@ -121,12 +120,14 @@ public class ModalInputHandler extends AbstractInteractionHandler {
                 .setDescription("Data de início inválida: `" + startDate + "`\n\nUse o formato **DD-MM-AAAA** (ex: 20-06-1986)")
                 .setColor(0xFF0000);
             event.getHook().editOriginalEmbeds(errorEmbed.build())
-                .setActionRow(Button.primary("retry-create-modal", "🔄 Preencher Novamente"))
+                .setActionRow(
+                    Button.primary("retry-create-modal", "🔄 Preencher Novamente"),
+                    Button.secondary("voltar-inicio", "🏠 Voltar ao Início")
+                )
                 .queue();
             return;
         }
         if (endDate != null && !endDate.isEmpty() && !isValidDate(endDate)) {
-            // Salvar dados temporariamente para preservar no retry
             state.setDescription(description);
             state.setStartDate(startDate);
             updateFormState(event.getUser().getIdLong(), state);
@@ -137,7 +138,10 @@ public class ModalInputHandler extends AbstractInteractionHandler {
                 .setDescription("Data de fim inválida: `" + endDate + "`\n\nUse o formato **DD-MM-AAAA** (ex: 25-06-1986)")
                 .setColor(0xFF0000);
             event.getHook().editOriginalEmbeds(errorEmbed.build())
-                .setActionRow(Button.primary("retry-create-modal", "🔄 Preencher Novamente"))
+                .setActionRow(
+                    Button.primary("retry-create-modal", "🔄 Preencher Novamente"),
+                    Button.secondary("voltar-inicio", "🏠 Voltar ao Início")
+                )
                 .queue();
             return;
         }
@@ -162,7 +166,6 @@ public class ModalInputHandler extends AbstractInteractionHandler {
         String startDate = event.getValue("start_date").getAsString();
         String endDate = event.getValue("end_date") != null ? event.getValue("end_date").getAsString() : null;
         if (!isValidDate(startDate)) {
-            // Salvar dados temporariamente para preservar no retry
             state.setEndDate(endDate);
             updateFormState(event.getUser().getIdLong(), state);
             
@@ -172,12 +175,14 @@ public class ModalInputHandler extends AbstractInteractionHandler {
                 .setDescription("Data de início inválida: `" + startDate + "`\n\nUse o formato **DD-MM-AAAA** (ex: 20-06-1986)")
                 .setColor(0xFF0000);
             event.getHook().editOriginalEmbeds(errorEmbed.build())
-                .setActionRow(Button.primary("retry-edit-dates-modal", "🔄 Preencher Novamente"))
+                .setActionRow(
+                    Button.primary("retry-edit-dates-modal", "🔄 Preencher Novamente"),
+                    Button.secondary("voltar-inicio", "🏠 Voltar ao Início")
+                )
                 .queue();
             return;
         }
         if (endDate != null && !endDate.isEmpty() && !isValidDate(endDate)) {
-            // Salvar dados temporariamente para preservar no retry
             state.setStartDate(startDate);
             updateFormState(event.getUser().getIdLong(), state);
             
@@ -187,7 +192,10 @@ public class ModalInputHandler extends AbstractInteractionHandler {
                 .setDescription("Data de fim inválida: `" + endDate + "`\n\nUse o formato **DD-MM-AAAA** (ex: 25-06-1986)")
                 .setColor(0xFF0000);
             event.getHook().editOriginalEmbeds(errorEmbed.build())
-                .setActionRow(Button.primary("retry-edit-dates-modal", "🔄 Preencher Novamente"))
+                .setActionRow(
+                    Button.primary("retry-edit-dates-modal", "🔄 Preencher Novamente"),
+                    Button.secondary("voltar-inicio", "🏠 Voltar ao Início")
+                )
                 .queue();
             return;
         }
@@ -301,7 +309,6 @@ public class ModalInputHandler extends AbstractInteractionHandler {
             endDate = null;
         }
         if (!isValidDate(startDate)) {
-            // Salvar dados temporariamente para preservar no retry
             state.setEndDate(endDate);
             updateFormState(event.getUser().getIdLong(), state);
             
@@ -311,12 +318,14 @@ public class ModalInputHandler extends AbstractInteractionHandler {
                 .setDescription("Data de início inválida: `" + startDate + "`\n\nUse o formato **DD-MM-AAAA** (ex: 20-06-1986)")
                 .setColor(0xFF0000);
             event.getHook().editOriginalEmbeds(errorEmbed.build())
-                .setActionRow(Button.primary("retry-field-edit-dates-modal", "🔄 Preencher Novamente"))
+                .setActionRow(
+                    Button.primary("retry-field-edit-dates-modal", "🔄 Preencher Novamente"),
+                    Button.secondary("voltar-inicio", "🏠 Voltar ao Início")
+                )
                 .queue();
             return;
         }
         if (endDate != null && !endDate.isEmpty() && !isValidDate(endDate)) {
-            // Salvar dados temporariamente para preservar no retry
             state.setStartDate(startDate);
             updateFormState(event.getUser().getIdLong(), state);
             
@@ -326,7 +335,10 @@ public class ModalInputHandler extends AbstractInteractionHandler {
                 .setDescription("Data de fim inválida: `" + endDate + "`\n\nUse o formato **DD-MM-AAAA** (ex: 25-06-1986)")
                 .setColor(0xFF0000);
             event.getHook().editOriginalEmbeds(errorEmbed.build())
-                .setActionRow(Button.primary("retry-field-edit-dates-modal", "🔄 Preencher Novamente"))
+                .setActionRow(
+                    Button.primary("retry-field-edit-dates-modal", "🔄 Preencher Novamente"),
+                    Button.secondary("voltar-inicio", "🏠 Voltar ao Início")
+                )
                 .queue();
             return;
         }
