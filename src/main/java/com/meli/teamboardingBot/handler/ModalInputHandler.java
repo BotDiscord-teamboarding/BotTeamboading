@@ -145,6 +145,27 @@ public class ModalInputHandler extends AbstractInteractionHandler {
                 .queue();
             return;
         }
+        if (isEndDateBeforeStartDate(startDate, endDate)) {
+            state.setDescription(description);
+            state.setStartDate(startDate);
+            updateFormState(event.getUser().getIdLong(), state);
+            
+            event.deferEdit().queue();
+            EmbedBuilder errorEmbed = new EmbedBuilder()
+                .setTitle("❌ Data de Fim Inválida")
+                .setDescription("A data de fim não pode ser anterior à data de início.\n\n" +
+                              "**Data de início:** " + startDate + "\n" +
+                              "**Data de fim:** " + endDate + "\n\n" +
+                              "Por favor, corrija as datas.")
+                .setColor(0xFF0000);
+            event.getHook().editOriginalEmbeds(errorEmbed.build())
+                .setActionRow(
+                    Button.primary("retry-create-modal", "🔄 Preencher Novamente"),
+                    Button.secondary("voltar-inicio", "🏠 Voltar ao Início")
+                )
+                .queue();
+            return;
+        }
         state.setDescription(description);
         state.setStartDate(startDate);
         state.setEndDate(endDate);
@@ -199,6 +220,26 @@ public class ModalInputHandler extends AbstractInteractionHandler {
                 .queue();
             return;
         }
+        if (isEndDateBeforeStartDate(startDate, endDate)) {
+            state.setStartDate(startDate);
+            updateFormState(event.getUser().getIdLong(), state);
+            
+            event.deferEdit().queue();
+            EmbedBuilder errorEmbed = new EmbedBuilder()
+                .setTitle("❌ Data de Fim Inválida")
+                .setDescription("A data de fim não pode ser anterior à data de início.\n\n" +
+                              "**Data de início:** " + startDate + "\n" +
+                              "**Data de fim:** " + endDate + "\n\n" +
+                              "Por favor, corrija as datas.")
+                .setColor(0xFF0000);
+            event.getHook().editOriginalEmbeds(errorEmbed.build())
+                .setActionRow(
+                    Button.primary("retry-edit-dates-modal", "🔄 Preencher Novamente"),
+                    Button.secondary("voltar-inicio", "🏠 Voltar ao Início")
+                )
+                .queue();
+            return;
+        }
         state.setStartDate(startDate);
         state.setEndDate(endDate);
         updateFormState(event.getUser().getIdLong(), state);
@@ -241,6 +282,32 @@ public class ModalInputHandler extends AbstractInteractionHandler {
             return false;
         } catch (Exception e) {
             logger.error("Erro inesperado ao validar data {}: {}", dateStr, e.getMessage());
+            return false;
+        }
+    }
+    private boolean isEndDateBeforeStartDate(String startDateStr, String endDateStr) {
+        if (startDateStr == null || endDateStr == null || endDateStr.trim().isEmpty()) {
+            return false;
+        }
+        try {
+            String[] startParts = startDateStr.split("-");
+            String[] endParts = endDateStr.split("-");
+            
+            LocalDate startDate = LocalDate.of(
+                Integer.parseInt(startParts[2]), 
+                Integer.parseInt(startParts[1]), 
+                Integer.parseInt(startParts[0])
+            );
+            
+            LocalDate endDate = LocalDate.of(
+                Integer.parseInt(endParts[2]), 
+                Integer.parseInt(endParts[1]), 
+                Integer.parseInt(endParts[0])
+            );
+            
+            return endDate.isBefore(startDate);
+        } catch (Exception e) {
+            logger.error("Erro ao comparar datas: startDate={}, endDate={}, erro={}", startDateStr, endDateStr, e.getMessage());
             return false;
         }
     }
@@ -333,6 +400,26 @@ public class ModalInputHandler extends AbstractInteractionHandler {
             EmbedBuilder errorEmbed = new EmbedBuilder()
                 .setTitle("❌ Data de Fim Inválida")
                 .setDescription("Data de fim inválida: `" + endDate + "`\n\nUse o formato **DD-MM-AAAA** (ex: 25-06-1986)")
+                .setColor(0xFF0000);
+            event.getHook().editOriginalEmbeds(errorEmbed.build())
+                .setActionRow(
+                    Button.primary("retry-field-edit-dates-modal", "🔄 Preencher Novamente"),
+                    Button.secondary("voltar-inicio", "🏠 Voltar ao Início")
+                )
+                .queue();
+            return;
+        }
+        if (isEndDateBeforeStartDate(startDate, endDate)) {
+            state.setStartDate(startDate);
+            updateFormState(event.getUser().getIdLong(), state);
+            
+            event.deferEdit().queue();
+            EmbedBuilder errorEmbed = new EmbedBuilder()
+                .setTitle("❌ Data de Fim Inválida")
+                .setDescription("A data de fim não pode ser anterior à data de início.\n\n" +
+                              "**Data de início:** " + startDate + "\n" +
+                              "**Data de fim:** " + endDate + "\n\n" +
+                              "Por favor, corrija as datas.")
                 .setColor(0xFF0000);
             event.getHook().editOriginalEmbeds(errorEmbed.build())
                 .setActionRow(

@@ -599,12 +599,14 @@ public class FieldEditHandler extends AbstractInteractionHandler {
         logger.info("Cancelando edição do log");
         EmbedBuilder embed = new EmbedBuilder()
             .setTitle("❌ Edição Cancelada")
-            .setDescription("A edição do Squad Log foi cancelada.")
+            .setDescription("A edição do Squad Log foi cancelada.\n\nO que deseja fazer agora?")
             .setColor(0xFF0000);
         event.editMessageEmbeds(embed.build())
-            .setComponents()
+            .setActionRow(
+                Button.primary("atualizar", "🔄 Tentar Novamente"),
+                Button.secondary("voltar-inicio", "🏠 Voltar ao Início")
+            )
             .queue();
-        formStateService.removeState(event.getUser().getIdLong());
     }
     @Override
     public int getPriority() {
