@@ -1,15 +1,22 @@
 package com.meli.teamboardingBot.handler;
 import com.meli.teamboardingBot.enums.FormStep;
 import com.meli.teamboardingBot.model.FormState;
+import com.meli.teamboardingBot.service.FormStateService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
+@Slf4j
 @Component
 @Order(7)
 public class NavigationHandler extends AbstractInteractionHandler {
+    public NavigationHandler(FormStateService formStateService) {
+        super(formStateService);
+    }
     @Override
     public boolean canHandle(String componentId) {
         return "atualizar".equals(componentId) ||
@@ -34,7 +41,7 @@ public class NavigationHandler extends AbstractInteractionHandler {
         }
     }
     private void handleUpdateButton(ButtonInteractionEvent event, FormState state) {
-        logger.info("Iniciando fluxo de atualização");
+        log.info("Iniciando fluxo de atualização");
         state.setCreating(false);
         state.setEditing(true);
         state.setStep(FormStep.LOG_SELECTION);
@@ -42,20 +49,20 @@ public class NavigationHandler extends AbstractInteractionHandler {
         showLogSelection(event);
     }
     private void handleEditButton(ButtonInteractionEvent event, FormState state) {
-        logger.info("Mostrando menu de edição");
+        log.info("Mostrando menu de edição");
         state.setEditing(true);
         state.setStep(FormStep.EDIT_MENU);
         updateFormState(event.getUser().getIdLong(), state);
         showEditFieldsMenu(event);
     }
     private void handleBackToLogsButton(ButtonInteractionEvent event, FormState state) {
-        logger.info("Voltando para seleção de logs");
+        log.info("Voltando para seleção de logs");
         state.setStep(FormStep.LOG_SELECTION);
         updateFormState(event.getUser().getIdLong(), state);
         showLogSelection(event);
     }
     private void handleCreateNewButton(ButtonInteractionEvent event, FormState state) {
-        logger.info("Iniciando novo fluxo de criação");
+        log.info("Iniciando novo fluxo de criação");
         formStateService.resetState(event.getUser().getIdLong());
         FormState newState = formStateService.getOrCreateState(event.getUser().getIdLong());
         newState.setCreating(true);
@@ -66,7 +73,7 @@ public class NavigationHandler extends AbstractInteractionHandler {
         showSquadSelectionWithHook(event.getHook());
     }
     private void handleUpdateExistingButton(ButtonInteractionEvent event, FormState state) {
-        logger.info("Iniciando fluxo de atualização");
+        log.info("Iniciando fluxo de atualização");
         state.setCreating(false);
         state.setEditing(true);
         state.setStep(FormStep.LOG_SELECTION);
@@ -75,20 +82,20 @@ public class NavigationHandler extends AbstractInteractionHandler {
         showLogSelectionWithHook(event.getHook());
     }
     private void handleExitButton(ButtonInteractionEvent event, FormState state) {
-        logger.info("Usuário saindo do bot");
+        log.info("Usuário saindo do bot");
         event.deferReply(true).queue();
         exitBot(event.getHook(), event.getUser().getIdLong());
     }
     private void handleBackToSummaryButton(ButtonInteractionEvent event, FormState state) {
-        logger.info("Voltando ao resumo - isEditing={}, isCreating={}", state.isEditing(), state.isCreating());
+        log.info("Voltando ao resumo - isEditing={}, isCreating={}", state.isEditing(), state.isCreating());
         if (state.isEditing() && !state.isCreating()) {
-            logger.info("Voltando ao resumo de atualização");
+            log.info("Voltando ao resumo de atualização");
             showUpdateSummary(event, state);
         } else if (state.isCreating()) {
-            logger.info("Voltando ao resumo de criação");
+            log.info("Voltando ao resumo de criação");
             showCreateSummary(event, state);
         } else {
-            logger.info("Voltando ao resumo de atualização (padrão)");
+            log.info("Voltando ao resumo de atualização (padrão)");
             showUpdateSummary(event, state);
         }
     }
@@ -130,7 +137,7 @@ public class NavigationHandler extends AbstractInteractionHandler {
             .queue();
     }
     private void showCreateSummary(ButtonInteractionEvent event, FormState state) {
-        logger.info("Mostrando resumo de criação");
+        log.info("Mostrando resumo de criação");
         event.deferEdit().queue();
         EmbedBuilder embed = buildSummaryEmbed(state, "📋 Resumo do que foi preenchido", "Verifique todos os dados antes de criar o log:");
         event.getHook().editOriginalEmbeds(embed.build())
@@ -141,7 +148,7 @@ public class NavigationHandler extends AbstractInteractionHandler {
             .queue();
     }
     private void showUpdateSummary(ButtonInteractionEvent event, FormState state) {
-        logger.info("Mostrando resumo de atualização");
+        log.info("Mostrando resumo de atualização");
         event.deferEdit().queue();
         EmbedBuilder embed = buildSummaryEmbed(state, "📋 Resumo do Questionário Selecionado", "Dados atuais do questionário:");
         event.getHook().editOriginalEmbeds(embed.build())

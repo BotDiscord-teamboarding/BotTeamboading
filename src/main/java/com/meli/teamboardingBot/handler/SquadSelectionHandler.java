@@ -1,7 +1,10 @@
 package com.meli.teamboardingBot.handler;
 import com.meli.teamboardingBot.enums.FormStep;
 import com.meli.teamboardingBot.model.FormState;
+import com.meli.teamboardingBot.service.FormStateService;
 import com.meli.teamboardingBot.service.SquadLogService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
@@ -15,13 +18,18 @@ import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+@Slf4j
 @Component
 @Order(1)
 public class SquadSelectionHandler extends AbstractInteractionHandler {
-    @Autowired
-    private SquadLogService squadLogService;
+    private final SquadLogService squadLogService;
     @Autowired
     private SummaryHandler summaryHandler;
+    
+    public SquadSelectionHandler(FormStateService formStateService, SquadLogService squadLogService) {
+        super(formStateService);
+        this.squadLogService = squadLogService;
+    }
     @Override
     public boolean canHandle(String componentId) {
         return "criar".equals(componentId) || 
@@ -44,7 +52,7 @@ public class SquadSelectionHandler extends AbstractInteractionHandler {
         }
     }
     private void handleCreateButton(ButtonInteractionEvent event, FormState state) {
-        logger.info("Iniciando fluxo de criação");
+        log.info("Iniciando fluxo de criação");
         state.setCreating(true);
         state.setEditing(false);
         state.setStep(FormStep.SQUAD_SELECTION);
@@ -52,14 +60,14 @@ public class SquadSelectionHandler extends AbstractInteractionHandler {
         showSquadSelection(event);
     }
     private void handleEditSquadButton(ButtonInteractionEvent event, FormState state) {
-        logger.info("Editando squad");
+        log.info("Editando squad");
         state.setStep(FormStep.SQUAD_MODIFY);
         updateFormState(event.getUser().getIdLong(), state);
         showSquadSelection(event);
     }
     private void handleSquadSelect(StringSelectInteractionEvent event, FormState state) {
         String selectedSquadId = event.getValues().get(0);
-        logger.info("Squad selecionada: {}", selectedSquadId);
+        log.info("Squad selecionada: {}", selectedSquadId);
         try {
             String squadsJson = squadLogService.getSquads();
             JSONObject obj = new JSONObject(squadsJson);
@@ -84,7 +92,7 @@ public class SquadSelectionHandler extends AbstractInteractionHandler {
                 showUserSelectionAfterSquad(event, state);
             }
         } catch (Exception e) {
-            logger.error("Erro na seleção de squad: {}", e.getMessage());
+            log.error("Erro na seleção de squad: {}", e.getMessage());
             showError(event, "Erro ao processar seleção da squad.");
         }
     }
@@ -122,7 +130,7 @@ public class SquadSelectionHandler extends AbstractInteractionHandler {
                 .setActionRow(squadMenuBuilder.build())
                 .queue();
         } catch (Exception e) {
-            logger.error("Erro ao carregar squads: {}", e.getMessage());
+            log.error("Erro ao carregar squads: {}", e.getMessage());
             EmbedBuilder errorEmbed = new EmbedBuilder()
                 .setTitle("❌ Erro ao carregar squads")
                 .setDescription("Ocorreu um erro ao carregar as squads. Tente novamente.")
@@ -185,14 +193,14 @@ public class SquadSelectionHandler extends AbstractInteractionHandler {
                         userName = "Usuário " + userId;
                     }
                     menuBuilder.addOption(userName, userId);
-                    logger.debug("Adicionado usuário: {} (ID: {})", userName, userId);
+                    log.debug("Adicionado usuário: {} (ID: {})", userName, userId);
                 }
             }
             event.getHook().editOriginalEmbeds(embed.build())
                 .setActionRow(menuBuilder.build())
                 .queue();
         } catch (Exception e) {
-            logger.error("Erro ao exibir seleção de usuário: {}", e.getMessage());
+            log.error("Erro ao exibir seleção de usuário: {}", e.getMessage());
             showError(event, "Erro ao carregar seleção de usuário.");
         }
     }

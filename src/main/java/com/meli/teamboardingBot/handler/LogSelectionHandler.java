@@ -1,6 +1,9 @@
 package com.meli.teamboardingBot.handler;
+
+import lombok.extern.slf4j.Slf4j;
 import com.meli.teamboardingBot.enums.FormStep;
 import com.meli.teamboardingBot.model.FormState;
+import com.meli.teamboardingBot.service.FormStateService;
 import com.meli.teamboardingBot.service.SquadLogService;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
@@ -12,11 +15,17 @@ import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
+
+@Slf4j
 @Component
 @Order(8)
 public class LogSelectionHandler extends AbstractInteractionHandler {
     @Autowired
     private SquadLogService squadLogService;
+    
+    public LogSelectionHandler(FormStateService formStateService) {
+        super(formStateService);
+    }
     @Override
     public boolean canHandle(String componentId) {
         return "log-select".equals(componentId);
@@ -29,18 +38,18 @@ public class LogSelectionHandler extends AbstractInteractionHandler {
     }
     private void handleLogSelect(StringSelectInteractionEvent event, FormState state) {
         String selectedLogId = event.getValues().get(0);
-        logger.info("Log selecionado: {}", selectedLogId);
+        log.info("Log selecionado: {}", selectedLogId);
         try {
             String squadLogsJson = squadLogService.getSquadLogAll();
-            logger.info("Resposta completa da API getSquadLogAll: {}", squadLogsJson);
+            log.info("Resposta completa da API getSquadLogAll: {}", squadLogsJson);
             JSONObject obj = new JSONObject(squadLogsJson);
             JSONArray squadLogsArray = obj.optJSONArray("items");
             if (squadLogsArray != null) {
                 for (int i = 0; i < squadLogsArray.length(); i++) {
-                    JSONObject log = squadLogsArray.getJSONObject(i);
-                    if (String.valueOf(log.get("id")).equals(selectedLogId)) {
-                        logger.info("JSON do log selecionado: {}", log.toString());
-                        loadLogDataIntoState(log, state);
+                    JSONObject logJson = squadLogsArray.getJSONObject(i);
+                    if (String.valueOf(logJson.get("id")).equals(selectedLogId)) {
+                        log.info("JSON do log selecionado: {}", logJson.toString());
+                        loadLogDataIntoState(logJson, state);
                         break;
                     }
                 }
@@ -50,29 +59,29 @@ public class LogSelectionHandler extends AbstractInteractionHandler {
             state.setCreating(false);
             state.setStep(FormStep.SUMMARY);
             updateFormState(event.getUser().getIdLong(), state);
-            logger.info("Estado após carregar log para edição: isEditing={}, isCreating={}, squadLogId={}", 
+            log.info("Estado após carregar log para edição: isEditing={}, isCreating={}, squadLogId={}", 
                        state.isEditing(), state.isCreating(), state.getSquadLogId());
             event.deferEdit().queue();
             showUpdateSummaryWithHook(event.getHook(), state);
         } catch (Exception e) {
-            logger.error("Erro na seleção de log: {}", e.getMessage());
+            log.error("Erro na seleção de log: {}", e.getMessage());
             event.reply("❌ Erro ao carregar dados do questionário.").setEphemeral(true).queue();
         }
     }
-    private void loadLogDataIntoState(JSONObject log, FormState state) {
-        logger.info("Carregando dados do log no estado");
-        logger.info("DEBUG: JSON do log completo: {}", log.toString());
+    private void loadLogDataIntoState(JSONObject logJson, FormState state) {
+        log.info("Carregando dados do log no estado");
+        log.info("DEBUG: JSON do log completo: {}", logJson.toString());
         state.setCreating(false);
         state.setEditing(true);
-        state.setDescription(log.optString("description", ""));
-        state.setStartDate(log.optString("start_date", ""));
-        state.setEndDate(log.optString("end_date", null));
-        JSONObject squad = log.optJSONObject("squad");
+        state.setDescription(logJson.optString("description", ""));
+        state.setStartDate(logJson.optString("start_date", ""));
+        state.setEndDate(logJson.optString("end_date", null));
+        JSONObject squad = logJson.optJSONObject("squad");
         if (squad != null) {
             state.setSquadId(String.valueOf(squad.get("id")));
             state.setSquadName(squad.optString("name", ""));
         }
-        JSONObject user = log.optJSONObject("user");
+        JSONObject user = logJson.optJSONObject("user");
         if (user != null) {
             String userId = String.valueOf(user.get("id"));
             String firstName = user.optString("first_name", "");
@@ -87,20 +96,20 @@ public class LogSelectionHandler extends AbstractInteractionHandler {
             } else {
                 userName = user.optString("name", "");
             }
-            logger.info("Carregando dados do usuário: id={}, firstName={}, lastName={}, fullName={}", 
+            log.info("Carregando dados do usuário: id={}, firstName={}, lastName={}, fullName={}", 
                        userId, firstName, lastName, userName);
             state.setUserId(userId);
             state.setUserName(userName);
-            logger.info("DEBUG: Definindo userId={} no estado (squadId={})", userId, state.getSquadId());
+            log.info("DEBUG: Definindo userId={} no estado (squadId={})", userId, state.getSquadId());
         } else {
-            logger.warn("Objeto 'user' não encontrado no log JSON: {}", log.toString());
+            log.warn("Objeto 'user' não encontrado no log JSON: {}", logJson.toString());
         }
-        JSONObject type = findTypeObject(log);
+        JSONObject type = findTypeObject(logJson);
         if (type != null) {
             state.setTypeId(String.valueOf(type.get("id")));
             state.setTypeName(type.optString("name", ""));
         }
-        JSONArray categories = findCategoriesArray(log);
+        JSONArray categories = findCategoriesArray(logJson);
         state.getCategoryIds().clear();
         state.getCategoryNames().clear();
         if (categories != null) {
@@ -110,27 +119,27 @@ public class LogSelectionHandler extends AbstractInteractionHandler {
                 state.getCategoryNames().add(category.optString("name", ""));
             }
         }
-        logger.info("Estado carregado: squadId={}, squadName={}, userId={}, userName={}, typeId={}, typeName={}",
+        log.info("Estado carregado: squadId={}, squadName={}, userId={}, userName={}, typeId={}, typeName={}",
                    state.getSquadId(), state.getSquadName(), state.getUserId(), state.getUserName(), 
                    state.getTypeId(), state.getTypeName());
     }
-    private JSONObject findTypeObject(JSONObject log) {
-        JSONObject type = log.optJSONObject("type");
+    private JSONObject findTypeObject(JSONObject logJson) {
+        JSONObject type = logJson.optJSONObject("type");
         if (type == null) {
-            type = log.optJSONObject("squad_log_type");
+            type = logJson.optJSONObject("squad_log_type");
         }
         if (type == null) {
-            type = log.optJSONObject("log_type");
+            type = logJson.optJSONObject("log_type");
         }
         return type;
     }
-    private JSONArray findCategoriesArray(JSONObject log) {
-        JSONArray categories = log.optJSONArray("categories");
+    private JSONArray findCategoriesArray(JSONObject logJson) {
+        JSONArray categories = logJson.optJSONArray("categories");
         if (categories == null) {
-            categories = log.optJSONArray("skill_categories");
+            categories = logJson.optJSONArray("skill_categories");
         }
         if (categories == null) {
-            categories = log.optJSONArray("squad_categories");
+            categories = logJson.optJSONArray("squad_categories");
         }
         return categories;
     }
@@ -157,7 +166,7 @@ public class LogSelectionHandler extends AbstractInteractionHandler {
                 .setActionRow(logMenuBuilder.build())
                 .queue();
         } catch (Exception e) {
-            logger.error("Erro ao carregar questionários: {}", e.getMessage());
+            log.error("Erro ao carregar questionários: {}", e.getMessage());
             event.editMessage("❌ Erro ao carregar questionários. Tente novamente.")
                 .setEmbeds()
                 .setComponents()
@@ -187,7 +196,7 @@ public class LogSelectionHandler extends AbstractInteractionHandler {
                 .setActionRow(logMenuBuilder.build())
                 .queue();
         } catch (Exception e) {
-            logger.error("Erro ao carregar questionários: {}", e.getMessage());
+            log.error("Erro ao carregar questionários: {}", e.getMessage());
             hook.editOriginal("❌ Erro ao carregar questionários. Tente novamente.")
                 .setEmbeds()
                 .setComponents()
@@ -220,7 +229,7 @@ public class LogSelectionHandler extends AbstractInteractionHandler {
         }
     }
     private void showUpdateSummary(StringSelectInteractionEvent event, FormState state) {
-        logger.info("Mostrando resumo para edição do squad log ID: {}", state.getSquadLogId());
+        log.info("Mostrando resumo para edição do squad log ID: {}", state.getSquadLogId());
         EmbedBuilder embed = new EmbedBuilder()
             .setTitle("📝 Editar Squad Log")
             .setDescription("Dados atuais do Squad Log. Selecione o campo que deseja editar:")
@@ -264,7 +273,7 @@ public class LogSelectionHandler extends AbstractInteractionHandler {
             .queue();
     }
     private void showUpdateSummaryWithHook(net.dv8tion.jda.api.interactions.InteractionHook hook, FormState state) {
-        logger.info("Mostrando resumo para edição do squad log ID: {}", state.getSquadLogId());
+        log.info("Mostrando resumo para edição do squad log ID: {}", state.getSquadLogId());
         EmbedBuilder embed = new EmbedBuilder()
             .setTitle("📝 Editar Squad Log")
             .setDescription("Dados atuais do Squad Log. Selecione o campo que deseja editar:")

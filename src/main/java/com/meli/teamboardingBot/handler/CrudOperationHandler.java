@@ -1,7 +1,9 @@
 package com.meli.teamboardingBot.handler;
 import com.meli.teamboardingBot.enums.FormStep;
 import com.meli.teamboardingBot.model.FormState;
+import com.meli.teamboardingBot.service.FormStateService;
 import com.meli.teamboardingBot.service.SquadLogService;
+import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
@@ -12,11 +14,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
+@Slf4j
 @Component
 @Order(6)
 public class CrudOperationHandler extends AbstractInteractionHandler {
-    @Autowired
-    private SquadLogService squadLogService;
+    private final SquadLogService squadLogService;
+    
+    public CrudOperationHandler(FormStateService formStateService, SquadLogService squadLogService) {
+        super(formStateService);
+        this.squadLogService = squadLogService;
+    }
     @Override
     public boolean canHandle(String componentId) {
         return "criar-log".equals(componentId) ||
@@ -50,7 +57,7 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
         }
     }
     private void handleCreateSquadLog(ButtonInteractionEvent event, FormState state) {
-        logger.info("Criando squad log");
+        log.info("Criando squad log");
         event.deferEdit().queue();
         if (!isStateValid(state)) {
             EmbedBuilder errorEmbed = new EmbedBuilder()
@@ -64,7 +71,7 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
         }
         try {
             String payload = buildCreatePayload(state);
-            logger.info("Payload de criação: {}", payload);
+            log.info("Payload de criação: {}", payload);
             ResponseEntity<String> response = squadLogService.createSquadLog(payload);
             if (response.getStatusCode().is2xxSuccessful()) {
                 showSuccessMessageWithHook(event, "✅ Squad Log criado com sucesso!", true);
@@ -73,12 +80,12 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
                 showErrorMessageWithHook(event, "❌ Erro ao criar Squad Log. Código: " + response.getStatusCode());
             }
         } catch (Exception e) {
-            logger.error("Erro ao criar squad log: {}", e.getMessage());
+            log.error("Erro ao criar squad log: {}", e.getMessage());
             showErrorMessageWithHook(event, "❌ Erro interno ao criar Squad Log. Tente novamente.");
         }
     }
     private void handleUpdateSquadLog(ButtonInteractionEvent event, FormState state) {
-        logger.info("Atualizando squad log ID: {}", state.getSquadLogId());
+        log.info("Atualizando squad log ID: {}", state.getSquadLogId());
         event.deferEdit().queue();
         if (!isStateValid(state) || state.getSquadLogId() == null) {
             EmbedBuilder errorEmbed = new EmbedBuilder()
@@ -92,8 +99,8 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
         }
         try {
             String payload = buildUpdatePayload(state);
-            logger.info("Payload de atualização para squad-log ID {}: {}", state.getSquadLogId(), payload);
-            logger.info("Estado atual: squadId={}, userId={}, typeId={}, categoryIds={}, startDate={}, endDate={}", 
+            log.info("Payload de atualização para squad-log ID {}: {}", state.getSquadLogId(), payload);
+            log.info("Estado atual: squadId={}, userId={}, typeId={}, categoryIds={}, startDate={}, endDate={}", 
                        state.getSquadId(), state.getUserId(), state.getTypeId(), 
                        state.getCategoryIds(), state.getStartDate(), state.getEndDate());
             ResponseEntity<String> response = squadLogService.updateSquadLog(state.getSquadLogId(), payload);
@@ -104,7 +111,7 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
                 showErrorMessageWithHook(event, "❌ Erro ao atualizar Squad Log. Código: " + response.getStatusCode());
             }
         } catch (Exception e) {
-            logger.error("Erro ao atualizar squad log: {}", e.getMessage());
+            log.error("Erro ao atualizar squad log: {}", e.getMessage());
             showErrorMessageWithHook(event, "❌ Erro interno ao atualizar Squad Log. Tente novamente.");
         }
     }
@@ -135,11 +142,11 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
             .mapToInt(Integer::parseInt)
             .toArray());
         
-        logger.info("Create payload: {}", payload.toString());
+        log.info("Create payload: {}", payload.toString());
         return payload.toString();
     }
     private String buildUpdatePayload(FormState state) {
-        logger.info("DEBUG buildUpdatePayload: squadId={}, userId={}, typeId={}, categoryIds={}",
+        log.info("DEBUG buildUpdatePayload: squadId={}, userId={}, typeId={}, categoryIds={}",
                    state.getSquadId(), state.getUserId(), state.getTypeId(), state.getCategoryIds());
         JSONObject payload = new JSONObject();
         
@@ -147,9 +154,9 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
         
         if (!state.getUserId().equals(state.getSquadId())) {
             payload.put("user_id", Integer.parseInt(state.getUserId()));
-            logger.info("Incluindo user_id no payload: {}", state.getUserId());
+            log.info("Incluindo user_id no payload: {}", state.getUserId());
         } else {
-            logger.info("All team detectado - omitindo user_id do payload");
+            log.info("All team detectado - omitindo user_id do payload");
         }
         
         payload.put("squad_log_type_id", Integer.parseInt(state.getTypeId()));
@@ -162,26 +169,26 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
             .mapToInt(Integer::parseInt)
             .toArray());
         
-        logger.info("Update payload: {}", payload.toString());
+        log.info("Update payload: {}", payload.toString());
         return payload.toString();
     }
     private String convertToApiDateFormat(String inputDate) {
         if (inputDate == null || inputDate.isEmpty()) {
-            logger.warn("Data de entrada é null ou vazia");
+            log.warn("Data de entrada é null ou vazia");
             return null;
         }
-        logger.info("Convertendo data '{}' para formato API", inputDate);
+        log.info("Convertendo data '{}' para formato API", inputDate);
         if (inputDate.matches("\\d{4}-\\d{2}-\\d{2}")) {
-            logger.info("Data já está no formato API: '{}'", inputDate);
+            log.info("Data já está no formato API: '{}'", inputDate);
             return inputDate;
         }
         if (inputDate.matches("\\d{2}-\\d{2}-\\d{4}")) {
             String[] parts = inputDate.split("-");
             String apiDate = parts[2] + "-" + parts[1] + "-" + parts[0];
-            logger.info("Data convertida de DD-MM-YYYY para API: '{}' -> '{}'", inputDate, apiDate);
+            log.info("Data convertida de DD-MM-YYYY para API: '{}' -> '{}'", inputDate, apiDate);
             return apiDate;
         }
-        logger.warn("Formato de data não reconhecido: '{}' - retornando como está", inputDate);
+        log.warn("Formato de data não reconhecido: '{}' - retornando como está", inputDate);
         return inputDate;
     }
     private void showSuccessMessage(ButtonInteractionEvent event, String message, boolean isCreation) {
@@ -215,7 +222,7 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
             .queue();
     }
     private void handleCreateNewLog(ButtonInteractionEvent event) {
-        logger.info("Iniciando criação de novo squad log");
+        log.info("Iniciando criação de novo squad log");
         FormState newState = new FormState();
         newState.setCreating(true);
         newState.setEditing(false);
@@ -255,7 +262,7 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
                 .setActionRow(menuBuilder.build())
                 .queue();
         } catch (Exception e) {
-            logger.error("Erro ao exibir seleção de squad: {}", e.getMessage());
+            log.error("Erro ao exibir seleção de squad: {}", e.getMessage());
             EmbedBuilder errorEmbed = new EmbedBuilder()
                 .setTitle("❌ Erro ao carregar squads")
                 .setDescription("Ocorreu um erro ao carregar as squads. Tente novamente.")
@@ -266,7 +273,7 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
         }
     }
     private void handleUpdateExistingLog(ButtonInteractionEvent event) {
-        logger.info("Iniciando atualização de squad log existente");
+        log.info("Iniciando atualização de squad log existente");
         FormState newState = new FormState();
         newState.setCreating(false);
         newState.setEditing(true);
@@ -274,9 +281,9 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
         formStateService.updateState(event.getUser().getIdLong(), newState);
         event.deferEdit().queue();
         try {
-            logger.info("Carregando lista de squad logs...");
+            log.info("Carregando lista de squad logs...");
             String squadLogsJson = squadLogService.getSquadLogAll();
-            logger.info("Resposta da API getSquadLogAll: {}", squadLogsJson);
+            log.info("Resposta da API getSquadLogAll: {}", squadLogsJson);
             org.json.JSONObject obj = new org.json.JSONObject(squadLogsJson);
             org.json.JSONArray squadLogsArray = obj.optJSONArray("items");
             if (squadLogsArray == null || squadLogsArray.length() == 0) {
@@ -298,7 +305,7 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
                 .setActionRow(logMenuBuilder.build())
                 .queue();
         } catch (Exception e) {
-            logger.error("Erro ao carregar Squad Logs: {}", e.getMessage(), e);
+            log.error("Erro ao carregar Squad Logs: {}", e.getMessage(), e);
             event.getHook().editOriginal("❌ Erro ao carregar Squad Logs: " + e.getMessage())
                 .setEmbeds()
                 .setComponents()
@@ -349,7 +356,7 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
             .queue();
     }
     private void handleExitBot(ButtonInteractionEvent event) {
-        logger.info("Usuário saindo do bot");
+        log.info("Usuário saindo do bot");
         formStateService.removeState(event.getUser().getIdLong());
         
         event.deferEdit().queue();
@@ -376,22 +383,22 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
                             try {
                                 Thread.sleep(2000);
                                 event.getHook().deleteOriginal().queue(
-                                    deleteSuccess -> logger.info("Mensagem apagada com sucesso após saída do bot"),
-                                    deleteError -> logger.error("Erro ao apagar mensagem: {}", deleteError.getMessage())
+                                    deleteSuccess -> log.info("Mensagem apagada com sucesso após saída do bot"),
+                                    deleteError -> log.error("Erro ao apagar mensagem: {}", deleteError.getMessage())
                                 );
                             } catch (InterruptedException e) {
                                 Thread.currentThread().interrupt();
-                                logger.error("Thread interrompida durante sleep final: {}", e.getMessage());
+                                log.error("Thread interrompida durante sleep final: {}", e.getMessage());
                             }
-                        }, error2 -> logger.error("Erro ao mostrar mensagem 'Saindo...': {}", error2.getMessage()));
+                        }, error2 -> log.error("Erro ao mostrar mensagem 'Saindo...': {}", error2.getMessage()));
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
-                    logger.error("Thread interrompida durante sleep inicial: {}", e.getMessage());
+                    log.error("Thread interrompida durante sleep inicial: {}", e.getMessage());
                 }
-            }, error -> logger.error("Erro ao mostrar mensagem de agradecimento: {}", error.getMessage()));
+            }, error -> log.error("Erro ao mostrar mensagem de agradecimento: {}", error.getMessage()));
     }
     private void handleVoltarInicio(ButtonInteractionEvent event) {
-        logger.info("Usuário voltando ao início");
+        log.info("Usuário voltando ao início");
         formStateService.removeState(event.getUser().getIdLong());
         event.deferEdit().queue();
         EmbedBuilder embed = new EmbedBuilder()
