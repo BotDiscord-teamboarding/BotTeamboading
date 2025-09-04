@@ -4,6 +4,7 @@ import com.meli.teamboardingBot.model.FormState;
 import com.meli.teamboardingBot.service.SquadLogService;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
+import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -24,7 +25,8 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
                "criar-novo-log".equals(componentId) ||
                "atualizar-log-existente".equals(componentId) ||
                "atualizar".equals(componentId) ||
-               "sair-bot".equals(componentId);
+               "sair-bot".equals(componentId) ||
+               "voltar-inicio".equals(componentId);
     }
     @Override
     public void handleButton(ButtonInteractionEvent event, FormState state) {
@@ -43,6 +45,8 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
             handleUpdateExistingLog(event);
         } else if ("sair-bot".equals(buttonId)) {
             handleExitBot(event);
+        } else if ("voltar-inicio".equals(buttonId)) {
+            handleVoltarInicio(event);
         }
     }
     private void handleCreateSquadLog(ButtonInteractionEvent event, FormState state) {
@@ -53,7 +57,9 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
                 .setTitle("❌ Dados Incompletos")
                 .setDescription("Verifique se todos os campos foram preenchidos.")
                 .setColor(0xFF0000);
-            event.getHook().editOriginalEmbeds(errorEmbed.build()).setComponents().queue();
+            event.getHook().editOriginalEmbeds(errorEmbed.build())
+                .setActionRow(Button.primary("voltar-inicio", "🏠 Voltar ao Início"))
+                .queue();
             return;
         }
         try {
@@ -79,7 +85,9 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
                 .setTitle("❌ Dados Incompletos")
                 .setDescription("Dados incompletos ou ID do log não encontrado.")
                 .setColor(0xFF0000);
-            event.getHook().editOriginalEmbeds(errorEmbed.build()).setComponents().queue();
+            event.getHook().editOriginalEmbeds(errorEmbed.build())
+                .setActionRow(Button.primary("voltar-inicio", "🏠 Voltar ao Início"))
+                .queue();
             return;
         }
         try {
@@ -111,11 +119,8 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
     private String buildCreatePayload(FormState state) {
         JSONObject payload = new JSONObject();
         
-        // Sempre incluir squad_id
         payload.put("squad_id", Integer.parseInt(state.getSquadId()));
         
-        // Se não for "All team", incluir user_id
-        // "All team" tem userId igual ao squadId
         if (!state.getUserId().equals(state.getSquadId())) {
             payload.put("user_id", Integer.parseInt(state.getUserId()));
         }
@@ -138,11 +143,8 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
                    state.getSquadId(), state.getUserId(), state.getTypeId(), state.getCategoryIds());
         JSONObject payload = new JSONObject();
         
-        // Sempre incluir squad_id
         payload.put("squad_id", Integer.parseInt(state.getSquadId()));
         
-        // Se não for "All team", incluir user_id
-        // "All team" tem userId igual ao squadId
         if (!state.getUserId().equals(state.getSquadId())) {
             payload.put("user_id", Integer.parseInt(state.getUserId()));
             logger.info("Incluindo user_id no payload: {}", state.getUserId());
@@ -232,7 +234,9 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
                     .setTitle("❌ Erro ao carregar squads")
                     .setDescription("Nenhuma squad encontrada.")
                     .setColor(0xFF0000);
-                event.getHook().editOriginalEmbeds(errorEmbed.build()).setComponents().queue();
+                event.getHook().editOriginalEmbeds(errorEmbed.build())
+                    .setActionRow(Button.primary("voltar-inicio", "🏠 Voltar ao Início"))
+                    .queue();
                 return;
             }
             EmbedBuilder embed = new EmbedBuilder()
@@ -256,7 +260,9 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
                 .setTitle("❌ Erro ao carregar squads")
                 .setDescription("Ocorreu um erro ao carregar as squads. Tente novamente.")
                 .setColor(0xFF0000);
-            event.getHook().editOriginalEmbeds(errorEmbed.build()).setComponents().queue();
+            event.getHook().editOriginalEmbeds(errorEmbed.build())
+                .setActionRow(Button.primary("voltar-inicio", "🏠 Voltar ao Início"))
+                .queue();
         }
     }
     private void handleUpdateExistingLog(ButtonInteractionEvent event) {
@@ -330,7 +336,7 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
             .setDescription("Tente novamente ou entre em contato com o suporte.")
             .setColor(0xFF0000);
         event.editMessageEmbeds(embed.build())
-            .setComponents()
+            .setActionRow(Button.primary("voltar-inicio", "🏠 Voltar ao Início"))
             .queue();
     }
     private void showErrorMessageWithHook(ButtonInteractionEvent event, String message) {
@@ -339,7 +345,7 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
             .setDescription("Tente novamente ou entre em contato com o suporte.")
             .setColor(0xFF0000);
         event.getHook().editOriginalEmbeds(embed.build())
-            .setComponents()
+            .setActionRow(Button.primary("voltar-inicio", "🏠 Voltar ao Início"))
             .queue();
     }
     private void handleExitBot(ButtonInteractionEvent event) {
@@ -383,6 +389,21 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
                     logger.error("Thread interrompida durante sleep inicial: {}", e.getMessage());
                 }
             }, error -> logger.error("Erro ao mostrar mensagem de agradecimento: {}", error.getMessage()));
+    }
+    private void handleVoltarInicio(ButtonInteractionEvent event) {
+        logger.info("Usuário voltando ao início");
+        formStateService.removeState(event.getUser().getIdLong());
+        event.deferEdit().queue();
+        EmbedBuilder embed = new EmbedBuilder()
+            .setTitle("🏠 Squad Log")
+            .setDescription("Escolha uma opção")
+            .setColor(0x0099FF);
+        event.getHook().editOriginalEmbeds(embed.build())
+            .setActionRow(
+                Button.success("criar", "🆕 Criar"),
+                Button.secondary("atualizar", "📝 Atualizar")
+            )
+            .queue();
     }
     @Override
     public int getPriority() {
