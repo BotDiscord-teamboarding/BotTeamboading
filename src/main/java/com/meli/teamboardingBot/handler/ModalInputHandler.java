@@ -1,6 +1,9 @@
 package com.meli.teamboardingBot.handler;
 import com.meli.teamboardingBot.enums.FormStep;
 import com.meli.teamboardingBot.model.FormState;
+import com.meli.teamboardingBot.service.FormStateService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
@@ -13,9 +16,13 @@ import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
+@Slf4j
 @Component
 @Order(5)
 public class ModalInputHandler extends AbstractInteractionHandler {
+    public ModalInputHandler(FormStateService formStateService) {
+        super(formStateService);
+    }
     @Override
     public boolean canHandle(String componentId) {
         return "create-complete-modal".equals(componentId) ||
@@ -60,7 +67,7 @@ public class ModalInputHandler extends AbstractInteractionHandler {
         }
     }
     private void handleEditDescriptionButton(ButtonInteractionEvent event, FormState state) {
-        logger.info("Editando descrição");
+        log.info("Editando descrição");
         TextInput.Builder descriptionBuilder = TextInput.create("description", "Descrição", TextInputStyle.PARAGRAPH)
             .setPlaceholder("Digite a descrição do log...")
             .setMaxLength(1000)
@@ -75,7 +82,7 @@ public class ModalInputHandler extends AbstractInteractionHandler {
         event.replyModal(modal).queue();
     }
     private void handleEditDatesButton(ButtonInteractionEvent event, FormState state) {
-        logger.info("Editando datas");
+        log.info("Editando datas");
         TextInput.Builder startDateBuilder = TextInput.create("start_date", "Data de Início (DD-MM-AAAA)", TextInputStyle.SHORT)
             .setPlaceholder("Ex: 20-06-1986")
             .setMaxLength(10)
@@ -105,7 +112,7 @@ public class ModalInputHandler extends AbstractInteractionHandler {
         event.replyModal(modal).queue();
     }
     private void handleCreateCompleteModal(ModalInteractionEvent event, FormState state) {
-        logger.info("Processando modal de criação completa");
+        log.info("Processando modal de criação completa");
         String description = event.getValue("description").getAsString();
         String startDate = event.getValue("start_date").getAsString();
         String endDate = event.getValue("end_date") != null ? event.getValue("end_date").getAsString() : null;
@@ -175,7 +182,7 @@ public class ModalInputHandler extends AbstractInteractionHandler {
         showCreateSummary(event, state);
     }
     private void handleEditDescriptionModal(ModalInteractionEvent event, FormState state) {
-        logger.info("Processando edição de descrição");
+        log.info("Processando edição de descrição");
         String description = event.getValue("description").getAsString();
         state.setDescription(description);
         updateFormState(event.getUser().getIdLong(), state);
@@ -183,7 +190,7 @@ public class ModalInputHandler extends AbstractInteractionHandler {
         showSummary(event, state);
     }
     private void handleEditDatesModal(ModalInteractionEvent event, FormState state) {
-        logger.info("Processando edição de datas");
+        log.info("Processando edição de datas");
         String startDate = event.getValue("start_date").getAsString();
         String endDate = event.getValue("end_date") != null ? event.getValue("end_date").getAsString() : null;
         if (!isValidDate(startDate)) {
@@ -253,35 +260,35 @@ public class ModalInputHandler extends AbstractInteractionHandler {
         try {
             String[] parts = dateStr.split("-");
             if (parts.length != 3) {
-                logger.warn("Data com formato inválido (não tem 3 partes): {}", dateStr);
+                log.warn("Data com formato inválido (não tem 3 partes): {}", dateStr);
                 return false;
             }
             int day = Integer.parseInt(parts[0]);
             int month = Integer.parseInt(parts[1]);
             int year = Integer.parseInt(parts[2]);
-            logger.info("Validando data: dateStr={}, day={}, month={}, year={}", dateStr, day, month, year);
+            log.info("Validando data: dateStr={}, day={}, month={}, year={}", dateStr, day, month, year);
             if (year < 1900 || year > 2100) {
-                logger.warn("Ano inválido: {}", year);
+                log.warn("Ano inválido: {}", year);
                 return false;
             }
             if (month < 1 || month > 12) {
-                logger.warn("Mês inválido: {}", month);
+                log.warn("Mês inválido: {}", month);
                 return false;
             }
             if (day < 1 || day > 31) {
-                logger.warn("Dia inválido: {}", day);
+                log.warn("Dia inválido: {}", day);
                 return false;
             }
             LocalDate.of(year, month, day);
             return true;
         } catch (DateTimeParseException e) {
-            logger.error("Erro ao criar LocalDate: {}", e.getMessage());
+            log.error("Erro ao criar LocalDate: {}", e.getMessage());
             return false;
         } catch (NumberFormatException e) {
-            logger.error("Erro ao converter string para número na data {}: {}", dateStr, e.getMessage());
+            log.error("Erro ao converter string para número na data {}: {}", dateStr, e.getMessage());
             return false;
         } catch (Exception e) {
-            logger.error("Erro inesperado ao validar data {}: {}", dateStr, e.getMessage());
+            log.error("Erro inesperado ao validar data {}: {}", dateStr, e.getMessage());
             return false;
         }
     }
@@ -307,12 +314,12 @@ public class ModalInputHandler extends AbstractInteractionHandler {
             
             return endDate.isBefore(startDate);
         } catch (Exception e) {
-            logger.error("Erro ao comparar datas: startDate={}, endDate={}, erro={}", startDateStr, endDateStr, e.getMessage());
+            log.error("Erro ao comparar datas: startDate={}, endDate={}, erro={}", startDateStr, endDateStr, e.getMessage());
             return false;
         }
     }
     private void showCreateSummary(ModalInteractionEvent event, FormState state) {
-        logger.info("Mostrando resumo após preenchimento do modal");
+        log.info("Mostrando resumo após preenchimento do modal");
         net.dv8tion.jda.api.EmbedBuilder embed = buildCompleteSummaryEmbed(state);
         event.getHook().editOriginalEmbeds(embed.build())
             .setActionRow(
@@ -322,7 +329,7 @@ public class ModalInputHandler extends AbstractInteractionHandler {
             .queue();
     }
     private void showSummary(ModalInteractionEvent event, FormState state) {
-        logger.info("Mostrando resumo após edição via modal");
+        log.info("Mostrando resumo após edição via modal");
         if (state.isCreating()) {
             showCreateSummary(event, state);
         } else {
@@ -361,7 +368,7 @@ public class ModalInputHandler extends AbstractInteractionHandler {
         return embed;
     }
     private void handleFieldEditDescriptionModal(ModalInteractionEvent event, FormState state) {
-        logger.info("Processando edição de descrição via modal de campo");
+        log.info("Processando edição de descrição via modal de campo");
         String description = event.getValue("description").getAsString();
         state.setDescription(description);
         updateFormState(event.getUser().getIdLong(), state);
@@ -369,7 +376,7 @@ public class ModalInputHandler extends AbstractInteractionHandler {
         returnToFieldEditSummaryWithHook(event, state);
     }
     private void handleFieldEditDatesModal(ModalInteractionEvent event, FormState state) {
-        logger.info("Processando edição de datas via modal de campo");
+        log.info("Processando edição de datas via modal de campo");
         String startDate = event.getValue("start_date").getAsString();
         String endDate = event.getValue("end_date") != null ? event.getValue("end_date").getAsString() : null;
         if (endDate != null && endDate.trim().isEmpty()) {
@@ -429,16 +436,16 @@ public class ModalInputHandler extends AbstractInteractionHandler {
                 .queue();
             return;
         }
-        logger.info("Atualizando datas no estado: startDate={}, endDate={}", startDate, endDate);
+        log.info("Atualizando datas no estado: startDate={}, endDate={}", startDate, endDate);
         state.setStartDate(startDate);
         state.setEndDate(endDate);
         updateFormState(event.getUser().getIdLong(), state);
-        logger.info("Estado atualizado. Novas datas: startDate={}, endDate={}", state.getStartDate(), state.getEndDate());
+        log.info("Estado atualizado. Novas datas: startDate={}, endDate={}", state.getStartDate(), state.getEndDate());
         event.deferEdit().queue();
         returnToFieldEditSummaryWithHook(event, state);
     }
     private void returnToFieldEditSummary(ModalInteractionEvent event, FormState state) {
-        logger.info("Retornando ao resumo de edição após modal (descrição/datas)");
+        log.info("Retornando ao resumo de edição após modal (descrição/datas)");
         EmbedBuilder embed = new EmbedBuilder()
             .setTitle("📝 Editar Squad Log")
             .setDescription("Dados atuais do Squad Log. Selecione o campo que deseja editar:")
@@ -482,7 +489,7 @@ public class ModalInputHandler extends AbstractInteractionHandler {
             .queue();
     }
     private void returnToFieldEditSummaryWithHook(ModalInteractionEvent event, FormState state) {
-        logger.info("Retornando ao resumo de edição após modal (descrição/datas) via hook");
+        log.info("Retornando ao resumo de edição após modal (descrição/datas) via hook");
         EmbedBuilder embed = new EmbedBuilder()
             .setTitle("📝 Editar Squad Log")
             .setDescription("Dados atuais do Squad Log. Selecione o campo que deseja editar:")
@@ -525,7 +532,7 @@ public class ModalInputHandler extends AbstractInteractionHandler {
             .queue();
     }
     private void handleRetryCreateModal(ButtonInteractionEvent event, FormState state) {
-        logger.info("Reabrindo modal de criação após erro de data");
+        log.info("Reabrindo modal de criação após erro de data");
         
         TextInput.Builder descriptionBuilder = TextInput.create("description", "Descrição", TextInputStyle.PARAGRAPH)
             .setPlaceholder("Digite a descrição do log...")
@@ -561,7 +568,7 @@ public class ModalInputHandler extends AbstractInteractionHandler {
     }
 
     private void handleRetryEditDatesModal(ButtonInteractionEvent event, FormState state) {
-        logger.info("Reabrindo modal de edição de datas após erro");
+        log.info("Reabrindo modal de edição de datas após erro");
         
         TextInput.Builder startDateBuilder = TextInput.create("start_date", "Data de Início (DD-MM-AAAA)", TextInputStyle.SHORT)
             .setPlaceholder("Ex: 20-06-1986")
@@ -594,7 +601,7 @@ public class ModalInputHandler extends AbstractInteractionHandler {
     }
 
     private void handleRetryFieldEditDatesModal(ButtonInteractionEvent event, FormState state) {
-        logger.info("Reabrindo modal de edição de datas de campo após erro");
+        log.info("Reabrindo modal de edição de datas de campo após erro");
         
         TextInput.Builder startDateBuilder = TextInput.create("start_date", "Data de Início (DD-MM-AAAA)", TextInputStyle.SHORT)
             .setPlaceholder("Ex: 20-06-1986")
@@ -642,7 +649,7 @@ public class ModalInputHandler extends AbstractInteractionHandler {
             java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("dd-MM-yyyy");
             return localDate.format(formatter);
         } catch (Exception e) {
-            logger.warn("Não foi possível converter a data da API: {}", apiDate);
+            log.warn("Não foi possível converter a data da API: {}", apiDate);
             return apiDate;
         }
     }

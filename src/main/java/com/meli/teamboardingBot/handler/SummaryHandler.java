@@ -1,5 +1,7 @@
 package com.meli.teamboardingBot.handler;
 import com.meli.teamboardingBot.model.FormState;
+import com.meli.teamboardingBot.service.FormStateService;
+import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
@@ -7,15 +9,20 @@ import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
+@Slf4j
 @Component
 @Order(9)
 public class SummaryHandler extends AbstractInteractionHandler {
+    
+    public SummaryHandler(FormStateService formStateService) {
+        super(formStateService);
+    }
     @Override
     public boolean canHandle(String componentId) {
         return false;
     }
     public void showCreateSummary(ModalInteractionEvent event, FormState state) {
-        logger.info("Mostrando resumo de criação via modal");
+        log.info("Mostrando resumo de criação via modal");
         EmbedBuilder embed = buildSummaryEmbed(state, "📋 Resumo do Squad Log", "Confirme os dados antes de criar:");
         Button createButton = Button.success("confirmar-criacao", "✅ Criar");
         Button editButton = Button.secondary("editar-log", "✏️ Editar");
@@ -24,7 +31,7 @@ public class SummaryHandler extends AbstractInteractionHandler {
             .queue();
     }
     public void showCreateSummary(net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent event, FormState state) {
-        logger.info("Mostrando resumo de criação");
+        log.info("Mostrando resumo de criação");
         event.deferEdit().queue();
         EmbedBuilder embed = buildSummaryEmbed(state, "📋 Resumo do que foi preenchido", "Verifique todos os dados antes de criar o log:");
         event.getHook().editOriginalEmbeds(embed.build())
@@ -35,7 +42,7 @@ public class SummaryHandler extends AbstractInteractionHandler {
             .queue();
     }
     public void showUpdateSummary(net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent event, FormState state) {
-        logger.info("Mostrando resumo de atualização");
+        log.info("Mostrando resumo de atualização");
         event.deferEdit().queue();
         EmbedBuilder embed = buildSummaryEmbed(state, "📋 Resumo do Questionário Selecionado", "Dados atuais do questionário:");
         event.getHook().editOriginalEmbeds(embed.build())
@@ -47,7 +54,7 @@ public class SummaryHandler extends AbstractInteractionHandler {
             .queue();
     }
     public void showUpdateSummary(StringSelectInteractionEvent event, FormState state) {
-        logger.info("Mostrando resumo de atualização via select");
+        log.info("Mostrando resumo de atualização via select");
         EmbedBuilder embed = buildSummaryEmbed(state, "📋 Resumo do Questionário Selecionado", "Dados atuais do questionário:");
         event.getHook().editOriginalEmbeds(embed.build())
             .setComponents(ActionRow.of(
@@ -58,7 +65,7 @@ public class SummaryHandler extends AbstractInteractionHandler {
             .queue();
     }
     public void showSummary(ModalInteractionEvent event, FormState state) {
-        logger.info("Mostrando resumo após modal");
+        log.info("Mostrando resumo após modal");
         if (state.isCreating()) {
             showCreateSummary(event, state);
         } else {
@@ -81,7 +88,7 @@ public class SummaryHandler extends AbstractInteractionHandler {
             .setColor(0x0099FF);
         String squadName = state.getSquadName() != null ? state.getSquadName() : "Não informado";
         String userName = state.getUserName() != null ? state.getUserName() : "Não informado";
-        logger.info("Construindo resumo - squadName: '{}', userName: '{}', userId: '{}'", 
+        log.info("Construindo resumo - squadName: '{}', userName: '{}', userId: '{}'", 
                    squadName, userName, state.getUserId());
         String typeName = state.getTypeName() != null ? state.getTypeName() : "Não informado";
         String categoryNames = (!state.getCategoryNames().isEmpty()) ? 

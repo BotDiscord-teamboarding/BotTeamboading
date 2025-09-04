@@ -1,6 +1,9 @@
 package com.meli.teamboardingBot.handler;
+
+import lombok.extern.slf4j.Slf4j;
 import com.meli.teamboardingBot.enums.FormStep;
 import com.meli.teamboardingBot.model.FormState;
+import com.meli.teamboardingBot.service.FormStateService;
 import com.meli.teamboardingBot.service.SquadLogService;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
@@ -15,11 +18,17 @@ import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
+
+@Slf4j
 @Component
 @Order(9)
 public class FieldEditHandler extends AbstractInteractionHandler {
     @Autowired
     private SquadLogService squadLogService;
+    
+    public FieldEditHandler(FormStateService formStateService) {
+        super(formStateService);
+    }
     @Override
     public boolean canHandle(String componentId) {
         return "edit-squad".equals(componentId) ||
@@ -82,18 +91,18 @@ public class FieldEditHandler extends AbstractInteractionHandler {
     private void handleSquadSelection(net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent event, FormState state) {
         String selectedSquadId = event.getValues().get(0);
         String selectedSquadName = event.getSelectedOptions().get(0).getLabel();
-        logger.info("Squad selecionada para edição: {} - {}", selectedSquadId, selectedSquadName);
-        logger.info("Estado atual: isEditing={}, isCreating={}, step={}", state.isEditing(), state.isCreating(), state.getStep());
+        log.info("Squad selecionada para edição: {} - {}", selectedSquadId, selectedSquadName);
+        log.info("Estado atual: isEditing={}, isCreating={}, step={}", state.isEditing(), state.isCreating(), state.getStep());
         state.setSquadId(selectedSquadId);
         state.setSquadName(selectedSquadName);
         updateFormState(event.getUser().getIdLong(), state);
-        logger.info("Atualizando mensagem com resumo dos dados após seleção de squad...");
+        log.info("Atualizando mensagem com resumo dos dados após seleção de squad...");
         event.deferEdit().queue();
         showEditSummary(event.getHook(), state);
     }
     private void handleUserSelection(net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent event, FormState state) {
         String selectedUserId = event.getValues().get(0);
-        logger.info("Usuário selecionado para edição: {}", selectedUserId);
+        log.info("Usuário selecionado para edição: {}", selectedUserId);
         try {
             if (selectedUserId.equals(state.getSquadId())) {
                 state.setUserId(selectedUserId);
@@ -105,7 +114,7 @@ public class FieldEditHandler extends AbstractInteractionHandler {
             event.deferEdit().queue();
             showEditSummary(event.getHook(), state);
         } catch (Exception e) {
-            logger.error("Erro ao carregar dados do usuário: {}", e.getMessage());
+            log.error("Erro ao carregar dados do usuário: {}", e.getMessage());
             String selectedUserName = event.getSelectedOptions().get(0).getLabel();
             state.setUserId(selectedUserId);
             state.setUserName(selectedUserName);
@@ -142,7 +151,7 @@ public class FieldEditHandler extends AbstractInteractionHandler {
     private void handleTypeSelection(net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent event, FormState state) {
         String selectedTypeId = event.getValues().get(0);
         String selectedTypeName = event.getSelectedOptions().get(0).getLabel();
-        logger.info("Tipo selecionado para edição: {} - {}", selectedTypeId, selectedTypeName);
+        log.info("Tipo selecionado para edição: {} - {}", selectedTypeId, selectedTypeName);
         state.setTypeId(selectedTypeId);
         state.setTypeName(selectedTypeName);
         updateFormState(event.getUser().getIdLong(), state);
@@ -150,7 +159,7 @@ public class FieldEditHandler extends AbstractInteractionHandler {
         showEditSummary(event.getHook(), state);
     }
     private void handleCategoriesSelection(net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent event, FormState state) {
-        logger.info("Categorias selecionadas para edição: {}", event.getValues());
+        log.info("Categorias selecionadas para edição: {}", event.getValues());
         state.getCategoryIds().clear();
         state.getCategoryNames().clear();
         for (int i = 0; i < event.getValues().size(); i++) {
@@ -164,7 +173,7 @@ public class FieldEditHandler extends AbstractInteractionHandler {
         showEditSummary(event.getHook(), state);
     }
     private void showEditSummary(net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent event, FormState state) {
-        logger.info("Atualizando mensagem com resumo dos dados após seleção...");
+        log.info("Atualizando mensagem com resumo dos dados após seleção...");
         EmbedBuilder embed = new EmbedBuilder()
             .setTitle("📝 Editar Squad Log")
             .setDescription("Dados atuais do Squad Log. Selecione o campo que deseja editar:")
@@ -205,12 +214,12 @@ public class FieldEditHandler extends AbstractInteractionHandler {
                 )
             )
             .queue(
-                success -> logger.info("Mensagem atualizada com sucesso - resumo mostrado"),
-                error -> logger.error("Erro ao atualizar mensagem: {}", error.getMessage())
+                success -> log.info("Mensagem atualizada com sucesso - resumo mostrado"),
+                error -> log.error("Erro ao atualizar mensagem: {}", error.getMessage())
             );
     }
     private void showEditSummary(net.dv8tion.jda.api.interactions.InteractionHook hook, FormState state) {
-        logger.info("Atualizando mensagem com resumo dos dados após seleção (via hook)...");
+        log.info("Atualizando mensagem com resumo dos dados após seleção (via hook)...");
         EmbedBuilder embed = new EmbedBuilder()
             .setTitle("📝 Editar Squad Log")
             .setDescription("Dados atuais do Squad Log. Selecione o campo que deseja editar:")
@@ -251,13 +260,13 @@ public class FieldEditHandler extends AbstractInteractionHandler {
                 )
             )
             .queue(
-                success -> logger.info("Mensagem atualizada com sucesso - resumo com nova squad mostrado"),
-                error -> logger.error("Erro ao atualizar mensagem: {}", error.getMessage())
+                success -> log.info("Mensagem atualizada com sucesso - resumo com nova squad mostrado"),
+                error -> log.error("Erro ao atualizar mensagem: {}", error.getMessage())
             );
     }
     private void returnToEditSummary(net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent event, FormState state) {
-        logger.info("Retornando ao resumo de edição após alteração");
-        logger.info("Estado no resumo: squadName={}, userName={}, typeName={}", state.getSquadName(), state.getUserName(), state.getTypeName());
+        log.info("Retornando ao resumo de edição após alteração");
+        log.info("Estado no resumo: squadName={}, userName={}, typeName={}", state.getSquadName(), state.getUserName(), state.getTypeName());
         EmbedBuilder embed = new EmbedBuilder()
             .setTitle("📝 Editar Squad Log")
             .setDescription("Dados atuais do Squad Log. Selecione o campo que deseja editar:")
@@ -280,7 +289,7 @@ public class FieldEditHandler extends AbstractInteractionHandler {
         String endDate = state.getEndDate() != null ? formatToBrazilianDate(state.getEndDate()) : "Não informado";
         embed.addField("📅 Data Início", startDate, false);
         embed.addField("📅 Data Fim", endDate, false);
-        logger.info("Tentando editar mensagem original com resumo atualizado...");
+        log.info("Tentando editar mensagem original com resumo atualizado...");
         try {
             event.getHook().editOriginalEmbeds(embed.build())
                 .setComponents(
@@ -300,15 +309,15 @@ public class FieldEditHandler extends AbstractInteractionHandler {
                     )
                 )
                 .queue(
-                    success -> logger.info("Mensagem editada com sucesso - resumo atualizado mostrado"),
-                    error -> logger.error("Erro ao editar mensagem: {}", error.getMessage())
+                    success -> log.info("Mensagem editada com sucesso - resumo atualizado mostrado"),
+                    error -> log.error("Erro ao editar mensagem: {}", error.getMessage())
                 );
         } catch (Exception e) {
-            logger.error("Exceção ao tentar editar mensagem: {}", e.getMessage(), e);
+            log.error("Exceção ao tentar editar mensagem: {}", e.getMessage(), e);
         }
     }
     private void handleEditSquad(ButtonInteractionEvent event, FormState state) {
-        logger.info("Editando squad do log");
+        log.info("Editando squad do log");
         try {
             event.deferEdit().queue();
             String squadsJson = squadLogService.getSquads();
@@ -330,7 +339,7 @@ public class FieldEditHandler extends AbstractInteractionHandler {
                     squadMenuBuilder.addOption(squadName, squadId);
                     hasSquads = true;
                 } else {
-                    logger.warn("Squad com ID {} tem nome vazio, pulando...", squadId);
+                    log.warn("Squad com ID {} tem nome vazio, pulando...", squadId);
                 }
             }
             if (!hasSquads) {
@@ -345,12 +354,12 @@ public class FieldEditHandler extends AbstractInteractionHandler {
                 .setActionRow(squadMenuBuilder.build())
                 .queue();
         } catch (Exception e) {
-            logger.error("Erro ao carregar squads: {}", e.getMessage());
+            log.error("Erro ao carregar squads: {}", e.getMessage());
             event.getHook().editOriginal("❌ Erro ao carregar squads.").queue();
         }
     }
     private void handleEditUser(ButtonInteractionEvent event, FormState state) {
-        logger.info("Editando usuário do log - Squad ID atual: {}", state.getSquadId());
+        log.info("Editando usuário do log - Squad ID atual: {}", state.getSquadId());
         try {
             event.deferEdit().queue();
             String squadsJson = squadLogService.getSquads();
@@ -370,7 +379,7 @@ public class FieldEditHandler extends AbstractInteractionHandler {
                     String squadId = String.valueOf(squad.get("id"));
                     
                     if (squadId.equals(state.getSquadId())) {
-                        logger.info("Encontrada squad correspondente: {} (ID: {})", squad.optString("name", ""), squadId);
+                        log.info("Encontrada squad correspondente: {} (ID: {})", squad.optString("name", ""), squadId);
                         JSONArray userSquads = squad.optJSONArray("user_squads");
                         if (userSquads != null) {
                             for (int j = 0; j < userSquads.length(); j++) {
@@ -394,9 +403,9 @@ public class FieldEditHandler extends AbstractInteractionHandler {
                                     if (!userName.trim().isEmpty()) {
                                         userMenuBuilder.addOption(userName, userId);
                                         hasUsers = true;
-                                        logger.info("Adicionado usuário: {} (ID: {})", userName, userId);
+                                        log.info("Adicionado usuário: {} (ID: {})", userName, userId);
                                     } else {
-                                        logger.warn("Usuário com ID {} tem nome vazio, pulando...", userId);
+                                        log.warn("Usuário com ID {} tem nome vazio, pulando...", userId);
                                     }
                                 }
                             }
@@ -419,18 +428,18 @@ public class FieldEditHandler extends AbstractInteractionHandler {
                 .setActionRow(userMenuBuilder.build())
                 .queue();
         } catch (Exception e) {
-            logger.error("Erro ao carregar usuários: {}", e.getMessage());
+            log.error("Erro ao carregar usuários: {}", e.getMessage());
             event.getHook().editOriginal("❌ Erro ao carregar usuários.").queue();
         }
     }
     private void handleEditType(ButtonInteractionEvent event, FormState state) {
-        logger.info("Editando tipo do log");
+        log.info("Editando tipo do log");
         try {
             event.deferEdit().queue();
             String typesJson = squadLogService.getSquadLogTypes();
-            logger.info("Resposta da API de tipos: {}", typesJson);
+            log.info("Resposta da API de tipos: {}", typesJson);
             if (typesJson == null || typesJson.trim().isEmpty()) {
-                logger.error("API retornou resposta vazia para tipos");
+                log.error("API retornou resposta vazia para tipos");
                 event.getHook().editOriginal("❌ Erro: API retornou resposta vazia para tipos.").queue();
                 return;
             }
@@ -438,7 +447,7 @@ public class FieldEditHandler extends AbstractInteractionHandler {
             try {
                 typesArray = new JSONArray(typesJson);
             } catch (JSONException e) {
-                logger.error("API retornou JSON inválido para tipos. Resposta: {}", typesJson);
+                log.error("API retornou JSON inválido para tipos. Resposta: {}", typesJson);
                 event.getHook().editOriginal("❌ Erro: API retornou formato JSON inválido para tipos.").queue();
                 return;
             }
@@ -458,7 +467,7 @@ public class FieldEditHandler extends AbstractInteractionHandler {
                     typeMenuBuilder.addOption(typeName, typeId);
                     hasTypes = true;
                 } else {
-                    logger.warn("Tipo com ID {} tem nome vazio, pulando...", typeId);
+                    log.warn("Tipo com ID {} tem nome vazio, pulando...", typeId);
                 }
             }
             if (!hasTypes) {
@@ -473,18 +482,18 @@ public class FieldEditHandler extends AbstractInteractionHandler {
                 .setActionRow(typeMenuBuilder.build())
                 .queue();
         } catch (Exception e) {
-            logger.error("Erro ao carregar tipos: {}", e.getMessage(), e);
+            log.error("Erro ao carregar tipos: {}", e.getMessage(), e);
             event.getHook().editOriginal("❌ Erro ao carregar tipos: " + e.getMessage()).queue();
         }
     }
     private void handleEditCategories(ButtonInteractionEvent event, FormState state) {
-        logger.info("Editando categorias do log");
+        log.info("Editando categorias do log");
         event.deferEdit().queue();
         try {
             String categoriesJson = squadLogService.getSquadCategories();
-            logger.info("Resposta da API de categorias: {}", categoriesJson);
+            log.info("Resposta da API de categorias: {}", categoriesJson);
             if (categoriesJson == null || categoriesJson.trim().isEmpty()) {
-                logger.error("API retornou resposta vazia para categorias");
+                log.error("API retornou resposta vazia para categorias");
                 event.getHook().editOriginal("❌ Erro: API retornou resposta vazia para categorias.").queue();
                 return;
             }
@@ -492,7 +501,7 @@ public class FieldEditHandler extends AbstractInteractionHandler {
             try {
                 categoriesArray = new JSONArray(categoriesJson);
             } catch (JSONException e) {
-                logger.error("API retornou JSON inválido para categorias. Resposta: {}", categoriesJson);
+                log.error("API retornou JSON inválido para categorias. Resposta: {}", categoriesJson);
                 event.getHook().editOriginal("❌ Erro: API retornou formato JSON inválido para categorias.").queue();
                 return;
             }
@@ -509,7 +518,7 @@ public class FieldEditHandler extends AbstractInteractionHandler {
                 String categoryId = String.valueOf(category.get("id"));
                 String categoryName = category.optString("name", "");
                 if (categoryName == null || categoryName.trim().isEmpty()) {
-                    logger.warn("Categoria com ID {} tem nome vazio, pulando...", categoryId);
+                    log.warn("Categoria com ID {} tem nome vazio, pulando...", categoryId);
                     continue;
                 }
                 categoryMenuBuilder.addOption(categoryName, categoryId);
@@ -528,12 +537,12 @@ public class FieldEditHandler extends AbstractInteractionHandler {
                 .setActionRow(categoryMenuBuilder.build())
                 .queue();
         } catch (Exception e) {
-            logger.error("Erro ao carregar categorias: {}", e.getMessage());
+            log.error("Erro ao carregar categorias: {}", e.getMessage());
             event.getHook().editOriginal("❌ Erro ao carregar categorias.").queue();
         }
     }
     private void handleEditDescription(ButtonInteractionEvent event, FormState state) {
-        logger.info("Editando descrição do log");
+        log.info("Editando descrição do log");
         TextInput.Builder descriptionBuilder = TextInput.create("description", "Descrição", TextInputStyle.PARAGRAPH)
             .setPlaceholder("Digite a nova descrição do log...")
             .setMaxLength(1000)
@@ -548,7 +557,7 @@ public class FieldEditHandler extends AbstractInteractionHandler {
         event.replyModal(modal).queue();
     }
     private void handleEditDates(ButtonInteractionEvent event, FormState state) {
-        logger.info("Editando datas do log");
+        log.info("Editando datas do log");
         TextInput.Builder startDateBuilder = TextInput.create("start_date", "Data de Início (DD-MM-AAAA)", TextInputStyle.SHORT)
             .setPlaceholder("Ex: 20-06-1986")
             .setMaxLength(10)
@@ -591,12 +600,12 @@ public class FieldEditHandler extends AbstractInteractionHandler {
             java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("dd-MM-yyyy");
             return localDate.format(formatter);
         } catch (Exception e) {
-            logger.warn("Não foi possível converter a data da API: {}", apiDate);
+            log.warn("Não foi possível converter a data da API: {}", apiDate);
             return apiDate;
         }
     }
     private void handleCancelEdit(ButtonInteractionEvent event) {
-        logger.info("Cancelando edição do log");
+        log.info("Cancelando edição do log");
         EmbedBuilder embed = new EmbedBuilder()
             .setTitle("❌ Edição Cancelada")
             .setDescription("A edição do Squad Log foi cancelada.\n\nO que deseja fazer agora?")

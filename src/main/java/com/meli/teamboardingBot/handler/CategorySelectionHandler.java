@@ -1,7 +1,9 @@
 package com.meli.teamboardingBot.handler;
 import com.meli.teamboardingBot.enums.FormStep;
 import com.meli.teamboardingBot.model.FormState;
+import com.meli.teamboardingBot.service.FormStateService;
 import com.meli.teamboardingBot.service.SquadLogService;
+import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
@@ -18,13 +20,18 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+@Slf4j
 @Component
 @Order(4)
 public class CategorySelectionHandler extends AbstractInteractionHandler {
-    @Autowired
-    private SquadLogService squadLogService;
+    private final SquadLogService squadLogService;
     @Autowired
     private SummaryHandler summaryHandler;
+    
+    public CategorySelectionHandler(FormStateService formStateService, SquadLogService squadLogService) {
+        super(formStateService);
+        this.squadLogService = squadLogService;
+    }
     @Override
     public boolean canHandle(String componentId) {
         return "category-select".equals(componentId) || 
@@ -47,20 +54,20 @@ public class CategorySelectionHandler extends AbstractInteractionHandler {
         }
     }
     private void handleSelectCategoryButton(ButtonInteractionEvent event, FormState state) {
-        logger.info("Iniciando seleção de categoria");
+        log.info("Iniciando seleção de categoria");
         state.setStep(FormStep.CATEGORY_SELECTION);
         updateFormState(event.getUser().getIdLong(), state);
         showCategorySelection(event);
     }
     private void handleEditCategoriesButton(ButtonInteractionEvent event, FormState state) {
-        logger.info("Editando categorias");
+        log.info("Editando categorias");
         state.setStep(FormStep.CATEGORY_MODIFY);
         updateFormState(event.getUser().getIdLong(), state);
         showCategorySelection(event);
     }
     private void handleCategorySelect(StringSelectInteractionEvent event, FormState state) {
         List<String> selectedCategoryIds = event.getValues();
-        logger.info("Categorias selecionadas: {}", selectedCategoryIds);
+        log.info("Categorias selecionadas: {}", selectedCategoryIds);
         try {
             String categoriesJson = squadLogService.getSquadCategories();
             JSONArray categoriesArray = new JSONArray(categoriesJson);
@@ -84,7 +91,7 @@ public class CategorySelectionHandler extends AbstractInteractionHandler {
                 openDescriptionModal(event, state);
             }
         } catch (Exception e) {
-            logger.error("Erro na seleção de categorias: {}", e.getMessage());
+            log.error("Erro na seleção de categorias: {}", e.getMessage());
             showError(event, "Erro ao processar seleção das categorias.");
         }
     }
@@ -122,7 +129,7 @@ public class CategorySelectionHandler extends AbstractInteractionHandler {
                     .queue();
             }
         } catch (Exception e) {
-            logger.error("Erro ao carregar categorias: {}", e.getMessage());
+            log.error("Erro ao carregar categorias: {}", e.getMessage());
             EmbedBuilder errorEmbed = new EmbedBuilder()
                 .setTitle("❌ Erro ao carregar categorias")
                 .setDescription("Ocorreu um erro ao carregar as categorias. Tente novamente.")
@@ -133,7 +140,7 @@ public class CategorySelectionHandler extends AbstractInteractionHandler {
         }
     }
     private void openDescriptionModal(StringSelectInteractionEvent event, FormState state) {
-        logger.info("Abrindo modal de descrição e datas");
+        log.info("Abrindo modal de descrição e datas");
         TextInput descriptionInput = TextInput.create("description", "Descrição", TextInputStyle.PARAGRAPH)
             .setPlaceholder("Digite a descrição do log...")
             .setMaxLength(1000)
@@ -156,9 +163,9 @@ public class CategorySelectionHandler extends AbstractInteractionHandler {
             .build();
         try {
             event.replyModal(modal).queue();
-            logger.info("Modal aberto com sucesso!");
+            log.info("Modal aberto com sucesso!");
         } catch (Exception modalError) {
-            logger.error("Erro ao abrir modal: {}", modalError.getMessage());
+            log.error("Erro ao abrir modal: {}", modalError.getMessage());
             showError(event, "Erro ao processar seleção das categorias.");
         }
     }

@@ -1,7 +1,10 @@
 package com.meli.teamboardingBot.handler;
 import com.meli.teamboardingBot.enums.FormStep;
 import com.meli.teamboardingBot.model.FormState;
+import com.meli.teamboardingBot.service.FormStateService;
 import com.meli.teamboardingBot.service.SquadLogService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
@@ -14,13 +17,18 @@ import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+@Slf4j
 @Component
 @Order(3)
 public class TypeSelectionHandler extends AbstractInteractionHandler {
-    @Autowired
-    private SquadLogService squadLogService;
+    private final SquadLogService squadLogService;
     @Autowired
     private SummaryHandler summaryHandler;
+    
+    public TypeSelectionHandler(FormStateService formStateService, SquadLogService squadLogService) {
+        super(formStateService);
+        this.squadLogService = squadLogService;
+    }
     @Override
     public boolean canHandle(String componentId) {
         return "type-select".equals(componentId) || 
@@ -43,20 +51,20 @@ public class TypeSelectionHandler extends AbstractInteractionHandler {
         }
     }
     private void handleSelectTypeButton(ButtonInteractionEvent event, FormState state) {
-        logger.info("Iniciando seleção de tipo");
+        log.info("Iniciando seleção de tipo");
         state.setStep(FormStep.TYPE_SELECTION);
         updateFormState(event.getUser().getIdLong(), state);
         showTypeSelection(event);
     }
     private void handleEditTypeButton(ButtonInteractionEvent event, FormState state) {
-        logger.info("Editando tipo");
+        log.info("Editando tipo");
         state.setStep(FormStep.TYPE_MODIFY);
         updateFormState(event.getUser().getIdLong(), state);
         showTypeSelection(event);
     }
     private void handleTypeSelect(StringSelectInteractionEvent event, FormState state) {
         String selectedTypeId = event.getValues().get(0);
-        logger.info("Tipo selecionado: {}", selectedTypeId);
+        log.info("Tipo selecionado: {}", selectedTypeId);
         try {
             String typesJson = squadLogService.getSquadLogTypes();
             JSONArray typesArray = new JSONArray(typesJson);
@@ -78,7 +86,7 @@ public class TypeSelectionHandler extends AbstractInteractionHandler {
                 showCategorySelectionAfterType(event);
             }
         } catch (Exception e) {
-            logger.error("Erro na seleção de tipo: {}", e.getMessage());
+            log.error("Erro na seleção de tipo: {}", e.getMessage());
             showError(event, "Erro ao processar seleção do tipo.");
         }
     }
@@ -114,7 +122,7 @@ public class TypeSelectionHandler extends AbstractInteractionHandler {
                     .queue();
             }
         } catch (Exception e) {
-            logger.error("Erro ao carregar tipos: {}", e.getMessage());
+            log.error("Erro ao carregar tipos: {}", e.getMessage());
             EmbedBuilder errorEmbed = new EmbedBuilder()
                 .setTitle("❌ Erro ao carregar tipos")
                 .setDescription("Ocorreu um erro ao carregar os tipos. Tente novamente.")
@@ -157,7 +165,7 @@ public class TypeSelectionHandler extends AbstractInteractionHandler {
                     .queue();
             }
         } catch (Exception e) {
-            logger.error("Erro ao carregar categorias: {}", e.getMessage());
+            log.error("Erro ao carregar categorias: {}", e.getMessage());
             EmbedBuilder errorEmbed = new EmbedBuilder()
                 .setTitle("❌ Erro ao carregar categorias")
                 .setDescription("Ocorreu um erro ao carregar as categorias. Tente novamente.")

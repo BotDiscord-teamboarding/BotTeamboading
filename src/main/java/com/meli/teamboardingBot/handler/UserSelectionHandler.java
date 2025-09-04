@@ -1,7 +1,10 @@
 package com.meli.teamboardingBot.handler;
 import com.meli.teamboardingBot.enums.FormStep;
 import com.meli.teamboardingBot.model.FormState;
+import com.meli.teamboardingBot.service.FormStateService;
 import com.meli.teamboardingBot.service.SquadLogService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
@@ -13,13 +16,18 @@ import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+@Slf4j
 @Component
 @Order(2)
 public class UserSelectionHandler extends AbstractInteractionHandler {
-    @Autowired
-    private SquadLogService squadLogService;
+    private final SquadLogService squadLogService;
     @Autowired
     private SummaryHandler summaryHandler;
+    
+    public UserSelectionHandler(FormStateService formStateService, SquadLogService squadLogService) {
+        super(formStateService);
+        this.squadLogService = squadLogService;
+    }
     @Override
     public boolean canHandle(String componentId) {
         return "user-select".equals(componentId) || 
@@ -42,20 +50,20 @@ public class UserSelectionHandler extends AbstractInteractionHandler {
         }
     }
     private void handleSelectUserButton(ButtonInteractionEvent event, FormState state) {
-        logger.info("Iniciando seleção de usuário");
+        log.info("Iniciando seleção de usuário");
         state.setStep(FormStep.USER_SELECTION);
         updateFormState(event.getUser().getIdLong(), state);
         showUserSelection(event, state.getSquadId());
     }
     private void handleEditUserButton(ButtonInteractionEvent event, FormState state) {
-        logger.info("Editando usuário");
+        log.info("Editando usuário");
         state.setStep(FormStep.USER_MODIFY);
         updateFormState(event.getUser().getIdLong(), state);
         showUserSelection(event, state.getSquadId());
     }
     private void handleUserSelect(StringSelectInteractionEvent event, FormState state) {
         String selectedUserId = event.getValues().get(0);
-        logger.info("Usuário selecionado: {}", selectedUserId);
+        log.info("Usuário selecionado: {}", selectedUserId);
         try {
             if (selectedUserId.equals(state.getSquadId())) {
                 state.setUserId(selectedUserId);
@@ -73,7 +81,7 @@ public class UserSelectionHandler extends AbstractInteractionHandler {
                 showTypeSelectionAfterUser(event);
             }
         } catch (Exception e) {
-            logger.error("Erro na seleção de usuário: {}", e.getMessage());
+            log.error("Erro na seleção de usuário: {}", e.getMessage());
             showError(event, "Erro ao processar seleção do usuário.");
         }
     }
@@ -105,12 +113,12 @@ public class UserSelectionHandler extends AbstractInteractionHandler {
     private void showUserSelection(ButtonInteractionEvent event, String squadId) {
         try {
             event.deferEdit().queue();
-            logger.info("Carregando usuários para squad: {}", squadId);
+            log.info("Carregando usuários para squad: {}", squadId);
             String squadsJson = squadLogService.getSquads();
             JSONObject obj = new JSONObject(squadsJson);
             JSONArray squadsArray = obj.optJSONArray("items");
             if (squadsArray == null || squadsArray.length() == 0) {
-                logger.error("Nenhuma squad encontrada na resposta da API");
+                log.error("Nenhuma squad encontrada na resposta da API");
                 showUserSelectionError(event, "Nenhuma squad encontrada.");
                 return;
             }
@@ -123,7 +131,7 @@ public class UserSelectionHandler extends AbstractInteractionHandler {
                 }
             }
             if (selectedSquad == null) {
-                logger.error("Squad com ID {} não encontrada", squadId);
+                log.error("Squad com ID {} não encontrada", squadId);
                 showUserSelectionError(event, "Squad não encontrada.");
                 return;
             }
@@ -148,7 +156,7 @@ public class UserSelectionHandler extends AbstractInteractionHandler {
                     }
                 }
             }
-            logger.info("Encontrados {} usuários na squad {}", userCount, squadId);
+            log.info("Encontrados {} usuários na squad {}", userCount, squadId);
             EmbedBuilder embed = new EmbedBuilder()
                 .setTitle("👤 Selecione uma Pessoa")
                 .setColor(0x0099FF);
@@ -164,7 +172,7 @@ public class UserSelectionHandler extends AbstractInteractionHandler {
                     .queue();
             }
         } catch (Exception e) {
-            logger.error("Erro ao carregar usuários: {}", e.getMessage(), e);
+            log.error("Erro ao carregar usuários: {}", e.getMessage(), e);
             showUserSelectionError(event, "Erro interno ao carregar usuários: " + e.getMessage());
         }
     }
@@ -178,7 +186,7 @@ public class UserSelectionHandler extends AbstractInteractionHandler {
                 .setComponents()
                 .queue();
         } catch (Exception e) {
-            logger.error("Erro ao mostrar erro de seleção de usuário: {}", e.getMessage());
+            log.error("Erro ao mostrar erro de seleção de usuário: {}", e.getMessage());
             try {
                 event.deferEdit().queue();
                 EmbedBuilder errorEmbed = new EmbedBuilder()
@@ -189,7 +197,7 @@ public class UserSelectionHandler extends AbstractInteractionHandler {
                     .setComponents()
                     .queue();
             } catch (Exception ex) {
-                logger.error("Fallback também falhou: {}", ex.getMessage());
+                log.error("Fallback também falhou: {}", ex.getMessage());
             }
         }
     }
@@ -224,7 +232,7 @@ public class UserSelectionHandler extends AbstractInteractionHandler {
                     .queue();
             }
         } catch (Exception e) {
-            logger.error("Erro ao carregar tipos: {}", e.getMessage());
+            log.error("Erro ao carregar tipos: {}", e.getMessage());
             EmbedBuilder errorEmbed = new EmbedBuilder()
                 .setTitle("❌ Erro ao carregar tipos")
                 .setDescription("Ocorreu um erro ao carregar os tipos. Tente novamente.")
