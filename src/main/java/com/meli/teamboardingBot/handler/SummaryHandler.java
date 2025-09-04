@@ -55,6 +55,7 @@ public class SummaryHandler extends AbstractInteractionHandler {
     }
     public void showUpdateSummary(StringSelectInteractionEvent event, FormState state) {
         log.info("Mostrando resumo de atualização via select");
+        event.deferEdit().queue();
         EmbedBuilder embed = buildSummaryEmbed(state, "📋 Resumo do Questionário Selecionado", "Dados atuais do questionário:");
         event.getHook().editOriginalEmbeds(embed.build())
             .setComponents(ActionRow.of(
