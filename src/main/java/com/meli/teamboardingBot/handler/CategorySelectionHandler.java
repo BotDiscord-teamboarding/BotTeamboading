@@ -85,7 +85,6 @@ public class CategorySelectionHandler extends AbstractInteractionHandler {
             }
             updateFormState(event.getUser().getIdLong(), state);
             if (state.getStep() == FormStep.CATEGORY_MODIFY) {
-                event.deferEdit().queue();
                 showSummary(event);
             } else {
                 openDescriptionModal(event, state);
