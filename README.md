@@ -92,7 +92,7 @@ O projeto foi desenvolvido seguindo princípios de **Clean Architecture** e **SO
 ### 1. Clone do Repositório
 
 ```bash
-git clone <repository-url>
+git clone git@github.com:BotDiscord-teamboarding/BotTeamboading.git
 cd BotTeamboading
 ```
 
