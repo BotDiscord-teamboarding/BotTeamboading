@@ -1,4 +1,5 @@
 package com.meli.teamboardingBot.enums;
+
 public enum FormStep {
     INITIAL,
     SQUAD_SELECTION,

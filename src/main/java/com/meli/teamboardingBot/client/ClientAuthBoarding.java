@@ -34,7 +34,7 @@ public class ClientAuthBoarding {
     private String clientSecret;
     private final String authUrl = "/auth/login";
 
-    Logger logger = LoggerFactory.getLogger(ClientAuthBoarding.class);
+    private final Logger logger = LoggerFactory.getLogger(ClientAuthBoarding.class);
     private final RestTemplate restTemplate = new RestTemplate();
 
     private AuthTokenResponseDTO cachedToken;
@@ -76,6 +76,4 @@ public class ClientAuthBoarding {
             throw new RuntimeException("Falha na autenticação: " + e.getMessage(), e);
         }
     }
-
-
 }

@@ -1,5 +1,6 @@
 package com.meli.teamboardingBot.discord.command;
 
+import com.meli.teamboardingBot.discord.ui.Ui;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import org.springframework.stereotype.Component;
@@ -13,12 +14,13 @@ public class SquadLogCommand implements SlashCommandHandler {
 
     @Override
     public void execute(SlashCommandInteractionEvent event) {
-        event.reply("Escolha uma opção:")
-                .addActionRow(
-                        Button.primary("criar", "Criar"),
+        event.deferReply(true).queue(hook ->
+                hook.editOriginalEmbeds(
+                        Ui.info("Escolha uma opção").build()
+                ).setActionRow(
+                        Button.success("criar", "Criar"),
                         Button.secondary("atualizar", "Atualizar")
-                )
-                .setEphemeral(true)
-                .queue();
+                ).queue()
+        );
     }
 }
