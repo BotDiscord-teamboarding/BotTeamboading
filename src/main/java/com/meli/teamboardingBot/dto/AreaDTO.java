@@ -1,29 +1,16 @@
 package com.meli.teamboardingBot.dto;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.Getter;
+import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
-import lombok.ToString;
-
+import lombok.AllArgsConstructor;
 import java.util.List;
 
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
-@ToString
+@AllArgsConstructor
 public class AreaDTO {
-    
-    @JsonProperty("id")
     private Long id;
-    
-    @JsonProperty("name")
     private String name;
-    
-    @JsonProperty("technologies")
     private List<TechnologyDTO> technologies;
-    
-    @JsonProperty("projects")
     private List<ProjectDTO> projects;
-
 }
