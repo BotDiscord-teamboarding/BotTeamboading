@@ -102,6 +102,8 @@ public class ComponentInteractionListener extends ListenerAdapter {
                     batchCreationHandler.handleBatchCreationModal(event);
                 } else if (modalId.equals("batch-edit-modal")) {
                     batchCreationHandler.handleEditEntryModal(event);
+                } else if (modalId.equals("batch-edit-modal-page1") || modalId.equals("batch-edit-modal-page2")) {
+                    batchCreationHandler.handleEditEntryModal(event);
                 } else if (modalId.endsWith("-modal") && modalId.startsWith("batch-edit-")) {
                     batchCreationHandler.handleFieldEditModal(event);
                 }
@@ -141,6 +143,7 @@ public class ComponentInteractionListener extends ListenerAdapter {
 
     private boolean isBatchModal(String modalId) {
         return modalId.equals("batch-creation-modal") || modalId.equals("batch-edit-modal") ||
+               modalId.equals("batch-edit-modal-page1") || modalId.equals("batch-edit-modal-page2") ||
                (modalId.startsWith("batch-edit-") && modalId.endsWith("-modal"));
     }
 }
