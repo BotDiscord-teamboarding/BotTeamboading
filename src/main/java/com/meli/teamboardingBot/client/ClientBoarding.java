@@ -1,18 +1,15 @@
 package com.meli.teamboardingBot.client;
 import com.meli.teamboardingBot.constants.ApiEndpoints;
-import com.meli.teamboardingBot.service.AuthenticationService;
 import com.meli.teamboardingBot.service.HttpClientService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 @Component
 public class ClientBoarding {
-    private final AuthenticationService authService;
     private final HttpClientService httpClient;
     private final Integer limit = 15;
     @Autowired
-    public ClientBoarding(AuthenticationService authService, HttpClientService httpClient) {
-        this.authService = authService;
+    public ClientBoarding(HttpClientService httpClient) {
         this.httpClient = httpClient;
     }
     public String getSquads() {
@@ -22,8 +19,7 @@ public class ClientBoarding {
         return httpClient.get(ApiEndpoints.SQUAD_LOG_TYPES);
     }
     public String getSquadCategories() {
-        String queryParams = "client_id=" + authService.getClientId();
-        return httpClient.get(ApiEndpoints.SQUAD_CATEGORIES, queryParams);
+        return httpClient.get(ApiEndpoints.SQUAD_CATEGORIES);
     }
     public ResponseEntity<String> createSquadLog(String payload) {
         return httpClient.post(ApiEndpoints.SQUAD_LOG, payload);
