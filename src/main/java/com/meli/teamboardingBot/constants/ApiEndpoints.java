@@ -8,7 +8,6 @@ public final class ApiEndpoints {
     public static final String SQUAD_LOG_LIST_ALL = "/clients/squad_logs?offset=0&q=&client_id=67&area_id=67&project_id=35&squad_id=232&only_active_squads=true&limit=15";
     public static final String SQUAD_LOG_BY_ID = "/clients/squad_logs/";
     
-    // Método para construir URL com paginação dinâmica
     public static String buildSquadLogListUrl(int offset, int limit) {
         return "/clients/squad_logs?offset=" + offset + "&q=&client_id=67&area_id=67&project_id=35&squad_id=232&only_active_squads=true&limit=" + limit;
     }

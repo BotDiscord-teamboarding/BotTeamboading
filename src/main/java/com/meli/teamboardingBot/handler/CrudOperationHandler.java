@@ -433,7 +433,6 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
     private void handleVoltarInicio(ButtonInteractionEvent event) {
         log.info("Usuário voltando ao início");
         formStateService.removeState(event.getUser().getIdLong());
-        // Reset pagination state
         currentPage = 1;
         event.deferEdit().queue();
         EmbedBuilder embed = new EmbedBuilder()
@@ -500,11 +499,9 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
                 .setDescription("Escolha o Squad Log que deseja atualizar:\n📄 Página " + currentPage + " de " + totalPages)
                 .setColor(0xFFAA00);
 
-            // Criar botões de navegação baseados na página atual
             Button voltarBtn = Button.secondary("voltar", "⬅️ Anterior");
             Button avancarBtn = Button.secondary("avancar", "➡️ Próxima");
             
-            // Desabilitar botões conforme necessário
             if (currentPage <= 1) {
                 voltarBtn = voltarBtn.asDisabled();
             }
