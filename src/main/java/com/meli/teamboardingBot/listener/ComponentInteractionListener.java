@@ -1,4 +1,8 @@
 package com.meli.teamboardingBot.listener;
+<<<<<<< HEAD
+=======
+import com.meli.teamboardingBot.handler.BatchCreationHandler;
+>>>>>>> origin/pre-dev
 import com.meli.teamboardingBot.handler.InteractionHandler;
 import com.meli.teamboardingBot.model.FormState;
 import com.meli.teamboardingBot.service.FormStateService;
@@ -16,10 +20,19 @@ public class ComponentInteractionListener extends ListenerAdapter {
     private final Logger logger = LoggerFactory.getLogger(ComponentInteractionListener.class);
     private final List<InteractionHandler> handlers;
     private final FormStateService formStateService;
+<<<<<<< HEAD
     @Autowired
     public ComponentInteractionListener(List<InteractionHandler> handlers, FormStateService formStateService) {
         this.handlers = handlers;
         this.formStateService = formStateService;
+=======
+    private final BatchCreationHandler batchCreationHandler;
+    @Autowired
+    public ComponentInteractionListener(List<InteractionHandler> handlers, FormStateService formStateService, BatchCreationHandler batchCreationHandler) {
+        this.handlers = handlers;
+        this.formStateService = formStateService;
+        this.batchCreationHandler = batchCreationHandler;
+>>>>>>> origin/pre-dev
         this.handlers.sort((h1, h2) -> Integer.compare(h1.getPriority(), h2.getPriority()));
         logger.info("Initialized with {} handlers", handlers.size());
     }
@@ -28,6 +41,21 @@ public class ComponentInteractionListener extends ListenerAdapter {
         String buttonId = event.getComponentId();
         long userId = event.getUser().getIdLong();
         logger.info("Button interaction: {} from user: {}", buttonId, userId);
+<<<<<<< HEAD
+=======
+        
+        if (isBatchButton(buttonId)) {
+            try {
+                batchCreationHandler.handleBatchNavigation(event);
+                return;
+            } catch (Exception e) {
+                logger.error("Error handling batch button {}: {}", buttonId, e.getMessage());
+                event.reply("❌ Erro interno. Tente novamente.").setEphemeral(true).queue();
+                return;
+            }
+        }
+        
+>>>>>>> origin/pre-dev
         FormState state = formStateService.getOrCreateState(userId);
         if (state == null) {
             event.reply("❌ Sessão expirada. Use /squad-log para começar novamente.").setEphemeral(true).queue();
@@ -80,6 +108,27 @@ public class ComponentInteractionListener extends ListenerAdapter {
         String modalId = event.getModalId();
         long userId = event.getUser().getIdLong();
         logger.info("Modal interaction: {} from user: {}", modalId, userId);
+<<<<<<< HEAD
+=======
+        
+        if (isBatchModal(modalId)) {
+            try {
+                if (modalId.equals("batch-creation-modal")) {
+                    batchCreationHandler.handleBatchCreationModal(event);
+                } else if (modalId.equals("batch-edit-modal")) {
+                    batchCreationHandler.handleEditEntryModal(event);
+                } else if (modalId.endsWith("-modal") && modalId.startsWith("batch-edit-")) {
+                    batchCreationHandler.handleFieldEditModal(event);
+                }
+                return;
+            } catch (Exception e) {
+                logger.error("Error handling batch modal {}: {}", modalId, e.getMessage());
+                event.reply("❌ Erro interno. Tente novamente.").setEphemeral(true).queue();
+                return;
+            }
+        }
+        
+>>>>>>> origin/pre-dev
         FormState state = formStateService.getOrCreateState(userId);
         if (state == null) {
             event.reply("❌ Sessão expirada. Use /squad-log para começar novamente.").setEphemeral(true).queue();
@@ -101,4 +150,16 @@ public class ComponentInteractionListener extends ListenerAdapter {
         logger.warn("No handler found for modal: {}", modalId);
         event.reply("❌ Componente não reconhecido.").setEphemeral(true).queue();
     }
+<<<<<<< HEAD
+=======
+
+    private boolean isBatchButton(String buttonId) {
+        return buttonId.startsWith("batch-");
+    }
+
+    private boolean isBatchModal(String modalId) {
+        return modalId.equals("batch-creation-modal") || modalId.equals("batch-edit-modal") ||
+               (modalId.startsWith("batch-edit-") && modalId.endsWith("-modal"));
+    }
+>>>>>>> origin/pre-dev
 }

@@ -53,6 +53,11 @@ public class ComponentInteractionListener extends ListenerAdapter {
     private static final String BTN_CRIAR_NOVO = "criar-novo";
     private static final String BTN_ATUALIZAR_EXISTENTE = "atualizar-existente";
     private static final String BTN_SAIR = "sair";
+<<<<<<< HEAD
+=======
+    private static final String BTN_VOLTAR = "voltar";
+    private static final String BTN_AVANCAR = "avancar";
+>>>>>>> origin/pre-dev
     
     // Botões de edição de campos
     private static final String BTN_EDIT_SQUAD = "edit-squad";
@@ -84,6 +89,11 @@ public class ComponentInteractionListener extends ListenerAdapter {
 
         FormState state = userFormState.computeIfAbsent(discordUserId, k -> new FormState());
 
+<<<<<<< HEAD
+=======
+
+
+>>>>>>> origin/pre-dev
         switch (buttonId) {
             case "criar" -> {
                 logger.info("[CRIAR_SQUAD] Iniciando processo de criação para usuário: {}", discordUserId);
@@ -291,6 +301,15 @@ public class ComponentInteractionListener extends ListenerAdapter {
 
                 event.replyModal(endDateModal).queue();
             }
+<<<<<<< HEAD
+=======
+            case "voltar" -> {
+                logger.info("BTN VOLTAR");
+            }
+            case "avancar" -> {
+                logger.info("BTN VOLTAR");
+            }
+>>>>>>> origin/pre-dev
             default -> {
                 logger.warn("[BUTTON_UNKNOWN] Botão desconhecido: {} | Usuário: {}", buttonId, discordUserId);
                 event.reply("❌ Botão não reconhecido.").setEphemeral(true).queue();
