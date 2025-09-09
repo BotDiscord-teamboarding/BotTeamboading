@@ -45,4 +45,9 @@ public class ClientBoarding {
         String endpoint = ApiEndpoints.SQUAD_LOG_BY_ID + id;
         return httpClient.get(endpoint);
     }
+    
+    public String getUsersBySquad(String squadId) {
+        String endpoint = ApiEndpoints.SQUAD_LIST + "/" + squadId + "/users";
+        return httpClient.get(endpoint);
+    }
 }
