@@ -22,7 +22,7 @@ public class IntelligentTextParsingService implements TextParser {
     private static final DateTimeFormatter BRAZILIAN_DATE_FORMAT = DateTimeFormatter.ofPattern("dd-MM-yyyy");
     
     private static final Pattern INTELLIGENT_PATTERN = Pattern.compile(
-        "([\\w\\s]+?)\\s*-\\s*([\\w\\s]+?)\\s*-\\s*([\\w\\s]+?)\\s*-\\s*([\\w\\s,]+?)\\s*-\\s*(\\d{2}-\\d{2}-\\d{4})(?:\\s*a\\s*(\\d{2}-\\d{2}-\\d{4}))?(?:\\s*-\\s*(.+))?",
+        "([\\w\\s]+?)\\s*-\\s*([\\w\\s]+?)\\s*-\\s*([\\w\\s]+?)\\s*-\\s*([\\w\\s,]+?)\\s*-\\s*(\\d{2}-\\d{2}-\\d{4})(?:\\s*-\\s*(\\d{2}-\\d{2}-\\d{4}))?(?:\\s*-\\s*(.+))?",
         Pattern.MULTILINE | Pattern.CASE_INSENSITIVE
     );
     
@@ -144,20 +144,31 @@ public class IntelligentTextParsingService implements TextParser {
                 String personName = cleanAndNormalize(parts[1]);
                 String logType = cleanAndNormalize(parts[2]);
                 String categoriesStr = cleanAndNormalize(parts[3]);
-                String dateStr = parts[4].trim();
+                String startDateStr = parts[4].trim();
                 
-                Pattern datePattern = Pattern.compile("(\\d{2}[-/]\\d{2}[-/]\\d{4})");
-                Matcher dateMatcher = datePattern.matcher(dateStr);
+                Pattern datePattern = Pattern.compile("\\d{2}[-/]\\d{2}[-/]\\d{4}");
                 
-                if (dateMatcher.find()) {
-                    String startDateStr = normalizeDate(dateMatcher.group(1));
-                    LocalDate startDate = parseDate(startDateStr);
+                if (datePattern.matcher(startDateStr).matches()) {
+                    LocalDate startDate = parseDate(normalizeDate(startDateStr));
+                    LocalDate endDate = null;
+                    String description;
+                    
+                    if (parts.length >= 6) {
+                        String potentialEndDate = parts[5].trim();
+                        if (datePattern.matcher(potentialEndDate).matches()) {
+                            endDate = parseDate(normalizeDate(potentialEndDate));
+                            description = parts.length > 6 ? parts[6].trim() : generateDefaultDescription(logType, personName);
+                        } else {
+                            description = potentialEndDate;
+                        }
+                    } else {
+                        description = generateDefaultDescription(logType, personName);
+                    }
                     
                     List<String> categories = parseCategories(categoriesStr);
-                    String description = parts.length > 5 ? parts[5].trim() : generateDefaultDescription(logType, personName);
                     
                     return new BatchLogEntry(squadName, personName, logType, categories, 
-                                           description, startDate, null, lineNumber);
+                                           description, startDate, endDate, lineNumber);
                 }
                 
             } catch (Exception e) {

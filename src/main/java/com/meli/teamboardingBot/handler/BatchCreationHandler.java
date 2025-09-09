@@ -66,10 +66,11 @@ public class BatchCreationHandler extends AbstractInteractionHandler {
                componentId.equals("batch-edit-squad") || componentId.equals("batch-edit-person") ||
                componentId.equals("batch-edit-type") || componentId.equals("batch-edit-categories") ||
                componentId.equals("batch-edit-description") || componentId.equals("batch-edit-dates") ||
-               componentId.equals("batch-back-to-preview") ||
+               componentId.equals("batch-back-to-preview") || componentId.equals("batch-edit-page2") ||
                componentId.equals("batch-edit-squad-modal") || componentId.equals("batch-edit-person-modal") ||
                componentId.equals("batch-edit-type-modal") || componentId.equals("batch-edit-categories-modal") ||
-               componentId.equals("batch-edit-description-modal") || componentId.equals("batch-edit-dates-modal");
+               componentId.equals("batch-edit-description-modal") || componentId.equals("batch-edit-dates-modal") ||
+               componentId.equals("batch-edit-modal-page1") || componentId.equals("batch-edit-modal-page2");
     }
 
     public void handleBatchCreationCommand(SlashCommandInteractionEvent event) {
@@ -187,7 +188,7 @@ public class BatchCreationHandler extends AbstractInteractionHandler {
         if (buttonId.equals("batch-edit-squad") || buttonId.equals("batch-edit-person") ||
             buttonId.equals("batch-edit-type") || buttonId.equals("batch-edit-categories") ||
             buttonId.equals("batch-edit-description") || buttonId.equals("batch-edit-dates") ||
-            buttonId.equals("batch-edit-entry")) {
+            buttonId.equals("batch-edit-entry") || buttonId.equals("batch-edit-page2")) {
             
             switch (buttonId) {
                 case "batch-edit-squad":
@@ -210,6 +211,9 @@ public class BatchCreationHandler extends AbstractInteractionHandler {
                     return;
                 case "batch-edit-entry":
                     showEditEntryModal(event, entries, currentIndex);
+                    return;
+                case "batch-edit-page2":
+                    showEditEntryModalPage2(event, entries, currentIndex);
                     return;
             }
         }
@@ -516,6 +520,10 @@ public class BatchCreationHandler extends AbstractInteractionHandler {
     }
 
     private void showEditEntryModal(ButtonInteractionEvent event, List<BatchLogEntry> entries, int currentIndex) {
+        showEditEntryModalPage1(event, entries, currentIndex);
+    }
+    
+    private void showEditEntryModalPage1(ButtonInteractionEvent event, List<BatchLogEntry> entries, int currentIndex) {
         BatchLogEntry entry = entries.get(currentIndex);
         
         TextInput squadInput = TextInput.create("edit-squad", "Squad", TextInputStyle.SHORT)
@@ -532,22 +540,45 @@ public class BatchCreationHandler extends AbstractInteractionHandler {
                 .setValue(entry.getLogType())
                 .setRequiredRange(1, 50)
                 .build();
-                
+
+        Modal modal = Modal.create("batch-edit-modal-page1", "✏️ Editar Squad Log (1/2)")
+                .addActionRow(squadInput)
+                .addActionRow(personInput)
+                .addActionRow(typeInput)
+                .build();
+
+        event.replyModal(modal).queue();
+    }
+    
+    private void showEditEntryModalPage2(ButtonInteractionEvent event, List<BatchLogEntry> entries, int currentIndex) {
+        BatchLogEntry entry = entries.get(currentIndex);
+        
         TextInput categoriesInput = TextInput.create("edit-categories", "Categorias", TextInputStyle.SHORT)
                 .setValue(String.join(", ", entry.getCategories()))
                 .setRequiredRange(1, 200)
                 .build();
                 
-        TextInput descriptionInput = TextInput.create("edit-description", "Descrição", TextInputStyle.SHORT)
+        String startDateStr = entry.getStartDate() != null ? entry.getStartDate().format(BRAZILIAN_DATE_FORMAT) : "";
+        String endDateStr = entry.getEndDate() != null ? entry.getEndDate().format(BRAZILIAN_DATE_FORMAT) : "";
+        String datesValue = startDateStr;
+        if (!endDateStr.isEmpty()) {
+            datesValue += " - " + endDateStr;
+        }
+        
+        TextInput datesInput = TextInput.create("edit-dates", "Datas (DD-MM-AAAA - DD-MM-AAAA)", TextInputStyle.SHORT)
+                .setValue(datesValue)
+                .setPlaceholder("Ex: 15-01-2025 - 20-01-2025 ou apenas 15-01-2025")
+                .setRequired(true)
+                .build();
+                
+        TextInput descriptionInput = TextInput.create("edit-description", "Descrição", TextInputStyle.PARAGRAPH)
                 .setValue(entry.getDescription())
                 .setRequiredRange(1, 500)
                 .build();
 
-        Modal modal = Modal.create("batch-edit-modal", "✏️ Editar Squad Log")
-                .addActionRow(squadInput)
-                .addActionRow(personInput)
-                .addActionRow(typeInput)
+        Modal modal = Modal.create("batch-edit-modal-page2", "✏️ Editar Squad Log (2/2)")
                 .addActionRow(categoriesInput)
+                .addActionRow(datesInput)
                 .addActionRow(descriptionInput)
                 .build();
 
@@ -555,6 +586,16 @@ public class BatchCreationHandler extends AbstractInteractionHandler {
     }
 
     public void handleEditEntryModal(ModalInteractionEvent event) {
+        String modalId = event.getModalId();
+        
+        if ("batch-edit-modal-page1".equals(modalId)) {
+            handleEditEntryModalPage1(event);
+        } else if ("batch-edit-modal-page2".equals(modalId)) {
+            handleEditEntryModalPage2(event);
+        }
+    }
+    
+    private void handleEditEntryModalPage1(ModalInteractionEvent event) {
         String userId = event.getUser().getId();
         List<BatchLogEntry> entries = getBatchEntries(userId);
         int currentIndex = getCurrentIndex(userId);
@@ -571,14 +612,77 @@ public class BatchCreationHandler extends AbstractInteractionHandler {
         String newSquad = event.getValue("edit-squad").getAsString().trim();
         String newPerson = event.getValue("edit-person").getAsString().trim();
         String newType = event.getValue("edit-type").getAsString().trim();
-        String newCategoriesStr = event.getValue("edit-categories").getAsString().trim();
-        String newDescription = event.getValue("edit-description").getAsString().trim();
         
         entry.setSquadName(newSquad);
         entry.setPersonName(newPerson);
         entry.setLogType(newType);
-        entry.setCategories(Arrays.asList(newCategoriesStr.split(",\\s*")));
-        entry.setDescription(newDescription);
+        
+        showEditPageTransition(event, entries, currentIndex);
+    }
+    
+    private void showEditPageTransition(ModalInteractionEvent event, List<BatchLogEntry> entries, int currentIndex) {
+        EmbedBuilder embed = new EmbedBuilder()
+                .setTitle("✅ Primeira página salva")
+                .setDescription("Dados básicos salvos com sucesso!\n\nClique em **Próximo** para editar categorias, datas e descrição.")
+                .setColor(Color.GREEN);
+
+        Button nextButton = Button.primary("batch-edit-page2", "➡️ Próximo (2/2)");
+        Button cancelButton = Button.secondary("batch-back-to-preview", "❌ Cancelar");
+
+        event.getHook().editOriginalEmbeds(embed.build())
+             .setComponents(ActionRow.of(nextButton, cancelButton))
+             .queue();
+    }
+    
+    private void handleEditEntryModalPage2(ModalInteractionEvent event) {
+        String userId = event.getUser().getId();
+        List<BatchLogEntry> entries = getBatchEntries(userId);
+        int currentIndex = getCurrentIndex(userId);
+        
+        if (entries == null || entries.isEmpty()) {
+            showSessionExpiredError(event);
+            return;
+        }
+        
+        event.deferEdit().queue();
+        
+        BatchLogEntry entry = entries.get(currentIndex);
+        
+        try {
+            String newCategoriesStr = event.getValue("edit-categories").getAsString().trim();
+            String datesStr = event.getValue("edit-dates").getAsString().trim();
+            String newDescription = event.getValue("edit-description").getAsString().trim();
+            
+            entry.setCategories(Arrays.asList(newCategoriesStr.split(",\\s*")));
+            entry.setDescription(newDescription);
+            
+            if (datesStr.isEmpty()) {
+                showDateValidationError(event, "Data de início é obrigatória");
+                return;
+            }
+            
+            if (datesStr.contains(" - ")) {
+                String[] dateParts = datesStr.split(" - ");
+                if (dateParts.length == 2) {
+                    String startDateStr = dateParts[0].trim();
+                    String endDateStr = dateParts[1].trim();
+                    
+                    entry.setStartDate(java.time.LocalDate.parse(startDateStr, BRAZILIAN_DATE_FORMAT));
+                    entry.setEndDate(java.time.LocalDate.parse(endDateStr, BRAZILIAN_DATE_FORMAT));
+                } else {
+                    showDateValidationError(event, "Formato inválido. Use: DD-MM-AAAA - DD-MM-AAAA ou apenas DD-MM-AAAA");
+                    return;
+                }
+            } else {
+                entry.setStartDate(java.time.LocalDate.parse(datesStr, BRAZILIAN_DATE_FORMAT));
+                entry.setEndDate(null);
+            }
+            
+        } catch (Exception e) {
+            log.error("Erro ao processar datas: {}", e.getMessage());
+            showDateValidationError(event, "Formato de data inválido. Use o formato DD-MM-AAAA (ex: 15-01-2025)");
+            return;
+        }
         
         BatchParsingResult validationResult = batchValidator.validateEntries(Arrays.asList(entry));
         
@@ -866,9 +970,13 @@ public class BatchCreationHandler extends AbstractInteractionHandler {
     }
     
     private void showDateValidationError(ModalInteractionEvent event) {
+        showDateValidationError(event, "Formato de data inválido. Use o formato DD-MM-AAAA (ex: 15-01-2025)");
+    }
+    
+    private void showDateValidationError(ModalInteractionEvent event, String message) {
         EmbedBuilder embed = new EmbedBuilder()
                 .setTitle("❌ Erro nas Datas")
-                .setDescription("Formato de data inválido. Use o formato DD-MM-AAAA (ex: 15-01-2025)")
+                .setDescription(message)
                 .setColor(Color.RED);
 
         event.getHook().editOriginalEmbeds(embed.build()).queue();
@@ -931,7 +1039,7 @@ public class BatchCreationHandler extends AbstractInteractionHandler {
         clearBatchState(event.getUser().getId());
         
         TextInput textInput = TextInput.create("batch-text", "Digite os squad logs", TextInputStyle.PARAGRAPH)
-                .setPlaceholder("Squad - Pessoa - Tipo - Categorias - Data início [a Data fim] [- Descrição]")
+                .setPlaceholder("Squad - Pessoa - Tipo - Categorias - Data inicio - Data final - [Descricao]")
                 .setRequiredRange(10, 4000)
                 .build();
 
