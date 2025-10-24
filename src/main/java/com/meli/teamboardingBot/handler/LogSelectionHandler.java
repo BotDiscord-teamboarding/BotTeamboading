@@ -40,7 +40,8 @@ public class LogSelectionHandler extends AbstractInteractionHandler {
         String selectedLogId = event.getValues().get(0);
         log.info("Log selecionado: {}", selectedLogId);
         try {
-            String squadLogsJson = squadLogService.getSquadLogAll();
+            String squadLogsJson = withUserContext(event.getUser().getId(), 
+                () -> squadLogService.getSquadLogAll());
             log.info("Resposta completa da API getSquadLogAll: {}", squadLogsJson);
             JSONObject obj = new JSONObject(squadLogsJson);
             JSONArray squadLogsArray = obj.optJSONArray("items");
@@ -145,7 +146,7 @@ public class LogSelectionHandler extends AbstractInteractionHandler {
     }
     public void showLogSelection(net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent event) {
         try {
-            String squadLogsJson = squadLogService.getSquadLogAll();
+            String squadLogsJson = withUserContext(event.getUser().getId(), () -> squadLogService.getSquadLogAll());
             JSONObject obj = new JSONObject(squadLogsJson);
             JSONArray squadLogsArray = obj.optJSONArray("items");
             if (squadLogsArray == null || squadLogsArray.length() == 0) {
@@ -173,9 +174,9 @@ public class LogSelectionHandler extends AbstractInteractionHandler {
                 .queue();
         }
     }
-    public void showLogSelectionWithHook(net.dv8tion.jda.api.interactions.InteractionHook hook) {
+    public void showLogSelectionWithHook(net.dv8tion.jda.api.interactions.InteractionHook hook, String userId) {
         try {
-            String squadLogsJson = squadLogService.getSquadLogAll();
+            String squadLogsJson = withUserContext(userId, () -> squadLogService.getSquadLogAll());
             JSONObject obj = new JSONObject(squadLogsJson);
             JSONArray squadLogsArray = obj.optJSONArray("items");
             if (squadLogsArray == null || squadLogsArray.length() == 0) {

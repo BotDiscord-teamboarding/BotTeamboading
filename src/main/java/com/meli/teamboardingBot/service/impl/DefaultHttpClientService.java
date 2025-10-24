@@ -1,6 +1,9 @@
 package com.meli.teamboardingBot.service.impl;
+import com.meli.teamboardingBot.context.DiscordUserContext;
+import com.meli.teamboardingBot.dto.AuthTokenResponseDTO;
 import com.meli.teamboardingBot.factory.HttpHeadersFactory;
 import com.meli.teamboardingBot.service.AuthenticationService;
+import com.meli.teamboardingBot.service.DiscordUserAuthenticationService;
 import com.meli.teamboardingBot.service.HttpClientService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,19 +19,36 @@ public class DefaultHttpClientService implements HttpClientService {
     private final Logger logger = LoggerFactory.getLogger(DefaultHttpClientService.class);
     private final RestTemplate restTemplate = new RestTemplate();
     private final AuthenticationService authService;
+    private final DiscordUserAuthenticationService discordAuthService;
     private final HttpHeadersFactory headersFactory;
     private final String apiUrl;
     @Autowired
-    public DefaultHttpClientService(AuthenticationService authService, 
+    public DefaultHttpClientService(AuthenticationService authService,
+                                  DiscordUserAuthenticationService discordAuthService,
                                   HttpHeadersFactory headersFactory,
                                   @Value("${api.url}") String apiUrl) {
         this.authService = authService;
+        this.discordAuthService = discordAuthService;
         this.headersFactory = headersFactory;
         this.apiUrl = apiUrl;
     }
+    
+
+    private String getAuthToken() {
+        String discordUserId = DiscordUserContext.getCurrentUserId();
+        if (discordUserId != null) {
+            AuthTokenResponseDTO userToken = discordAuthService.getUserToken(discordUserId);
+            if (userToken != null) {
+                logger.debug("Usando token do usuário Discord: {}", discordUserId);
+                return userToken.getAccessToken();
+            }
+        }
+        logger.debug("Usando token padrão (credenciais do application.properties)");
+        return authService.getAuthToken().getAccessToken();
+    }
     @Override
     public String get(String endpoint) {
-        String token = authService.getAuthToken().getAccessToken();
+        String token = getAuthToken();
         HttpEntity<Void> request = new HttpEntity<>(headersFactory.createAuthHeaders(token));
         String fullUrl = apiUrl + endpoint;
         logger.info("GET request to: {}", fullUrl);
@@ -49,7 +69,7 @@ public class DefaultHttpClientService implements HttpClientService {
     }
     @Override
     public ResponseEntity<String> post(String endpoint, String payload) {
-        String token = authService.getAuthToken().getAccessToken();
+        String token = getAuthToken();
         HttpEntity<String> request = new HttpEntity<>(payload, headersFactory.createJsonHeaders(token));
         String fullUrl = apiUrl + endpoint;
         logger.info("POST request to: {}", fullUrl);
@@ -66,7 +86,7 @@ public class DefaultHttpClientService implements HttpClientService {
     }
     @Override
     public ResponseEntity<String> put(String endpoint, String payload) {
-        String token = authService.getAuthToken().getAccessToken();
+        String token = getAuthToken();
         HttpEntity<String> request = new HttpEntity<>(payload, headersFactory.createJsonHeaders(token));
         String fullUrl = apiUrl + endpoint;
         logger.info("PUT request to: {}", fullUrl);

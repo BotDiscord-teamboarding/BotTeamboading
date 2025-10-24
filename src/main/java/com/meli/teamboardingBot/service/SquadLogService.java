@@ -36,14 +36,6 @@ public class SquadLogService {
         return clientBoarding.getSquadLogId(id);
     }
     
-    public String getLogTypes() {
-        return clientBoarding.getSquadLogTypes();
-    }
-    
-    public String getCategories() {
-        return clientBoarding.getSquadCategories();
-    }
-    
     public String getUsersBySquad(String squadId) {
         return clientBoarding.getUsersBySquad(squadId);
     }

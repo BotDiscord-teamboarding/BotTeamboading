@@ -186,7 +186,7 @@ public class ApiBatchValidationService implements BatchValidator {
 
     private void loadTypesCache() {
         try {
-            String typesResponse = squadLogService.getLogTypes();
+            String typesResponse = squadLogService.getSquadLogTypes();
             JSONArray typesArray = new JSONArray(typesResponse);
             
             for (int i = 0; i < typesArray.length(); i++) {
@@ -203,7 +203,7 @@ public class ApiBatchValidationService implements BatchValidator {
 
     private void loadCategoriesCache() {
         try {
-            String categoriesResponse = squadLogService.getCategories();
+            String categoriesResponse = squadLogService.getSquadCategories();
             JSONArray categoriesArray = new JSONArray(categoriesResponse);
             
             for (int i = 0; i < categoriesArray.length(); i++) {

@@ -69,7 +69,7 @@ public class CategorySelectionHandler extends AbstractInteractionHandler {
         List<String> selectedCategoryIds = event.getValues();
         log.info("Categorias selecionadas: {}", selectedCategoryIds);
         try {
-            String categoriesJson = squadLogService.getSquadCategories();
+            String categoriesJson = withUserContext(event.getUser().getId(), () -> squadLogService.getSquadCategories());
             JSONArray categoriesArray = new JSONArray(categoriesJson);
             state.getCategoryIds().clear();
             state.getCategoryNames().clear();
@@ -97,7 +97,7 @@ public class CategorySelectionHandler extends AbstractInteractionHandler {
     private void showCategorySelection(ButtonInteractionEvent event) {
         try {
             event.deferEdit().queue();
-            String categoriesJson = squadLogService.getSquadCategories();
+            String categoriesJson = withUserContext(event.getUser().getId(), () -> squadLogService.getSquadCategories());
             JSONArray categoriesArray = new JSONArray(categoriesJson);
             StringSelectMenu.Builder categoryMenuBuilder = StringSelectMenu.create("category-select")
                     .setPlaceholder("Selecione as categorias")

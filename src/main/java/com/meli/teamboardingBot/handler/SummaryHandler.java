@@ -81,6 +81,8 @@ public class SummaryHandler extends AbstractInteractionHandler {
         }
     }
     public void showSummary(StringSelectInteractionEvent event) {
+        // Método vazio - considerar remoção se não for utilizado
+        log.warn("Método showSummary(StringSelectInteractionEvent) chamado mas não implementado");
     }
     private EmbedBuilder buildSummaryEmbed(FormState state, String title, String description) {
         EmbedBuilder embed = new EmbedBuilder()
