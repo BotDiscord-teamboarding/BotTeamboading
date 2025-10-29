@@ -1,7 +1,6 @@
 package com.meli.teamboardingBot.handler;
 import com.meli.teamboardingBot.enums.FormStep;
 import com.meli.teamboardingBot.model.FormState;
-import com.meli.teamboardingBot.service.DiscordUserAuthenticationService;
 import com.meli.teamboardingBot.service.FormStateService;
 import com.meli.teamboardingBot.service.SquadLogService;
 import lombok.extern.slf4j.Slf4j;
@@ -11,7 +10,7 @@ import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -20,15 +19,14 @@ import org.springframework.stereotype.Component;
 @Order(6)
 public class CrudOperationHandler extends AbstractInteractionHandler {
     private final SquadLogService squadLogService;
-    private final DiscordUserAuthenticationService discordAuthService;
-    private static final int LIMIT_PAGE = 15;
 
-    public CrudOperationHandler(FormStateService formStateService, 
-                               SquadLogService squadLogService,
-                               DiscordUserAuthenticationService discordAuthService) {
+    private int currentPage = 1;
+    private final int limitPage = 15;
+    private int totalPages;
+
+    public CrudOperationHandler(FormStateService formStateService, SquadLogService squadLogService) {
         super(formStateService);
         this.squadLogService = squadLogService;
-        this.discordAuthService = discordAuthService;
     }
     @Override
     public boolean canHandle(String componentId) {
@@ -38,47 +36,35 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
                "criar-novo-log".equals(componentId) ||
                "atualizar-log-existente".equals(componentId) ||
                "atualizar".equals(componentId) ||
+               "sair-bot".equals(componentId) ||
                "voltar-inicio".equals(componentId) ||
                "voltar".equals(componentId) ||
                "avancar".equals(componentId);
     }
     @Override
-    protected void handleButtonInternal(ButtonInteractionEvent event, FormState state) {
+    public void handleButton(ButtonInteractionEvent event, FormState state) {
         String buttonId = event.getComponentId();
-        log.info("Button clicked: {}", buttonId);
-        
-        try {
-            if ("criar-log".equals(buttonId) || "confirmar-criacao".equals(buttonId)) {
-                if (state.isCreating()) {
-                    handleCreateSquadLog(event, state);
-                } else {
-                    handleUpdateSquadLog(event, state);
-                }
-            } else if ("confirmar-atualizacao".equals(buttonId)) {
+        if ("criar-log".equals(buttonId) || "confirmar-criacao".equals(buttonId)) {
+            if (state.isCreating()) {
+                handleCreateSquadLog(event, state);
+            } else {
                 handleUpdateSquadLog(event, state);
-            } else if ("criar-novo-log".equals(buttonId)) {
-                handleCreateNewLog(event);
-            } else if ("atualizar-log-existente".equals(buttonId) || "atualizar".equals(buttonId)) {
-                handleUpdateExistingLog(event);
-            } else if ("sair-bot".equals(buttonId)) {
-                handleExitBot(event);
-            } else if ("voltar-inicio".equals(buttonId)) {
-                handleVoltarInicio(event);
-            } else if ("voltar".equals(buttonId)) {
-                handleVoltarPage(event);
-            } else if ("avancar".equals(buttonId)) {
-                handleAvancarPage(event);
             }
-        } catch (Exception e) {
-            log.error("Error handling button click: {}", e.getMessage(), e);
-            showErrorMessage(event, "❌ Ocorreu um erro ao processar sua solicitação. Por favor, tente novamente.");
+        } else if ("confirmar-atualizacao".equals(buttonId)) {
+            handleUpdateSquadLog(event, state);
+        } else if ("criar-novo-log".equals(buttonId)) {
+            handleCreateNewLog(event);
+        } else if ("atualizar-log-existente".equals(buttonId) || "atualizar".equals(buttonId)) {
+            handleUpdateExistingLog(event);
+        } else if ("sair-bot".equals(buttonId)) {
+            handleExitBot(event);
+        } else if ("voltar-inicio".equals(buttonId)) {
+            handleVoltarInicio(event);
+        } else if ("voltar".equals(buttonId)) {
+            handleVoltarPage(event);
+        } else if ("avancar".equals(buttonId)) {
+            handleAvancarPage(event);
         }
-    }
-    
-    @Override
-    protected void handleStringSelectInternal(StringSelectInteractionEvent event, FormState state) {
-        // Handle string select interactions here if needed
-        log.warn("String select handling not implemented for: {}", event.getComponentId());
     }
     private void handleCreateSquadLog(ButtonInteractionEvent event, FormState state) {
         log.info("Criando squad log");
@@ -96,8 +82,7 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
         try {
             String payload = buildCreatePayload(state);
             log.info("Payload de criação: {}", payload);
-            ResponseEntity<String> response = withUserContext(event.getUser().getId(), 
-                () -> squadLogService.createSquadLog(payload));
+            ResponseEntity<String> response = squadLogService.createSquadLog(payload);
             if (response.getStatusCode().is2xxSuccessful()) {
                 showSuccessMessageWithHook(event, "✅ Squad Log criado com sucesso!", true);
                 formStateService.removeState(event.getUser().getIdLong());
@@ -128,8 +113,7 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
             log.info("Estado atual: squadId={}, userId={}, typeId={}, categoryIds={}, startDate={}, endDate={}", 
                        state.getSquadId(), state.getUserId(), state.getTypeId(), 
                        state.getCategoryIds(), state.getStartDate(), state.getEndDate());
-            ResponseEntity<String> response = withUserContext(event.getUser().getId(), 
-                () -> squadLogService.updateSquadLog(state.getSquadLogId(), payload));
+            ResponseEntity<String> response = squadLogService.updateSquadLog(state.getSquadLogId(), payload);
             if (response.getStatusCode().is2xxSuccessful()) {
                 showSuccessMessageWithHook(event, "✅ Squad Log atualizado com sucesso!", false);
                 formStateService.removeState(event.getUser().getIdLong());
@@ -259,7 +243,7 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
     }
     private void showSquadSelectionDirectly(ButtonInteractionEvent event, FormState state) {
         try {
-            String squadsJson = withUserContext(event.getUser().getId(), () -> squadLogService.getSquads());
+            String squadsJson = squadLogService.getSquads();
             JSONObject obj = new JSONObject(squadsJson);
             JSONArray squadsArray = obj.optJSONArray("items");
             if (squadsArray == null || squadsArray.length() == 0) {
@@ -299,25 +283,7 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
         }
     }
     private void handleUpdateExistingLog(ButtonInteractionEvent event) {
-        String userId = event.getUser().getId();
-        
-        if (!discordAuthService.isUserAuthenticated(userId)) {
-            log.warn("Usuário {} não autenticado tentando atualizar squad-log", userId);
-            EmbedBuilder embed = new EmbedBuilder()
-                .setTitle("🔒 Autenticação Necessária")
-                .setDescription("Você precisa fazer login antes de usar este comando.\n\n" +
-                              "Clique no botão abaixo para autenticar com suas credenciais.")
-                .setColor(0xFFA500);
-            event.editMessageEmbeds(embed.build())
-                .setActionRow(
-                    Button.success("btn-autenticar", "🔐 Autenticar"),
-                    Button.primary("voltar-inicio", "🏠 Voltar ao Início")
-                )
-                .queue();
-            return;
-        }
-        
-        log.info("Iniciando atualização de squad log existente para usuário autenticado: {}", userId);
+        log.info("Iniciando atualização de squad log existente");
         FormState newState = new FormState();
         newState.setCreating(false);
         newState.setEditing(true);
@@ -326,15 +292,12 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
         event.deferEdit().queue();
         try {
             log.info("Carregando lista de squad logs...");
-            FormState state = formStateService.getOrCreateState(event.getUser().getIdLong());
-            String squadLogsJson = withUserContext(event.getUser().getId(), 
-                () -> squadLogService.getSquadLogAll(state.getCurrentPage(), LIMIT_PAGE));
-            log.info("Resposta da API getSquadLogAll (página {}): {}", state.getCurrentPage(), squadLogsJson);
+            String squadLogsJson = squadLogService.getSquadLogAll(currentPage, limitPage);
+            log.info("Resposta da API getSquadLogAll (página {}): {}", currentPage, squadLogsJson);
             org.json.JSONObject obj = new org.json.JSONObject(squadLogsJson);
             org.json.JSONArray squadLogsArray = obj.optJSONArray("items");
             int totalItems = obj.optInt("total", squadLogsArray != null ? squadLogsArray.length() : 0);
-            state.setTotalPages((int) Math.ceil((double) totalItems / (double) LIMIT_PAGE));
-            formStateService.updateState(event.getUser().getIdLong(), state);
+            this.totalPages = (int) Math.ceil((double) totalItems / this.limitPage);
             if (squadLogsArray == null || squadLogsArray.length() == 0) {
                 event.getHook().editOriginal("❌ Nenhum Squad Log encontrado para atualização.")
                     .setEmbeds()
@@ -348,7 +311,7 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
             buildLogSelectMenu(squadLogsArray, logMenuBuilder);
             EmbedBuilder embed = new EmbedBuilder()
                 .setTitle("📝 Atualizar Squad Log Existente")
-                .setDescription("Escolha o Squad Log que deseja atualizar:\n📄 Página " + state.getCurrentPage() + " de " + state.getTotalPages())
+                .setDescription("Escolha o Squad Log que deseja atualizar:\n📄 Página " + currentPage + " de " + totalPages)
                 .setColor(0xFFAA00);
 
 
@@ -356,10 +319,10 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
             Button avancarBtn = Button.secondary("avancar", "➡️ Próxima");
             
 
-            if (state.getCurrentPage() <= 1) {
+            if (currentPage <= 1) {
                 voltarBtn = voltarBtn.asDisabled();
             }
-            if (state.getCurrentPage() >= state.getTotalPages()) {
+            if (currentPage >= totalPages) {
                 avancarBtn = avancarBtn.asDisabled();
             }
             
@@ -470,6 +433,7 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
     private void handleVoltarInicio(ButtonInteractionEvent event) {
         log.info("Usuário voltando ao início");
         formStateService.removeState(event.getUser().getIdLong());
+        currentPage = 1;
         event.deferEdit().queue();
         EmbedBuilder embed = new EmbedBuilder()
             .setTitle("🏠 Squad Log")
@@ -484,12 +448,10 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
     }
     
     private void handleVoltarPage(ButtonInteractionEvent event) {
-        FormState state = formStateService.getOrCreateState(event.getUser().getIdLong());
-        log.info("Navegando para página anterior (atual: {})", state.getCurrentPage());
-        if (state.getCurrentPage() > 1) {
-            state.setCurrentPage(state.getCurrentPage() - 1);
-            formStateService.updateState(event.getUser().getIdLong(), state);
-            refreshLogSelection(event, state);
+        log.info("Navegando para página anterior (atual: {})", currentPage);
+        if (currentPage > 1) {
+            currentPage--;
+            refreshLogSelection(event);
         } else {
             log.warn("Tentativa de voltar da primeira página");
             event.reply("❌ Você já está na primeira página!").setEphemeral(true).queue();
@@ -497,30 +459,26 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
     }
     
     private void handleAvancarPage(ButtonInteractionEvent event) {
-        FormState state = formStateService.getOrCreateState(event.getUser().getIdLong());
-        log.info("Navegando para próxima página (atual: {})", state.getCurrentPage());
-        if (state.getCurrentPage() < state.getTotalPages()) {
-            state.setCurrentPage(state.getCurrentPage() + 1);
-            formStateService.updateState(event.getUser().getIdLong(), state);
-            refreshLogSelection(event, state);
+        log.info("Navegando para próxima página (atual: {})", currentPage);
+        if (currentPage < totalPages) {
+            currentPage++;
+            refreshLogSelection(event);
         } else {
             log.warn("Tentativa de avançar da última página");
             event.reply("❌ Você já está na última página!").setEphemeral(true).queue();
         }
     }
     
-    private void refreshLogSelection(ButtonInteractionEvent event, FormState state) {
+    private void refreshLogSelection(ButtonInteractionEvent event) {
         event.deferEdit().queue();
         try {
-            log.info("Atualizando lista de squad logs para página {}", state.getCurrentPage());
-            String squadLogsJson = withUserContext(event.getUser().getId(), 
-                () -> squadLogService.getSquadLogAll(state.getCurrentPage(), LIMIT_PAGE));
-            log.info("Resposta da API getSquadLogAll (página {}): {}", state.getCurrentPage(), squadLogsJson);
+            log.info("Atualizando lista de squad logs para página {}", currentPage);
+            String squadLogsJson = squadLogService.getSquadLogAll(currentPage, limitPage);
+            log.info("Resposta da API getSquadLogAll (página {}): {}", currentPage, squadLogsJson);
             org.json.JSONObject obj = new org.json.JSONObject(squadLogsJson);
             org.json.JSONArray squadLogsArray = obj.optJSONArray("items");
             int totalItems = obj.optInt("total", squadLogsArray != null ? squadLogsArray.length() : 0);
-            state.setTotalPages((int) Math.ceil((double) totalItems / (double) LIMIT_PAGE));
-            formStateService.updateState(event.getUser().getIdLong(), state);
+            this.totalPages = (int) Math.ceil((double) totalItems / this.limitPage);
             
             if (squadLogsArray == null || squadLogsArray.length() == 0) {
                 event.getHook().editOriginal("❌ Nenhum Squad Log encontrado nesta página.")
@@ -538,16 +496,16 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
             
             EmbedBuilder embed = new EmbedBuilder()
                 .setTitle("📝 Atualizar Squad Log Existente")
-                .setDescription("Escolha o Squad Log que deseja atualizar:\n📄 Página " + state.getCurrentPage() + " de " + state.getTotalPages())
+                .setDescription("Escolha o Squad Log que deseja atualizar:\n📄 Página " + currentPage + " de " + totalPages)
                 .setColor(0xFFAA00);
 
             Button voltarBtn = Button.secondary("voltar", "⬅️ Anterior");
             Button avancarBtn = Button.secondary("avancar", "➡️ Próxima");
             
-            if (state.getCurrentPage() <= 1) {
+            if (currentPage <= 1) {
                 voltarBtn = voltarBtn.asDisabled();
             }
-            if (state.getCurrentPage() >= state.getTotalPages()) {
+            if (currentPage >= totalPages) {
                 avancarBtn = avancarBtn.asDisabled();
             }
             

@@ -32,12 +32,6 @@ public class ComponentInteractionListener extends ListenerAdapter {
         long userId = event.getUser().getIdLong();
         logger.info("Button interaction: {} from user: {}", buttonId, userId);
         
-        // Ignora botão de autenticação (processado por LoginModalHandler)
-        if ("btn-autenticar".equals(buttonId)) {
-            logger.debug("Botão de autenticação será processado por LoginModalHandler");
-            return;
-        }
-        
         if (isBatchButton(buttonId)) {
             try {
                 batchCreationHandler.handleBatchNavigation(event);
@@ -101,12 +95,6 @@ public class ComponentInteractionListener extends ListenerAdapter {
         String modalId = event.getModalId();
         long userId = event.getUser().getIdLong();
         logger.info("Modal interaction: {} from user: {}", modalId, userId);
-        
-        // Ignora modal de login (processado por LoginModalHandler)
-        if ("login-modal".equals(modalId)) {
-            logger.debug("Modal de login será processado por LoginModalHandler");
-            return;
-        }
         
         if (isBatchModal(modalId)) {
             try {

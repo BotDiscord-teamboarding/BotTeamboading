@@ -65,19 +65,12 @@ public class UserSelectionHandler extends AbstractInteractionHandler {
         String selectedUserId = event.getValues().get(0);
         log.info("Usuário selecionado: {}", selectedUserId);
         try {
-            withUserContext(event.getUser().getId(), () -> {
-                if (selectedUserId.equals(state.getSquadId())) {
-                    state.setUserId(selectedUserId);
-                    state.setUserName("All team");
-                } else {
-                    try {
-                        loadUserFromSquad(state, selectedUserId);
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-            });
-            
+            if (selectedUserId.equals(state.getSquadId())) {
+                state.setUserId(selectedUserId);
+                state.setUserName("All team");
+            } else {
+                loadUserFromSquad(state, selectedUserId);
+            }
             event.deferEdit().queue();
             updateFormState(event.getUser().getIdLong(), state);
             if (state.getStep() == FormStep.USER_MODIFY) {
@@ -121,7 +114,7 @@ public class UserSelectionHandler extends AbstractInteractionHandler {
         try {
             event.deferEdit().queue();
             log.info("Carregando usuários para squad: {}", squadId);
-            String squadsJson = withUserContext(event.getUser().getId(), () -> squadLogService.getSquads());
+            String squadsJson = squadLogService.getSquads();
             JSONObject obj = new JSONObject(squadsJson);
             JSONArray squadsArray = obj.optJSONArray("items");
             if (squadsArray == null || squadsArray.length() == 0) {
@@ -210,7 +203,7 @@ public class UserSelectionHandler extends AbstractInteractionHandler {
     }
     private void showTypeSelectionAfterUser(StringSelectInteractionEvent event) {
         try {
-            String logTypesJson = withUserContext(event.getUser().getId(), () -> squadLogService.getSquadLogTypes());
+            String logTypesJson = squadLogService.getSquadLogTypes();
             JSONArray logTypesArray = new JSONArray(logTypesJson);
             StringSelectMenu.Builder typeMenuBuilder = StringSelectMenu.create("type-select")
                     .setPlaceholder("Selecione o tipo");

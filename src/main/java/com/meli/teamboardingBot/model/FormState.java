@@ -26,10 +26,6 @@ public class FormState {
     private String startDate;
     private String endDate;
     private Long squadLogId;
-    
-    // Pagination state (thread-safe per user)
-    private int currentPage = 1;
-    private int totalPages = 1;
 
     public void setStep(FormStep step) {
         this.step = step;
@@ -51,8 +47,6 @@ public class FormState {
         this.startDate = null;
         this.endDate = null;
         this.squadLogId = null;
-        this.currentPage = 1;
-        this.totalPages = 1;
         this.lastActivity = LocalDateTime.now();
     }
 }

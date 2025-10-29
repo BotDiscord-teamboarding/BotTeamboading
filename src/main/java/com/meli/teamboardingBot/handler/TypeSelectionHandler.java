@@ -66,7 +66,7 @@ public class TypeSelectionHandler extends AbstractInteractionHandler {
         String selectedTypeId = event.getValues().get(0);
         log.info("Tipo selecionado: {}", selectedTypeId);
         try {
-            String typesJson = withUserContext(event.getUser().getId(), () -> squadLogService.getSquadLogTypes());
+            String typesJson = squadLogService.getSquadLogTypes();
             JSONArray typesArray = new JSONArray(typesJson);
             for (int i = 0; i < typesArray.length(); i++) {
                 JSONObject type = typesArray.getJSONObject(i);
@@ -93,7 +93,7 @@ public class TypeSelectionHandler extends AbstractInteractionHandler {
     private void showTypeSelection(ButtonInteractionEvent event) {
         try {
             event.deferEdit().queue();
-            String logTypesJson = withUserContext(event.getUser().getId(), () -> squadLogService.getSquadLogTypes());
+            String logTypesJson = squadLogService.getSquadLogTypes();
             JSONArray logTypesArray = new JSONArray(logTypesJson);
             StringSelectMenu.Builder typeMenuBuilder = StringSelectMenu.create("type-select")
                     .setPlaceholder("Selecione o tipo");
@@ -134,7 +134,7 @@ public class TypeSelectionHandler extends AbstractInteractionHandler {
     }
     private void showCategorySelectionAfterType(StringSelectInteractionEvent event) {
         try {
-            String categoriesJson = withUserContext(event.getUser().getId(), () -> squadLogService.getSquadCategories());
+            String categoriesJson = squadLogService.getSquadCategories();
             JSONArray categoriesArray = new JSONArray(categoriesJson);
             StringSelectMenu.Builder categoryMenuBuilder = StringSelectMenu.create("category-select")
                     .setPlaceholder("Selecione as categorias")

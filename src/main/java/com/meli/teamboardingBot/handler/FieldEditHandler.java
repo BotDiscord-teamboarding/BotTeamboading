@@ -320,7 +320,7 @@ public class FieldEditHandler extends AbstractInteractionHandler {
         log.info("Editando squad do log");
         try {
             event.deferEdit().queue();
-            String squadsJson = withUserContext(event.getUser().getId(), () -> squadLogService.getSquads());
+            String squadsJson = squadLogService.getSquads();
             JSONObject obj = new JSONObject(squadsJson);
             JSONArray squadsArray = obj.optJSONArray("items");
             if (squadsArray == null || squadsArray.length() == 0) {
@@ -362,7 +362,7 @@ public class FieldEditHandler extends AbstractInteractionHandler {
         log.info("Editando usuário do log - Squad ID atual: {}", state.getSquadId());
         try {
             event.deferEdit().queue();
-            String squadsJson = withUserContext(event.getUser().getId(), () -> squadLogService.getSquads());
+            String squadsJson = squadLogService.getSquads();
             JSONObject obj = new JSONObject(squadsJson);
             JSONArray squadsArray = obj.optJSONArray("items");
             net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu.Builder userMenuBuilder = 
@@ -436,7 +436,7 @@ public class FieldEditHandler extends AbstractInteractionHandler {
         log.info("Editando tipo do log");
         try {
             event.deferEdit().queue();
-            String typesJson = withUserContext(event.getUser().getId(), () -> squadLogService.getSquadLogTypes());
+            String typesJson = squadLogService.getSquadLogTypes();
             log.info("Resposta da API de tipos: {}", typesJson);
             if (typesJson == null || typesJson.trim().isEmpty()) {
                 log.error("API retornou resposta vazia para tipos");
@@ -490,7 +490,7 @@ public class FieldEditHandler extends AbstractInteractionHandler {
         log.info("Editando categorias do log");
         event.deferEdit().queue();
         try {
-            String categoriesJson = withUserContext(event.getUser().getId(), () -> squadLogService.getSquadCategories());
+            String categoriesJson = squadLogService.getSquadCategories();
             log.info("Resposta da API de categorias: {}", categoriesJson);
             if (categoriesJson == null || categoriesJson.trim().isEmpty()) {
                 log.error("API retornou resposta vazia para categorias");

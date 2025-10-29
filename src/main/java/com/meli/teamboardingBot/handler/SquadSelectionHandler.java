@@ -1,13 +1,14 @@
 package com.meli.teamboardingBot.handler;
-import com.meli.teamboardingBot.context.DiscordUserContext;
 import com.meli.teamboardingBot.enums.FormStep;
 import com.meli.teamboardingBot.model.FormState;
 import com.meli.teamboardingBot.service.FormStateService;
 import com.meli.teamboardingBot.service.SquadLogService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
+import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
 import org.json.JSONArray;
@@ -22,16 +23,12 @@ import java.util.concurrent.TimeUnit;
 @Order(1)
 public class SquadSelectionHandler extends AbstractInteractionHandler {
     private final SquadLogService squadLogService;
-    private final com.meli.teamboardingBot.service.DiscordUserAuthenticationService discordAuthService;
     @Autowired
     private SummaryHandler summaryHandler;
     
-    public SquadSelectionHandler(FormStateService formStateService, 
-                                SquadLogService squadLogService,
-                                com.meli.teamboardingBot.service.DiscordUserAuthenticationService discordAuthService) {
+    public SquadSelectionHandler(FormStateService formStateService, SquadLogService squadLogService) {
         super(formStateService);
         this.squadLogService = squadLogService;
-        this.discordAuthService = discordAuthService;
     }
     @Override
     public boolean canHandle(String componentId) {
@@ -55,25 +52,7 @@ public class SquadSelectionHandler extends AbstractInteractionHandler {
         }
     }
     private void handleCreateButton(ButtonInteractionEvent event, FormState state) {
-        String userId = event.getUser().getId();
-        
-        if (!discordAuthService.isUserAuthenticated(userId)) {
-            log.warn("Usuário {} não autenticado tentando criar squad-log", userId);
-            EmbedBuilder embed = new EmbedBuilder()
-                .setTitle("🔒 Autenticação Necessária")
-                .setDescription("Você precisa fazer login antes de usar este comando.\n\n" +
-                              "Clique no botão abaixo para autenticar com suas credenciais.")
-                .setColor(0xFFA500);
-            event.editMessageEmbeds(embed.build())
-                .setActionRow(
-                    Button.success("btn-autenticar", "🔐 Autenticar"),
-                    Button.primary("voltar-inicio", "🏠 Voltar ao Início")
-                )
-                .queue();
-            return;
-        }
-        
-        log.info("Iniciando fluxo de criação para usuário autenticado: {}", userId);
+        log.info("Iniciando fluxo de criação");
         state.setCreating(true);
         state.setEditing(false);
         state.setStep(FormStep.SQUAD_SELECTION);
@@ -90,7 +69,7 @@ public class SquadSelectionHandler extends AbstractInteractionHandler {
         String selectedSquadId = event.getValues().get(0);
         log.info("Squad selecionada: {}", selectedSquadId);
         try {
-            String squadsJson = withUserContext(event.getUser().getId(), () -> squadLogService.getSquads());
+            String squadsJson = squadLogService.getSquads();
             JSONObject obj = new JSONObject(squadsJson);
             JSONArray squadsArray = obj.optJSONArray("items");
             if (squadsArray != null) {
@@ -119,7 +98,7 @@ public class SquadSelectionHandler extends AbstractInteractionHandler {
     }
     private void showSquadSelection(ButtonInteractionEvent event) {
         try {
-            String squadsJson = withUserContext(event.getUser().getId(), () -> squadLogService.getSquads());
+            String squadsJson = squadLogService.getSquads();
             JSONObject obj = new JSONObject(squadsJson);
             JSONArray squadsArray = obj.optJSONArray("items");
             event.deferEdit().queue();
@@ -164,7 +143,7 @@ public class SquadSelectionHandler extends AbstractInteractionHandler {
     private void showUserSelectionAfterSquad(StringSelectInteractionEvent event, FormState state) {
         try {
             String squadId = state.getSquadId();
-            String squadsJson = withUserContext(event.getUser().getId(), () -> squadLogService.getSquads());
+            String squadsJson = squadLogService.getSquads();
             JSONObject obj = new JSONObject(squadsJson);
             JSONArray squadsArray = obj.optJSONArray("items");
             if (squadsArray == null || squadsArray.length() == 0) {
@@ -223,8 +202,6 @@ public class SquadSelectionHandler extends AbstractInteractionHandler {
         } catch (Exception e) {
             log.error("Erro ao exibir seleção de usuário: {}", e.getMessage());
             showError(event, "Erro ao carregar seleção de usuário.");
-        } finally {
-            DiscordUserContext.clear();
         }
     }
     private void showSummary(StringSelectInteractionEvent event) {
