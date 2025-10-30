@@ -1,7 +1,9 @@
 package com.meli.teamboardingBot.model.batch;
 
 import java.time.LocalDate;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class BatchLogEntry {
     private String squadName;
@@ -16,6 +18,7 @@ public class BatchLogEntry {
     private Long userId;
     private Long typeId;
     private List<Long> categoryIds;
+    private Set<String> editedFields = new HashSet<>();
 
     public BatchLogEntry() {}
 
@@ -67,4 +70,9 @@ public class BatchLogEntry {
 
     public List<Long> getCategoryIds() { return categoryIds; }
     public void setCategoryIds(List<Long> categoryIds) { this.categoryIds = categoryIds; }
+    
+    public Set<String> getEditedFields() { return editedFields; }
+    public void markFieldAsEdited(String fieldName) { this.editedFields.add(fieldName); }
+    public boolean isFieldEdited(String fieldName) { return editedFields.contains(fieldName); }
+    public void clearEditedFields() { this.editedFields.clear(); }
 }

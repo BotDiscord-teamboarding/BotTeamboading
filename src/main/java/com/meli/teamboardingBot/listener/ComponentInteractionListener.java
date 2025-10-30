@@ -100,10 +100,6 @@ public class ComponentInteractionListener extends ListenerAdapter {
             try {
                 if (modalId.equals("batch-creation-modal")) {
                     batchCreationHandler.handleBatchCreationModal(event);
-                } else if (modalId.equals("batch-edit-modal")) {
-                    batchCreationHandler.handleEditEntryModal(event);
-                } else if (modalId.equals("batch-edit-modal-page1") || modalId.equals("batch-edit-modal-page2")) {
-                    batchCreationHandler.handleEditEntryModal(event);
                 } else if (modalId.endsWith("-modal") && modalId.startsWith("batch-edit-")) {
                     batchCreationHandler.handleFieldEditModal(event);
                 }
