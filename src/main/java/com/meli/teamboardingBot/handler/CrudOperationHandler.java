@@ -19,7 +19,11 @@ import org.springframework.stereotype.Component;
 @Order(6)
 public class CrudOperationHandler extends AbstractInteractionHandler {
     private final SquadLogService squadLogService;
-    
+
+    private int currentPage = 1;
+    private final int limitPage = 15;
+    private int totalPages;
+
     public CrudOperationHandler(FormStateService formStateService, SquadLogService squadLogService) {
         super(formStateService);
         this.squadLogService = squadLogService;
@@ -33,7 +37,9 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
                "atualizar-log-existente".equals(componentId) ||
                "atualizar".equals(componentId) ||
                "sair-bot".equals(componentId) ||
-               "voltar-inicio".equals(componentId);
+               "voltar-inicio".equals(componentId) ||
+               "voltar".equals(componentId) ||
+               "avancar".equals(componentId);
     }
     @Override
     public void handleButton(ButtonInteractionEvent event, FormState state) {
@@ -54,6 +60,10 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
             handleExitBot(event);
         } else if ("voltar-inicio".equals(buttonId)) {
             handleVoltarInicio(event);
+        } else if ("voltar".equals(buttonId)) {
+            handleVoltarPage(event);
+        } else if ("avancar".equals(buttonId)) {
+            handleAvancarPage(event);
         }
     }
     private void handleCreateSquadLog(ButtonInteractionEvent event, FormState state) {
@@ -282,10 +292,12 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
         event.deferEdit().queue();
         try {
             log.info("Carregando lista de squad logs...");
-            String squadLogsJson = squadLogService.getSquadLogAll();
-            log.info("Resposta da API getSquadLogAll: {}", squadLogsJson);
+            String squadLogsJson = squadLogService.getSquadLogAll(currentPage, limitPage);
+            log.info("Resposta da API getSquadLogAll (página {}): {}", currentPage, squadLogsJson);
             org.json.JSONObject obj = new org.json.JSONObject(squadLogsJson);
             org.json.JSONArray squadLogsArray = obj.optJSONArray("items");
+            int totalItems = obj.optInt("total", squadLogsArray != null ? squadLogsArray.length() : 0);
+            this.totalPages = (int) Math.ceil((double) totalItems / this.limitPage);
             if (squadLogsArray == null || squadLogsArray.length() == 0) {
                 event.getHook().editOriginal("❌ Nenhum Squad Log encontrado para atualização.")
                     .setEmbeds()
@@ -293,17 +305,38 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
                     .queue();
                 return;
             }
-            net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu.Builder logMenuBuilder = 
+            net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu.Builder logMenuBuilder =
                 net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu.create("log-select")
-                    .setPlaceholder("Selecione um Squad Log para atualizar");
+                    .setPlaceholder("Selecione um Squad Log para atualizar ");
             buildLogSelectMenu(squadLogsArray, logMenuBuilder);
             EmbedBuilder embed = new EmbedBuilder()
                 .setTitle("📝 Atualizar Squad Log Existente")
-                .setDescription("Escolha o Squad Log que deseja atualizar:")
+                .setDescription("Escolha o Squad Log que deseja atualizar:\n📄 Página " + currentPage + " de " + totalPages)
                 .setColor(0xFFAA00);
+
+
+            Button voltarBtn = Button.secondary("voltar", "⬅️ Anterior");
+            Button avancarBtn = Button.secondary("avancar", "➡️ Próxima");
+            
+
+            if (currentPage <= 1) {
+                voltarBtn = voltarBtn.asDisabled();
+            }
+            if (currentPage >= totalPages) {
+                avancarBtn = avancarBtn.asDisabled();
+            }
+            
             event.getHook().editOriginalEmbeds(embed.build())
-                .setActionRow(logMenuBuilder.build())
-                .queue();
+                    .setComponents(
+                            net.dv8tion.jda.api.interactions.components.ActionRow.of(logMenuBuilder.build()),
+                            net.dv8tion.jda.api.interactions.components.ActionRow.of(
+                                    voltarBtn,
+                                    avancarBtn,
+                                    Button.primary("voltar-inicio", "🏠 Voltar ao Início")
+                            )
+                    )
+                    .queue();
+
         } catch (Exception e) {
             log.error("Erro ao carregar Squad Logs: {}", e.getMessage(), e);
             event.getHook().editOriginal("❌ Erro ao carregar Squad Logs: " + e.getMessage())
@@ -400,6 +433,7 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
     private void handleVoltarInicio(ButtonInteractionEvent event) {
         log.info("Usuário voltando ao início");
         formStateService.removeState(event.getUser().getIdLong());
+        currentPage = 1;
         event.deferEdit().queue();
         EmbedBuilder embed = new EmbedBuilder()
             .setTitle("🏠 Squad Log")
@@ -411,6 +445,88 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
                 Button.secondary("atualizar", "📝 Atualizar")
             )
             .queue();
+    }
+    
+    private void handleVoltarPage(ButtonInteractionEvent event) {
+        log.info("Navegando para página anterior (atual: {})", currentPage);
+        if (currentPage > 1) {
+            currentPage--;
+            refreshLogSelection(event);
+        } else {
+            log.warn("Tentativa de voltar da primeira página");
+            event.reply("❌ Você já está na primeira página!").setEphemeral(true).queue();
+        }
+    }
+    
+    private void handleAvancarPage(ButtonInteractionEvent event) {
+        log.info("Navegando para próxima página (atual: {})", currentPage);
+        if (currentPage < totalPages) {
+            currentPage++;
+            refreshLogSelection(event);
+        } else {
+            log.warn("Tentativa de avançar da última página");
+            event.reply("❌ Você já está na última página!").setEphemeral(true).queue();
+        }
+    }
+    
+    private void refreshLogSelection(ButtonInteractionEvent event) {
+        event.deferEdit().queue();
+        try {
+            log.info("Atualizando lista de squad logs para página {}", currentPage);
+            String squadLogsJson = squadLogService.getSquadLogAll(currentPage, limitPage);
+            log.info("Resposta da API getSquadLogAll (página {}): {}", currentPage, squadLogsJson);
+            org.json.JSONObject obj = new org.json.JSONObject(squadLogsJson);
+            org.json.JSONArray squadLogsArray = obj.optJSONArray("items");
+            int totalItems = obj.optInt("total", squadLogsArray != null ? squadLogsArray.length() : 0);
+            this.totalPages = (int) Math.ceil((double) totalItems / this.limitPage);
+            
+            if (squadLogsArray == null || squadLogsArray.length() == 0) {
+                event.getHook().editOriginal("❌ Nenhum Squad Log encontrado nesta página.")
+                    .setEmbeds()
+                    .setComponents()
+                    .queue();
+                return;
+            }
+            
+            net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu.Builder logMenuBuilder =
+                net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu.create("log-select")
+                    .setPlaceholder("Selecione um Squad Log para atualizar");
+            
+            buildLogSelectMenu(squadLogsArray, logMenuBuilder);
+            
+            EmbedBuilder embed = new EmbedBuilder()
+                .setTitle("📝 Atualizar Squad Log Existente")
+                .setDescription("Escolha o Squad Log que deseja atualizar:\n📄 Página " + currentPage + " de " + totalPages)
+                .setColor(0xFFAA00);
+
+            Button voltarBtn = Button.secondary("voltar", "⬅️ Anterior");
+            Button avancarBtn = Button.secondary("avancar", "➡️ Próxima");
+            
+            if (currentPage <= 1) {
+                voltarBtn = voltarBtn.asDisabled();
+            }
+            if (currentPage >= totalPages) {
+                avancarBtn = avancarBtn.asDisabled();
+            }
+            
+            event.getHook().editOriginalEmbeds(embed.build())
+                    .setComponents(
+                            net.dv8tion.jda.api.interactions.components.ActionRow.of(logMenuBuilder.build()),
+                            net.dv8tion.jda.api.interactions.components.ActionRow.of(
+                                    voltarBtn,
+                                    avancarBtn,
+                                    Button.primary("voltar-inicio", "🏠 Voltar ao Início")
+                            )
+                    )
+                    .queue();
+            
+        } catch (Exception e) {
+            log.error("Erro ao atualizar lista de Squad Logs: {}", e.getMessage(), e);
+            event.getHook().editOriginal("❌ Erro ao carregar Squad Logs: " + e.getMessage())
+                .setEmbeds()
+                .setComponents()
+                .queue();
+        }
     }
     @Override
     public int getPriority() {

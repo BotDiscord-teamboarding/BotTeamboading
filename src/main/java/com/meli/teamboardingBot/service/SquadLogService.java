@@ -28,7 +28,23 @@ public class SquadLogService {
     public String getSquadLogAll() {
         return clientBoarding.getSquadLogAll();
     }
+    
+    public String getSquadLogAll(int page, int limit) {
+        return clientBoarding.getSquadLogAll(page, limit);
+    }
     public String getSquadLogId(String id) {
         return clientBoarding.getSquadLogId(id);
+    }
+    
+    public String getLogTypes() {
+        return clientBoarding.getSquadLogTypes();
+    }
+    
+    public String getCategories() {
+        return clientBoarding.getSquadCategories();
+    }
+    
+    public String getUsersBySquad(String squadId) {
+        return clientBoarding.getUsersBySquad(squadId);
     }
 }

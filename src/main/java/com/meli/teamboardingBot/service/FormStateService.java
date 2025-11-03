@@ -1,7 +1,9 @@
 package com.meli.teamboardingBot.service;
 import com.meli.teamboardingBot.model.FormState;
+import com.meli.teamboardingBot.model.batch.BatchLogEntry;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 @Service
@@ -36,5 +38,29 @@ public class FormStateService {
     }
     public void cleanExpiredStates() {
         userStates.entrySet().removeIf(entry -> isExpired(entry.getValue()));
+    }
+
+    private final Map<String, List<BatchLogEntry>> batchEntries = new ConcurrentHashMap<>();
+    private final Map<String, Integer> batchCurrentIndex = new ConcurrentHashMap<>();
+
+    public void setBatchEntries(String userId, List<BatchLogEntry> entries) {
+        batchEntries.put(userId, entries);
+    }
+
+    public List<BatchLogEntry> getBatchEntries(String userId) {
+        return batchEntries.get(userId);
+    }
+
+    public void setBatchCurrentIndex(String userId, int index) {
+        batchCurrentIndex.put(userId, index);
+    }
+
+    public int getBatchCurrentIndex(String userId) {
+        return batchCurrentIndex.getOrDefault(userId, 0);
+    }
+
+    public void clearBatchState(String userId) {
+        batchEntries.remove(userId);
+        batchCurrentIndex.remove(userId);
     }
 }
