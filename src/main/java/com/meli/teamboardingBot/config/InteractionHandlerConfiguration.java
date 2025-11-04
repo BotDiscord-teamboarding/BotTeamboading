@@ -5,7 +5,7 @@ import org.springframework.context.annotation.Configuration;
 @ComponentScan(basePackages = {
     "com.meli.teamboardingBot.handler",
     "com.meli.teamboardingBot.service",
-    "com.meli.teamboardingBot.discord.listener"
+    "com.meli.teamboardingBot.listener"
 })
 public class InteractionHandlerConfiguration {
 }

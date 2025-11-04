@@ -7,6 +7,7 @@ import com.meli.teamboardingBot.service.SquadLogService;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
+import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
 import org.json.JSONArray;
@@ -15,6 +16,10 @@ import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionE
 import org.springframework.core.annotation.Order;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
+
+
+import static net.dv8tion.jda.api.interactions.components.buttons.Button.*;
+
 @Slf4j
 @Component
 @Order(6)
@@ -77,7 +82,6 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
     
     @Override
     protected void handleStringSelectInternal(StringSelectInteractionEvent event, FormState state) {
-        // Handle string select interactions here if needed
         log.warn("String select handling not implemented for: {}", event.getComponentId());
     }
     private void handleCreateSquadLog(ButtonInteractionEvent event, FormState state) {
@@ -89,7 +93,7 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
                 .setDescription("Verifique se todos os campos foram preenchidos.")
                 .setColor(0xFF0000);
             event.getHook().editOriginalEmbeds(errorEmbed.build())
-                .setActionRow(Button.primary("voltar-inicio", "🏠 Voltar ao Início"))
+                .setActionRow(primary("voltar-inicio", "🏠 Voltar ao Início"))
                 .queue();
             return;
         }
@@ -118,7 +122,7 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
                 .setDescription("Dados incompletos ou ID do log não encontrado.")
                 .setColor(0xFF0000);
             event.getHook().editOriginalEmbeds(errorEmbed.build())
-                .setActionRow(Button.primary("voltar-inicio", "🏠 Voltar ao Início"))
+                .setActionRow(primary("voltar-inicio", "🏠 Voltar ao Início"))
                 .queue();
             return;
         }
@@ -217,21 +221,7 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
         log.warn("Formato de data não reconhecido: '{}' - retornando como está", inputDate);
         return inputDate;
     }
-    private void showSuccessMessage(ButtonInteractionEvent event, String message, boolean isCreation) {
-        EmbedBuilder embed = new EmbedBuilder()
-            .setTitle(message)
-            .setDescription(isCreation ? 
-                "O Squad Log foi criado com sucesso! O que deseja fazer agora?" :
-                "O Squad Log foi atualizado com sucesso! O que deseja fazer agora?")
-            .setColor(0x00FF00);
-        event.editMessageEmbeds(embed.build())
-            .setActionRow(
-                net.dv8tion.jda.api.interactions.components.buttons.Button.primary("criar-novo-log", "🆕 Criar Novo Squad-Log"),
-                net.dv8tion.jda.api.interactions.components.buttons.Button.secondary("atualizar-log-existente", "📝 Atualizar Squad-Log Existente"),
-                net.dv8tion.jda.api.interactions.components.buttons.Button.danger("sair-bot", "🚪 Sair")
-            )
-            .queue();
-    }
+
     private void showSuccessMessageWithHook(ButtonInteractionEvent event, String message, boolean isCreation) {
         EmbedBuilder embed = new EmbedBuilder()
             .setTitle(message)
@@ -241,9 +231,9 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
             .setColor(0x00FF00);
         event.getHook().editOriginalEmbeds(embed.build())
             .setActionRow(
-                net.dv8tion.jda.api.interactions.components.buttons.Button.primary("criar-novo-log", "🆕 Criar Novo Squad-Log"),
-                net.dv8tion.jda.api.interactions.components.buttons.Button.secondary("atualizar-log-existente", "📝 Atualizar Squad-Log Existente"),
-                net.dv8tion.jda.api.interactions.components.buttons.Button.danger("sair-bot", "🚪 Sair")
+                primary("criar-novo-log", "🆕 Criar Novo Squad-Log"),
+                secondary("atualizar-log-existente", "📝 Atualizar Squad-Log Existente"),
+                danger("sair-bot", "🚪 Sair")
             )
             .queue();
     }
@@ -268,7 +258,7 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
                     .setDescription("Nenhuma squad encontrada.")
                     .setColor(0xFF0000);
                 event.getHook().editOriginalEmbeds(errorEmbed.build())
-                    .setActionRow(Button.primary("voltar-inicio", "🏠 Voltar ao Início"))
+                    .setActionRow(primary("voltar-inicio", "🏠 Voltar ao Início"))
                     .queue();
                 return;
             }
@@ -294,7 +284,7 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
                 .setDescription("Ocorreu um erro ao carregar as squads. Tente novamente.")
                 .setColor(0xFF0000);
             event.getHook().editOriginalEmbeds(errorEmbed.build())
-                .setActionRow(Button.primary("voltar-inicio", "🏠 Voltar ao Início"))
+                .setActionRow(primary("voltar-inicio", "🏠 Voltar ao Início"))
                 .queue();
         }
     }
@@ -311,7 +301,7 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
             event.editMessageEmbeds(embed.build())
                 .setActionRow(
                     Button.success("btn-autenticar", "🔐 Autenticar"),
-                    Button.primary("voltar-inicio", "🏠 Voltar ao Início")
+                    primary("voltar-inicio", "🏠 Voltar ao Início")
                 )
                 .queue();
             return;
@@ -330,8 +320,8 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
             String squadLogsJson = withUserContext(event.getUser().getId(), 
                 () -> squadLogService.getSquadLogAll(state.getCurrentPage(), LIMIT_PAGE));
             log.info("Resposta da API getSquadLogAll (página {}): {}", state.getCurrentPage(), squadLogsJson);
-            org.json.JSONObject obj = new org.json.JSONObject(squadLogsJson);
-            org.json.JSONArray squadLogsArray = obj.optJSONArray("items");
+            JSONObject obj = new org.json.JSONObject(squadLogsJson);
+            JSONArray squadLogsArray = obj.optJSONArray("items");
             int totalItems = obj.optInt("total", squadLogsArray != null ? squadLogsArray.length() : 0);
             state.setTotalPages((int) Math.ceil((double) totalItems / (double) LIMIT_PAGE));
             formStateService.updateState(event.getUser().getIdLong(), state);
@@ -342,8 +332,8 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
                     .queue();
                 return;
             }
-            net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu.Builder logMenuBuilder =
-                net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu.create("log-select")
+            StringSelectMenu.Builder logMenuBuilder =
+                StringSelectMenu.create("log-select")
                     .setPlaceholder("Selecione um Squad Log para atualizar ");
             buildLogSelectMenu(squadLogsArray, logMenuBuilder);
             EmbedBuilder embed = new EmbedBuilder()
@@ -352,8 +342,8 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
                 .setColor(0xFFAA00);
 
 
-            Button voltarBtn = Button.secondary("voltar", "⬅️ Anterior");
-            Button avancarBtn = Button.secondary("avancar", "➡️ Próxima");
+            Button voltarBtn = secondary("voltar", "⬅️ Anterior");
+            Button avancarBtn = secondary("avancar", "➡️ Próxima");
             
 
             if (state.getCurrentPage() <= 1) {
@@ -365,11 +355,11 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
             
             event.getHook().editOriginalEmbeds(embed.build())
                     .setComponents(
-                            net.dv8tion.jda.api.interactions.components.ActionRow.of(logMenuBuilder.build()),
-                            net.dv8tion.jda.api.interactions.components.ActionRow.of(
+                            ActionRow.of(logMenuBuilder.build()),
+                            ActionRow.of(
                                     voltarBtn,
                                     avancarBtn,
-                                    Button.primary("voltar-inicio", "🏠 Voltar ao Início")
+                                    primary("voltar-inicio", "🏠 Voltar ao Início")
                             )
                     )
                     .queue();
@@ -382,7 +372,7 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
                 .queue();
         }
     }
-    private void buildLogSelectMenu(org.json.JSONArray squadLogsArray, net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu.Builder logMenuBuilder) {
+    private void buildLogSelectMenu(JSONArray squadLogsArray, StringSelectMenu.Builder logMenuBuilder) {
         for (int i = 0; i < squadLogsArray.length(); i++) {
             org.json.JSONObject log = squadLogsArray.getJSONObject(i);
             String logId = String.valueOf(log.get("id"));
@@ -413,7 +403,7 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
             .setDescription("Tente novamente ou entre em contato com o suporte.")
             .setColor(0xFF0000);
         event.editMessageEmbeds(embed.build())
-            .setActionRow(Button.primary("voltar-inicio", "🏠 Voltar ao Início"))
+            .setActionRow(primary("voltar-inicio", "🏠 Voltar ao Início"))
             .queue();
     }
     private void showErrorMessageWithHook(ButtonInteractionEvent event, String message) {
@@ -422,7 +412,7 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
             .setDescription("Tente novamente ou entre em contato com o suporte.")
             .setColor(0xFF0000);
         event.getHook().editOriginalEmbeds(embed.build())
-            .setActionRow(Button.primary("voltar-inicio", "🏠 Voltar ao Início"))
+            .setActionRow(primary("voltar-inicio", "🏠 Voltar ao Início"))
             .queue();
     }
     private void handleExitBot(ButtonInteractionEvent event) {
@@ -478,7 +468,7 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
         event.getHook().editOriginalEmbeds(embed.build())
             .setActionRow(
                 Button.success("criar", "🆕 Criar"),
-                Button.secondary("atualizar", "📝 Atualizar")
+                secondary("atualizar", "📝 Atualizar")
             )
             .queue();
     }
@@ -530,8 +520,8 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
                 return;
             }
             
-            net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu.Builder logMenuBuilder =
-                net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu.create("log-select")
+            StringSelectMenu.Builder logMenuBuilder =
+                StringSelectMenu.create("log-select")
                     .setPlaceholder("Selecione um Squad Log para atualizar");
             
             buildLogSelectMenu(squadLogsArray, logMenuBuilder);
@@ -541,8 +531,8 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
                 .setDescription("Escolha o Squad Log que deseja atualizar:\n📄 Página " + state.getCurrentPage() + " de " + state.getTotalPages())
                 .setColor(0xFFAA00);
 
-            Button voltarBtn = Button.secondary("voltar", "⬅️ Anterior");
-            Button avancarBtn = Button.secondary("avancar", "➡️ Próxima");
+            Button voltarBtn = secondary("voltar", "⬅️ Anterior");
+            Button avancarBtn = secondary("avancar", "➡️ Próxima");
             
             if (state.getCurrentPage() <= 1) {
                 voltarBtn = voltarBtn.asDisabled();
@@ -553,11 +543,11 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
             
             event.getHook().editOriginalEmbeds(embed.build())
                     .setComponents(
-                            net.dv8tion.jda.api.interactions.components.ActionRow.of(logMenuBuilder.build()),
-                            net.dv8tion.jda.api.interactions.components.ActionRow.of(
+                            ActionRow.of(logMenuBuilder.build()),
+                            ActionRow.of(
                                     voltarBtn,
                                     avancarBtn,
-                                    Button.primary("voltar-inicio", "🏠 Voltar ao Início")
+                                    primary("voltar-inicio", "🏠 Voltar ao Início")
                             )
                     )
                     .queue();

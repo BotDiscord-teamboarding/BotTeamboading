@@ -31,9 +31,8 @@ public class ComponentInteractionListener extends ListenerAdapter {
         String buttonId = event.getComponentId();
         long userId = event.getUser().getIdLong();
         logger.info("Button interaction: {} from user: {}", buttonId, userId);
-        
-        // Ignora botão de autenticação (processado por LoginModalHandler)
-        if ("btn-autenticar".equals(buttonId)) {
+
+        if (isAuthenticationButton(buttonId)) {
             logger.debug("Botão de autenticação será processado por LoginModalHandler");
             return;
         }
@@ -102,9 +101,8 @@ public class ComponentInteractionListener extends ListenerAdapter {
         long userId = event.getUser().getIdLong();
         logger.info("Modal interaction: {} from user: {}", modalId, userId);
         
-        // Ignora modal de login (processado por LoginModalHandler)
-        if ("login-modal".equals(modalId)) {
-            logger.debug("Modal de login será processado por LoginModalHandler");
+        if ("login-modal".equals(modalId) || "modal-google-code".equals(modalId)) {
+            logger.debug("Modal de login/autenticação será processado por LoginModalHandler");
             return;
         }
         
@@ -157,5 +155,12 @@ public class ComponentInteractionListener extends ListenerAdapter {
         return modalId.equals("batch-creation-modal") || modalId.equals("batch-edit-modal") ||
                modalId.equals("batch-edit-modal-page1") || modalId.equals("batch-edit-modal-page2") ||
                (modalId.startsWith("batch-edit-") && modalId.endsWith("-modal"));
+    }
+
+    private boolean isAuthenticationButton(String buttonId) {
+        return "btn-autenticar".equals(buttonId) ||
+                "btn-auth-manual".equals(buttonId) ||
+                "btn-auth-google".equals(buttonId) ||
+                "btn-submit-google-code".equals(buttonId);
     }
 }
