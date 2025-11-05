@@ -13,7 +13,6 @@ import java.util.concurrent.ConcurrentHashMap;
 @Service
 public class DiscordUserAuthenticationService {
     private static final Logger logger = LoggerFactory.getLogger(DiscordUserAuthenticationService.class);
-    // Token expira após 24 horas (86400 segundos)
     private static final long TOKEN_EXPIRATION_TIME = 24 * 3600 * 1000L;
     
     private final ClientAuthBoarding authClient;
@@ -67,35 +66,6 @@ public class DiscordUserAuthenticationService {
         } catch (Exception e) {
             logger.error("Falha na autenticação para usuário Discord {}: {}", discordUserId, e.getMessage());
             return new AuthResponse(false, "❌ Falha na autenticação. Verifique suas credenciais e tente novamente.");
-        }
-    }
-    
-    /**
-     * Autentica usuário via Google usando token já obtido
-     * @param discordUserId ID do usuário no Discord
-     * @param accessToken Token de acesso obtido via Google OAuth2
-     * @return AuthResponse com resultado da autenticação
-     */
-    public AuthResponse authenticateUserWithToken(String discordUserId, String accessToken) {
-        try {
-            logger.info("Autenticando usuário Discord via Google: {}", discordUserId);
-            
-            // Criar AuthTokenResponseDTO com o token obtido do Google
-            // UserDTO será null pois não temos dados do usuário neste momento
-            AuthTokenResponseDTO token = new AuthTokenResponseDTO(accessToken, "bearer", null);
-            
-            UserAuthData authData = new UserAuthData(
-                token,
-                System.currentTimeMillis() + TOKEN_EXPIRATION_TIME
-            );
-            userTokens.put(discordUserId, authData);
-            
-            logger.info("✅ Autenticação Google bem-sucedida para usuário Discord: {}", discordUserId);
-            return new AuthResponse(true, "✅ Login via Google realizado com sucesso!");
-            
-        } catch (Exception e) {
-            logger.error("❌ Falha na autenticação Google para usuário Discord {}: {}", discordUserId, e.getMessage());
-            return new AuthResponse(false, "❌ Falha na autenticação via Google.");
         }
     }
     

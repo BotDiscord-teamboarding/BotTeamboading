@@ -27,7 +27,6 @@ public class FormState {
     private String endDate;
     private Long squadLogId;
     
-    // Pagination state (thread-safe per user)
     private int currentPage = 1;
     private int totalPages = 1;
 

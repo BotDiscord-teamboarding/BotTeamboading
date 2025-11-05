@@ -101,8 +101,8 @@ public class ComponentInteractionListener extends ListenerAdapter {
         long userId = event.getUser().getIdLong();
         logger.info("Modal interaction: {} from user: {}", modalId, userId);
         
-        if ("login-modal".equals(modalId) || "modal-google-code".equals(modalId)) {
-            logger.debug("Modal de login/autenticação será processado por LoginModalHandler");
+        if ("login-modal".equals(modalId)) {
+            logger.debug("Modal de login será processado por LoginModalHandler");
             return;
         }
         
@@ -160,7 +160,6 @@ public class ComponentInteractionListener extends ListenerAdapter {
     private boolean isAuthenticationButton(String buttonId) {
         return "btn-autenticar".equals(buttonId) ||
                 "btn-auth-manual".equals(buttonId) ||
-                "btn-auth-google".equals(buttonId) ||
-                "btn-submit-google-code".equals(buttonId);
+                "btn-auth-google".equals(buttonId);
     }
 }
