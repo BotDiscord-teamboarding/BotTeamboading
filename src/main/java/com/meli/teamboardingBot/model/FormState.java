@@ -6,6 +6,7 @@ import com.meli.teamboardingBot.enums.FormStep;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 @Getter
 @Setter
@@ -26,6 +27,9 @@ public class FormState {
     private String startDate;
     private String endDate;
     private Long squadLogId;
+    private String language = "pt-BR";
+    private Locale locale;
+
 
     public void setStep(FormStep step) {
         this.step = step;
