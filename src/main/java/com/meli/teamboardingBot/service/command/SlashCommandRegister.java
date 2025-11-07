@@ -14,6 +14,7 @@ public class SlashCommandRegister {
     @PostConstruct
     public void registerCommands() {
         jda.getGuildById(guildId).updateCommands().addCommands(
+                Commands.slash("start", "Iniciar e fazer autenticação no bot"),
                 Commands.slash("squad-log", "Squad Log"),
                 Commands.slash("squad-log-lote", "Criar múltiplos squad logs de uma vez usando texto livre")
         ).queue();

@@ -9,6 +9,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.net.URLDecoder;
 import java.util.Map;
 
 @Service
@@ -29,12 +30,15 @@ public class GoogleAuthIntegrationService {
     }
 
 
-    public String getGoogleLoginConnectionUrl() {
+    public String getGoogleLoginConnectionUrl(String discordUserId) {
         try {
             logger.info("=".repeat(80));
             logger.info("OBTENDO URL DE AUTENTICAÇÃO GOOGLE");
             logger.info("=".repeat(80));
-            logger.info("Endpoint da API: {}", googleConnectionUrl);
+            logger.info("Discord User ID: {}", discordUserId);
+            
+            String urlWithParams = googleConnectionUrl + "?state=" + discordUserId + "&from_discord=true";
+            logger.info("Endpoint da API: {}", urlWithParams);
 
             HttpHeaders headers = new HttpHeaders();
             headers.set("accept", "application/json");
@@ -42,7 +46,7 @@ public class GoogleAuthIntegrationService {
             HttpEntity<String> request = new HttpEntity<>(headers);
 
             String response = restTemplate.exchange(
-                    googleConnectionUrl,
+                    urlWithParams,
                     HttpMethod.GET,
                     request,
                     String.class
@@ -60,7 +64,6 @@ public class GoogleAuthIntegrationService {
             logger.info("{}", response);
             logger.info("-".repeat(80));
             
-            // Extrair e logar parâmetros da URL
             if (response != null && response.contains("?")) {
                 String[] parts = response.split("\\?");
                 logger.info("Base URL: {}", parts[0]);
@@ -72,7 +75,7 @@ public class GoogleAuthIntegrationService {
                         String[] keyValue = param.split("=", 2);
                         if (keyValue.length == 2) {
                             String key = keyValue[0];
-                            String value = java.net.URLDecoder.decode(keyValue[1], "UTF-8");
+                            String value = URLDecoder.decode(keyValue[1], "UTF-8");
                             logger.info("  {} = {}", key, value);
                         }
                     }
@@ -88,29 +91,19 @@ public class GoogleAuthIntegrationService {
         }
     }
 
-    /**
-     * Troca o authorization code por access token
-     * @param code Authorization code obtido após autenticação Google
-     * @return Access token da API interna
-     */
-    public String exchangeCodeForToken(String code) {
+    public String exchangeCodeForToken(String code, String discordUserId) {
         try {
             logger.info("=".repeat(80));
             logger.info("TROCANDO CODE POR TOKEN");
             logger.info("=".repeat(80));
-            logger.info("Code recebido (tamanho: {} chars): {}...", code.length(), code.substring(0, Math.min(20, code.length())));
-            logger.info("Code completo: {}", code);
+            logger.info("Discord User ID: {}", discordUserId);
+            logger.info("Code recebido (já decodificado): {}", code);
             
-            // Decodificar primeiro caso o usuário tenha copiado da URL (que já está encoded)
-            String decodedCode = java.net.URLDecoder.decode(code, "UTF-8");
-            logger.info("Code decodificado: {}", decodedCode);
-            
-            // Agora encodar corretamente
-            String encodedCode = java.net.URLEncoder.encode(decodedCode, "UTF-8");
-            String url = googleLoginUrl + "?code=" + encodedCode;
+            String encodedCode = java.net.URLEncoder.encode(code, "UTF-8");
+            String url = googleLoginUrl + "?code=" + code + "&from_discord=true";
             
             logger.info("Chamando: POST {}", googleLoginUrl);
-            logger.info("Query param: code={}", encodedCode);
+            logger.info("Query params: code={}, from_discord=true", encodedCode);
             logger.info("URL completa: {}", url);
             
             HttpHeaders headers = new HttpHeaders();
@@ -139,7 +132,7 @@ public class GoogleAuthIntegrationService {
             
             if (response != null && response.containsKey("access_token")) {
                 String accessToken = (String) response.get("access_token");
-                logger.info("✅ Token obtido com sucesso!");
+                logger.info("✅ Token obtido com sucesso para Discord User ID: {}", discordUserId);
                 logger.info("=".repeat(80));
                 return accessToken;
             } else {

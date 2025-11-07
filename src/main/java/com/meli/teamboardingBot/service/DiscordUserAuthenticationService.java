@@ -70,18 +70,11 @@ public class DiscordUserAuthenticationService {
         }
     }
     
-    /**
-     * Autentica usuário via Google usando token já obtido
-     * @param discordUserId ID do usuário no Discord
-     * @param accessToken Token de acesso obtido via Google OAuth2
-     * @return AuthResponse com resultado da autenticação
-     */
+
     public AuthResponse authenticateUserWithToken(String discordUserId, String accessToken) {
         try {
             logger.info("Autenticando usuário Discord via Google: {}", discordUserId);
-            
-            // Criar AuthTokenResponseDTO com o token obtido do Google
-            // UserDTO será null pois não temos dados do usuário neste momento
+
             AuthTokenResponseDTO token = new AuthTokenResponseDTO(accessToken, "bearer", null);
             
             UserAuthData authData = new UserAuthData(

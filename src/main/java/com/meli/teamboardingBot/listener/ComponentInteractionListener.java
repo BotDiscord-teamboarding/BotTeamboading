@@ -161,6 +161,8 @@ public class ComponentInteractionListener extends ListenerAdapter {
         return "btn-autenticar".equals(buttonId) ||
                 "btn-auth-manual".equals(buttonId) ||
                 "btn-auth-google".equals(buttonId) ||
-                "btn-submit-google-code".equals(buttonId);
+                "btn-submit-google-code".equals(buttonId) ||
+                "auth-manual".equals(buttonId) ||
+                "auth-google".equals(buttonId);
     }
 }

@@ -61,14 +61,10 @@ public class SquadSelectionHandler extends AbstractInteractionHandler {
             log.warn("Usuário {} não autenticado tentando criar squad-log", userId);
             EmbedBuilder embed = new EmbedBuilder()
                 .setTitle("🔒 Autenticação Necessária")
-                .setDescription("Você precisa fazer login antes de usar este comando.\n\n" +
-                              "Clique no botão abaixo para autenticar com suas credenciais.")
+                .setDescription("faça a autenticação atraves do comando `/start`")
                 .setColor(0xFFA500);
             event.editMessageEmbeds(embed.build())
-                .setActionRow(
-                    Button.success("btn-autenticar", "🔐 Autenticar"),
-                    Button.primary("voltar-inicio", "🏠 Voltar ao Início")
-                )
+                .setActionRow(Button.primary("voltar-inicio", "🏠 Voltar ao Início"))
                 .queue();
             return;
         }

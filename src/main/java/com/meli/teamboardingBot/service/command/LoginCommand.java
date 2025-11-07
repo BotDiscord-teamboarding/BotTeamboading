@@ -25,7 +25,7 @@ public class LoginCommand implements SlashCommandHandler {
         String userId = event.getUser().getId();
         
         if (authService.isUserAuthenticated(userId)) {
-            event.reply("✅ Você já está autenticado! Use o comando `/squad-log` para começar.")
+            event.reply("✅ Você já está autenticado! Use os comandos `/{comand}` para começar.")
                 .setEphemeral(true)
                 .queue();
             return;
