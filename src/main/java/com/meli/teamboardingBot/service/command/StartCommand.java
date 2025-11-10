@@ -1,6 +1,7 @@
 package com.meli.teamboardingBot.service.command;
 
 import com.meli.teamboardingBot.service.DiscordUserAuthenticationService;
+import com.meli.teamboardingBot.service.PendingAuthMessageService;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
@@ -10,9 +11,12 @@ import org.springframework.stereotype.Component;
 public class StartCommand implements SlashCommandHandler {
     
     private final DiscordUserAuthenticationService authService;
+    private final PendingAuthMessageService pendingAuthMessageService;
 
-    public StartCommand(DiscordUserAuthenticationService authService) {
+    public StartCommand(DiscordUserAuthenticationService authService,
+                       PendingAuthMessageService pendingAuthMessageService) {
         this.authService = authService;
+        this.pendingAuthMessageService = pendingAuthMessageService;
     }
 
     @Override
@@ -24,7 +28,8 @@ public class StartCommand implements SlashCommandHandler {
     public void execute(SlashCommandInteractionEvent event) {
         String userId = event.getUser().getId();
         
-        // Verifica se já está autenticado
+        pendingAuthMessageService.clearPendingAuthMessage(userId);
+        
         if (authService.isUserAuthenticated(userId)) {
             EmbedBuilder embed = new EmbedBuilder()
                 .setTitle("✅ Você já está autenticado!")
@@ -40,7 +45,6 @@ public class StartCommand implements SlashCommandHandler {
             return;
         }
         
-        // Mostra opções de autenticação
         EmbedBuilder embed = new EmbedBuilder()
             .setTitle("🚀 Bem-vindo ao Squad Log Bot!")
             .setDescription("Para começar a usar o bot, você precisa fazer a autenticação.\n\n" +

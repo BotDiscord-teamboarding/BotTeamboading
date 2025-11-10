@@ -1,5 +1,6 @@
 package com.meli.teamboardingBot.service.command;
 import com.meli.teamboardingBot.service.DiscordUserAuthenticationService;
+import com.meli.teamboardingBot.service.PendingAuthMessageService;
 import com.meli.teamboardingBot.ui.Ui;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
@@ -8,9 +9,12 @@ import org.springframework.stereotype.Component;
 @Component
 public class SquadLogCommand implements SlashCommandHandler {
     private final DiscordUserAuthenticationService authService;
+    private final PendingAuthMessageService pendingAuthMessageService;
 
-    public SquadLogCommand(DiscordUserAuthenticationService authService) {
+    public SquadLogCommand(DiscordUserAuthenticationService authService,
+                          PendingAuthMessageService pendingAuthMessageService) {
         this.authService = authService;
+        this.pendingAuthMessageService = pendingAuthMessageService;
     }
 
     @Override
@@ -28,7 +32,9 @@ public class SquadLogCommand implements SlashCommandHandler {
                 .setColor(0xFFA500);
             event.replyEmbeds(embed.build())
                 .setEphemeral(true)
-                .queue();
+                .queue(hook -> hook.retrieveOriginal().queue(
+                    message -> pendingAuthMessageService.storePendingAuthMessage(userId, message)
+                ));
             return;
         }
         

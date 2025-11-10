@@ -3,6 +3,7 @@ import com.meli.teamboardingBot.context.DiscordUserContext;
 import com.meli.teamboardingBot.enums.FormStep;
 import com.meli.teamboardingBot.model.FormState;
 import com.meli.teamboardingBot.service.FormStateService;
+import com.meli.teamboardingBot.service.PendingAuthMessageService;
 import com.meli.teamboardingBot.service.SquadLogService;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -23,15 +24,18 @@ import java.util.concurrent.TimeUnit;
 public class SquadSelectionHandler extends AbstractInteractionHandler {
     private final SquadLogService squadLogService;
     private final com.meli.teamboardingBot.service.DiscordUserAuthenticationService discordAuthService;
+    private final PendingAuthMessageService pendingAuthMessageService;
     @Autowired
     private SummaryHandler summaryHandler;
     
     public SquadSelectionHandler(FormStateService formStateService, 
                                 SquadLogService squadLogService,
-                                com.meli.teamboardingBot.service.DiscordUserAuthenticationService discordAuthService) {
+                                com.meli.teamboardingBot.service.DiscordUserAuthenticationService discordAuthService,
+                                PendingAuthMessageService pendingAuthMessageService) {
         super(formStateService);
         this.squadLogService = squadLogService;
         this.discordAuthService = discordAuthService;
+        this.pendingAuthMessageService = pendingAuthMessageService;
     }
     @Override
     public boolean canHandle(String componentId) {
@@ -65,7 +69,7 @@ public class SquadSelectionHandler extends AbstractInteractionHandler {
                 .setColor(0xFFA500);
             event.editMessageEmbeds(embed.build())
                 .setActionRow(Button.primary("voltar-inicio", "🏠 Voltar ao Início"))
-                .queue();
+                .queue(message -> pendingAuthMessageService.storePendingAuthMessage(userId, event.getMessage()));
             return;
         }
         

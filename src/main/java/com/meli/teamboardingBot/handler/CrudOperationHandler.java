@@ -3,6 +3,7 @@ import com.meli.teamboardingBot.enums.FormStep;
 import com.meli.teamboardingBot.model.FormState;
 import com.meli.teamboardingBot.service.DiscordUserAuthenticationService;
 import com.meli.teamboardingBot.service.FormStateService;
+import com.meli.teamboardingBot.service.PendingAuthMessageService;
 import com.meli.teamboardingBot.service.SquadLogService;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -26,14 +27,17 @@ import static net.dv8tion.jda.api.interactions.components.buttons.Button.*;
 public class CrudOperationHandler extends AbstractInteractionHandler {
     private final SquadLogService squadLogService;
     private final DiscordUserAuthenticationService discordAuthService;
+    private final PendingAuthMessageService pendingAuthMessageService;
     private static final int LIMIT_PAGE = 15;
 
     public CrudOperationHandler(FormStateService formStateService, 
                                SquadLogService squadLogService,
-                               DiscordUserAuthenticationService discordAuthService) {
+                               DiscordUserAuthenticationService discordAuthService,
+                               PendingAuthMessageService pendingAuthMessageService) {
         super(formStateService);
         this.squadLogService = squadLogService;
         this.discordAuthService = discordAuthService;
+        this.pendingAuthMessageService = pendingAuthMessageService;
     }
     @Override
     public boolean canHandle(String componentId) {
@@ -306,7 +310,7 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
                 .setColor(0xFFA500);
             event.editMessageEmbeds(embed.build())
                 .setActionRow(primary("voltar-inicio", "🏠 Voltar ao Início"))
-                .queue();
+                .queue(message -> pendingAuthMessageService.storePendingAuthMessage(userId, event.getMessage()));
             return;
         }
         
