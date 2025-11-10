@@ -43,6 +43,7 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
                "criar-novo-log".equals(componentId) ||
                "atualizar-log-existente".equals(componentId) ||
                "atualizar".equals(componentId) ||
+               "sair-bot".equals(componentId) ||
                "voltar-inicio".equals(componentId) ||
                "voltar".equals(componentId) ||
                "avancar".equals(componentId);
@@ -53,6 +54,20 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
         log.info("Button clicked: {}", buttonId);
         
         try {
+            if ("criar-novo-log".equals(buttonId)) {
+                handleCreateNewLog(event);
+                return;
+            } else if ("atualizar-log-existente".equals(buttonId) || "atualizar".equals(buttonId)) {
+                handleUpdateExistingLog(event);
+                return;
+            } else if ("sair-bot".equals(buttonId)) {
+                handleExitBot(event);
+                return;
+            } else if ("voltar-inicio".equals(buttonId)) {
+                handleVoltarInicio(event);
+                return;
+            }
+            
             if ("criar-log".equals(buttonId) || "confirmar-criacao".equals(buttonId)) {
                 if (state.isCreating()) {
                     handleCreateSquadLog(event, state);
@@ -61,14 +76,6 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
                 }
             } else if ("confirmar-atualizacao".equals(buttonId)) {
                 handleUpdateSquadLog(event, state);
-            } else if ("criar-novo-log".equals(buttonId)) {
-                handleCreateNewLog(event);
-            } else if ("atualizar-log-existente".equals(buttonId) || "atualizar".equals(buttonId)) {
-                handleUpdateExistingLog(event);
-            } else if ("sair-bot".equals(buttonId)) {
-                handleExitBot(event);
-            } else if ("voltar-inicio".equals(buttonId)) {
-                handleVoltarInicio(event);
             } else if ("voltar".equals(buttonId)) {
                 handleVoltarPage(event);
             } else if ("avancar".equals(buttonId)) {

@@ -16,7 +16,8 @@ public class SlashCommandRegister {
         jda.getGuildById(guildId).updateCommands().addCommands(
                 Commands.slash("start", "Iniciar e fazer autenticação no bot"),
                 Commands.slash("squad-log", "Squad Log"),
-                Commands.slash("squad-log-lote", "Criar múltiplos squad logs de uma vez usando texto livre")
+                Commands.slash("squad-log-lote", "Criar múltiplos squad logs de uma vez usando texto livre"),
+                Commands.slash("stop", "Cancelar o fluxo de criação ou edição atual")
         ).queue();
     }
 }
