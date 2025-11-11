@@ -13,6 +13,7 @@ import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import java.util.concurrent.CompletableFuture;
@@ -24,6 +25,12 @@ public class TypeSelectionHandler extends AbstractInteractionHandler {
     private final SquadLogService squadLogService;
     @Autowired
     private SummaryHandler summaryHandler;
+
+    @Autowired
+    private MessageSource messageSource;
+
+    @Autowired
+    private FormState formState;
     
     public TypeSelectionHandler(FormStateService formStateService, SquadLogService squadLogService) {
         super(formStateService);
@@ -87,7 +94,7 @@ public class TypeSelectionHandler extends AbstractInteractionHandler {
             }
         } catch (Exception e) {
             log.error("Erro na seleção de tipo: {}", e.getMessage());
-            showError(event, "Erro ao processar seleção do tipo.");
+            showError(event, messageSource.getMessage("", null, formState.getLocale()) + ".");
         }
     }
     private void showTypeSelection(ButtonInteractionEvent event) {
@@ -96,7 +103,7 @@ public class TypeSelectionHandler extends AbstractInteractionHandler {
             String logTypesJson = squadLogService.getSquadLogTypes();
             JSONArray logTypesArray = new JSONArray(logTypesJson);
             StringSelectMenu.Builder typeMenuBuilder = StringSelectMenu.create("type-select")
-                    .setPlaceholder("Selecione o tipo");
+                    .setPlaceholder(messageSource.getMessage("txt_selecione_o_tipo", null, formState.getLocale()));
             boolean hasTypes = false;
             for (int i = 0; i < logTypesArray.length(); i++) {
                 JSONObject type = logTypesArray.getJSONObject(i);
@@ -108,15 +115,15 @@ public class TypeSelectionHandler extends AbstractInteractionHandler {
                 }
             }
             EmbedBuilder embed = new EmbedBuilder()
-                .setTitle("📝 Selecione um Tipo")
-                .setDescription("Escolha o tipo do log:")
+                .setTitle("📝 "+ messageSource.getMessage("txt_selecione_um_tipo", null, formState.getLocale()))
+                .setDescription( messageSource.getMessage("txt_escolha_o_tipo_do_log", null, formState.getLocale()) + ":")
                 .setColor(0x0099FF);
             if (hasTypes) {
                 event.getHook().editOriginalEmbeds(embed.build())
                     .setActionRow(typeMenuBuilder.build())
                     .queue();
             } else {
-                embed.setDescription("❌ Nenhum tipo disponível no momento.");
+                embed.setDescription("❌ ."+ messageSource.getMessage("txt_nenhum_tipo_disponivel_no_momento", null, formState.getLocale()) + ".");
                 event.getHook().editOriginalEmbeds(embed.build())
                     .setComponents()
                     .queue();
@@ -124,11 +131,11 @@ public class TypeSelectionHandler extends AbstractInteractionHandler {
         } catch (Exception e) {
             log.error("Erro ao carregar tipos: {}", e.getMessage());
             EmbedBuilder errorEmbed = new EmbedBuilder()
-                .setTitle("❌ Erro ao carregar tipos")
-                .setDescription("Ocorreu um erro ao carregar os tipos. Tente novamente.")
+                .setTitle("❌ "+ messageSource.getMessage("txt_erro_carregar_tipos", null, formState.getLocale()))
+                .setDescription(messageSource.getMessage("txt_erro_carregar_tipos", null, formState.getLocale())+". " +messageSource.getMessage("txt_tente_novamente", null, formState.getLocale())+".")
                 .setColor(0xFF0000);
             event.getHook().editOriginalEmbeds(errorEmbed.build())
-                .setActionRow(Button.primary("voltar-inicio", "🏠 Voltar ao Início"))
+                .setActionRow(Button.primary("voltar-inicio", "🏠 "+ messageSource.getMessage("txt_voltar_inicio", null, formState.getLocale())))
                 .queue();
         }
     }
@@ -137,7 +144,7 @@ public class TypeSelectionHandler extends AbstractInteractionHandler {
             String categoriesJson = squadLogService.getSquadCategories();
             JSONArray categoriesArray = new JSONArray(categoriesJson);
             StringSelectMenu.Builder categoryMenuBuilder = StringSelectMenu.create("category-select")
-                    .setPlaceholder("Selecione as categorias")
+                    .setPlaceholder(messageSource.getMessage("txt_selecione_as_categorias", null, formState.getLocale()))
                     .setMinValues(1)
                     .setMaxValues(Math.min(categoriesArray.length(), 25)); 
             boolean hasCategories = false;
@@ -151,15 +158,15 @@ public class TypeSelectionHandler extends AbstractInteractionHandler {
                 }
             }
             EmbedBuilder embed = new EmbedBuilder()
-                .setTitle("🏷️ Selecione as Categorias")
-                .setDescription("Escolha uma ou mais categorias:")
+                .setTitle("🏷️ "+ messageSource.getMessage("txt_selecione_as_categorias", null, formState.getLocale()))
+                .setDescription(messageSource.getMessage("txt_escolha_uma_ou_mais_categorias", null, formState.getLocale()) + ":")
                 .setColor(0x0099FF);
             if (hasCategories) {
                 event.getHook().editOriginalEmbeds(embed.build())
                     .setActionRow(categoryMenuBuilder.build())
                     .queue();
             } else {
-                embed.setDescription("❌ Nenhuma categoria disponível no momento.");
+                embed.setDescription("❌ "+ messageSource.getMessage("txt_nenhuma_categoria_disponivel", null, formState.getLocale()) + ".");
                 event.getHook().editOriginalEmbeds(embed.build())
                     .setComponents()
                     .queue();
@@ -167,11 +174,11 @@ public class TypeSelectionHandler extends AbstractInteractionHandler {
         } catch (Exception e) {
             log.error("Erro ao carregar categorias: {}", e.getMessage());
             EmbedBuilder errorEmbed = new EmbedBuilder()
-                .setTitle("❌ Erro ao carregar categorias")
-                .setDescription("Ocorreu um erro ao carregar as categorias. Tente novamente.")
+                .setTitle("❌ "+ messageSource.getMessage("txt_erro_carregar_categorias", null, formState.getLocale()))
+                .setDescription(messageSource.getMessage("txt_erro_carregar_categorias", null, formState.getLocale())+ ". "+messageSource.getMessage("txt_tente_novamente", null, formState.getLocale()) + "." )
                 .setColor(0xFF0000);
             event.getHook().editOriginalEmbeds(errorEmbed.build())
-                .setActionRow(Button.primary("voltar-inicio", "🏠 Voltar ao Início"))
+                .setActionRow(Button.primary("voltar-inicio", "🏠 "+ messageSource.getMessage("txt_voltar_inicio", null, formState.getLocale())))
                 .queue();
         }
     }
@@ -183,11 +190,11 @@ public class TypeSelectionHandler extends AbstractInteractionHandler {
     }
     private void showError(StringSelectInteractionEvent event, String message) {
         EmbedBuilder errorEmbed = new EmbedBuilder()
-            .setTitle("❌ Erro")
+            .setTitle("❌ "+ messageSource.getMessage("txt_erro", null, formState.getLocale()))
             .setDescription(message)
             .setColor(0xFF0000);
         event.getHook().editOriginalEmbeds(errorEmbed.build())
-            .setActionRow(Button.primary("voltar-inicio", "🏠 Voltar ao Início"))
+            .setActionRow(Button.primary("voltar-inicio", "🏠 "+ messageSource.getMessage("txt_voltar_inicio", null, formState.getLocale())))
             .queue();
     }
     @Override
