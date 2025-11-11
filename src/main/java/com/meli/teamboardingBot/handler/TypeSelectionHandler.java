@@ -94,7 +94,7 @@ public class TypeSelectionHandler extends AbstractInteractionHandler {
             }
         } catch (Exception e) {
             log.error("Erro na seleção de tipo: {}", e.getMessage());
-            showError(event, messageSource.getMessage("", null, formState.getLocale()) + ".");
+            showError(event, messageSource.getMessage("txt_erro_processar_selecao_do_tipo", null, formState.getLocale()) + ".");
         }
     }
     private void showTypeSelection(ButtonInteractionEvent event) {

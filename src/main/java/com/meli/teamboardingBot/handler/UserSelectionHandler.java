@@ -12,6 +12,7 @@ import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import java.util.concurrent.CompletableFuture;
@@ -23,6 +24,12 @@ public class UserSelectionHandler extends AbstractInteractionHandler {
     private final SquadLogService squadLogService;
     @Autowired
     private SummaryHandler summaryHandler;
+
+    @Autowired
+    private MessageSource messageSource;
+
+    @Autowired
+    private FormState formState;
     
     public UserSelectionHandler(FormStateService formStateService, SquadLogService squadLogService) {
         super(formStateService);
@@ -82,7 +89,7 @@ public class UserSelectionHandler extends AbstractInteractionHandler {
             }
         } catch (Exception e) {
             log.error("Erro na seleção de usuário: {}", e.getMessage());
-            showError(event, "Erro ao processar seleção do usuário.");
+            showError(event,  messageSource.getMessage("txt_erro_processar_selecao_do_usuario", null, formState.getLocale())+".");
         }
     }
     private void loadUserFromSquad(FormState state, String selectedUserId) throws Exception {
@@ -119,7 +126,7 @@ public class UserSelectionHandler extends AbstractInteractionHandler {
             JSONArray squadsArray = obj.optJSONArray("items");
             if (squadsArray == null || squadsArray.length() == 0) {
                 log.error("Nenhuma squad encontrada na resposta da API");
-                showUserSelectionError(event, "Nenhuma squad encontrada.");
+                showUserSelectionError(event,  messageSource.getMessage("txt_nenhuma_squad_encontrada", null, formState.getLocale())+".");
                 return;
             }
             JSONObject selectedSquad = null;
@@ -132,11 +139,11 @@ public class UserSelectionHandler extends AbstractInteractionHandler {
             }
             if (selectedSquad == null) {
                 log.error("Squad com ID {} não encontrada", squadId);
-                showUserSelectionError(event, "Squad não encontrada.");
+                showUserSelectionError(event, messageSource.getMessage("txt_squad_nao_encontrada", null, formState.getLocale())+".");
                 return;
             }
             StringSelectMenu.Builder userMenuBuilder = StringSelectMenu.create("user-select")
-                    .setPlaceholder("Selecione uma pessoa");
+                    .setPlaceholder(messageSource.getMessage("txt_selecione_uma_pessoa", null, formState.getLocale()));
             userMenuBuilder.addOption("All team", squadId);
             JSONArray userSquads = selectedSquad.optJSONArray("user_squads");
             int userCount = 0;
@@ -158,28 +165,28 @@ public class UserSelectionHandler extends AbstractInteractionHandler {
             }
             log.info("Encontrados {} usuários na squad {}", userCount, squadId);
             EmbedBuilder embed = new EmbedBuilder()
-                .setTitle("👤 Selecione uma Pessoa")
+                .setTitle("👤 "+ messageSource.getMessage("txt_selecione_uma_pessoa", null, formState.getLocale()))
                 .setColor(0x0099FF);
             if (userCount > 0) {
-                embed.setDescription("Escolha quem irá responder ao questionário:");
+                embed.setDescription(messageSource.getMessage("txt_escolha_quem_ira_responder_ao_questionario", null, formState.getLocale()));
                 event.getHook().editOriginalEmbeds(embed.build())
                     .setActionRow(userMenuBuilder.build())
                     .queue();
             } else {
-                embed.setDescription("Apenas a opção 'All team' está disponível:");
+                embed.setDescription(messageSource.getMessage("txt_apenas_a_opcao_all_team_esta_disponivel", null, formState.getLocale())+":");
                 event.getHook().editOriginalEmbeds(embed.build())
                     .setActionRow(userMenuBuilder.build())
                     .queue();
             }
         } catch (Exception e) {
             log.error("Erro ao carregar usuários: {}", e.getMessage(), e);
-            showUserSelectionError(event, "Erro interno ao carregar usuários: " + e.getMessage());
+            showUserSelectionError(event, messageSource.getMessage("txt_erro_interno_ao_carregar_usuarios", null, formState.getLocale())+": "+ e.getMessage() );
         }
     }
     private void showUserSelectionError(ButtonInteractionEvent event, String message) {
         try {
             EmbedBuilder errorEmbed = new EmbedBuilder()
-                .setTitle("❌ Erro ao carregar usuários")
+                .setTitle("❌ "+ messageSource.getMessage("txt_erro_carregar_usuarios", null, formState.getLocale()))
                 .setDescription(message)
                 .setColor(0xFF0000);
             event.getHook().editOriginalEmbeds(errorEmbed.build())
@@ -190,7 +197,7 @@ public class UserSelectionHandler extends AbstractInteractionHandler {
             try {
                 event.deferEdit().queue();
                 EmbedBuilder errorEmbed = new EmbedBuilder()
-                    .setTitle("❌ Erro ao carregar usuários")
+                    .setTitle("❌ Erro ao carregar usuários"+ messageSource.getMessage("txt_erro_carregar_usuarios", null, formState.getLocale()))
                     .setDescription(message)
                     .setColor(0xFF0000);
                 event.getHook().editOriginalEmbeds(errorEmbed.build())
@@ -206,7 +213,7 @@ public class UserSelectionHandler extends AbstractInteractionHandler {
             String logTypesJson = squadLogService.getSquadLogTypes();
             JSONArray logTypesArray = new JSONArray(logTypesJson);
             StringSelectMenu.Builder typeMenuBuilder = StringSelectMenu.create("type-select")
-                    .setPlaceholder("Selecione o tipo");
+                    .setPlaceholder(messageSource.getMessage("txt_selecione_o_tipo", null, formState.getLocale()));
             boolean hasTypes = false;
             for (int i = 0; i < logTypesArray.length(); i++) {
                 JSONObject type = logTypesArray.getJSONObject(i);
@@ -218,15 +225,15 @@ public class UserSelectionHandler extends AbstractInteractionHandler {
                 }
             }
             EmbedBuilder embed = new EmbedBuilder()
-                .setTitle("📝 Selecione um Tipo")
-                .setDescription("Escolha o tipo do log:")
+                .setTitle("📝 "+ messageSource.getMessage("txt_selecione_o_tipo", null, formState.getLocale()))
+                .setDescription(messageSource.getMessage("txt_escolha_o_tipo_do_log", null, formState.getLocale())+":")
                 .setColor(0x0099FF);
             if (hasTypes) {
                 event.getHook().editOriginalEmbeds(embed.build())
                     .setActionRow(typeMenuBuilder.build())
                     .queue();
             } else {
-                embed.setDescription("❌ Nenhum tipo disponível no momento.");
+                embed.setDescription("❌ "+ messageSource.getMessage("txt_nenhum_tipo_disponivel_no_momento", null, formState.getLocale()) +".");
                 event.getHook().editOriginalEmbeds(embed.build())
                     .setComponents()
                     .queue();
@@ -234,8 +241,8 @@ public class UserSelectionHandler extends AbstractInteractionHandler {
         } catch (Exception e) {
             log.error("Erro ao carregar tipos: {}", e.getMessage());
             EmbedBuilder errorEmbed = new EmbedBuilder()
-                .setTitle("❌ Erro ao carregar tipos")
-                .setDescription("Ocorreu um erro ao carregar os tipos. Tente novamente.")
+                .setTitle("❌ "+ messageSource.getMessage("txt_erro_carregar_tipos", null, formState.getLocale()))
+                .setDescription(messageSource.getMessage("", null, formState.getLocale())+ ". "+messageSource.getMessage("txt_tente_novamente", null, formState.getLocale())+".")
                 .setColor(0xFF0000);
             event.getHook().editOriginalEmbeds(errorEmbed.build()).setComponents().queue();
         }
@@ -248,7 +255,7 @@ public class UserSelectionHandler extends AbstractInteractionHandler {
     }
     private void showError(StringSelectInteractionEvent event, String message) {
         EmbedBuilder errorEmbed = new EmbedBuilder()
-            .setTitle("❌ Erro")
+            .setTitle("❌ " + messageSource.getMessage("txt_erro", null, formState.getLocale()))
             .setDescription(message)
             .setColor(0xFF0000);
         event.getHook().editOriginalEmbeds(errorEmbed.build())

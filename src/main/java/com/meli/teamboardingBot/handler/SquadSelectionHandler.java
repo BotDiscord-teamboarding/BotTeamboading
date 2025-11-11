@@ -177,7 +177,7 @@ public class SquadSelectionHandler extends AbstractInteractionHandler {
             }
             EmbedBuilder embed = new EmbedBuilder()
                 .setTitle("👤 " + messageSource.getMessage("txt_selecao_de_usuario", null, formState.getLocale()))
-                .setDescription(messageSource.getMessage("txt_selecione_o_usuario_que_irá_responder_ao_questionário", null, formState.getLocale())+":")
+                .setDescription(messageSource.getMessage("txt_selecione_o_usuario_que_ira_responder_ao_questionario", null, formState.getLocale())+":")
                 .setColor(0x0099FF);
             StringSelectMenu.Builder menuBuilder = StringSelectMenu.create("user-select")
                 .setPlaceholder(messageSource.getMessage("txt_escolha_um_usuario", null, formState.getLocale())+ "...");
