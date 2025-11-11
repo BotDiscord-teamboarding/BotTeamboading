@@ -14,6 +14,7 @@ import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import java.util.concurrent.CompletableFuture;
@@ -51,6 +52,12 @@ public class SquadSelectionHandler extends AbstractInteractionHandler {
             handleSquadSelect(event, state);
         }
     }
+    @Autowired
+    private MessageSource messageSource;
+
+    @Autowired
+    private FormState formState;
+
     private void handleCreateButton(ButtonInteractionEvent event, FormState state) {
         log.info("Iniciando fluxo de criação");
         state.setCreating(true);
@@ -93,7 +100,7 @@ public class SquadSelectionHandler extends AbstractInteractionHandler {
             }
         } catch (Exception e) {
             log.error("Erro na seleção de squad: {}", e.getMessage());
-            showError(event, "Erro ao processar seleção da squad.");
+            showError(event, messageSource.getMessage("txt_erro_processar_selecao_das_squads", null, formState.getLocale()));
         }
     }
     private void showSquadSelection(ButtonInteractionEvent event) {
@@ -104,16 +111,16 @@ public class SquadSelectionHandler extends AbstractInteractionHandler {
             event.deferEdit().queue();
             if (squadsArray == null || squadsArray.length() == 0) {
                 EmbedBuilder errorEmbed = new EmbedBuilder()
-                    .setTitle("❌ Nenhuma squad encontrada")
-                    .setDescription("Não há squads disponíveis no momento.")
+                    .setTitle("❌ " + messageSource.getMessage("txt_nenhuma_squad_encontrada", null, formState.getLocale()))
+                    .setDescription( messageSource.getMessage("txt_nao_ha_squads_disponiveis_no_momento", null, formState.getLocale()) + ".")
                     .setColor(0xFF0000);
                 event.getHook().editOriginalEmbeds(errorEmbed.build())
-                    .setActionRow(Button.primary("voltar-inicio", "🏠 Voltar ao Início"))
+                    .setActionRow(Button.primary("voltar-inicio", "🏠 "+ messageSource.getMessage("txt_voltar_inicio", null, formState.getLocale())))
                     .queue();
                 return;
             }
             StringSelectMenu.Builder squadMenuBuilder = StringSelectMenu.create("squad-select")
-                    .setPlaceholder("Selecione uma squad");
+                    .setPlaceholder(messageSource.getMessage("txt_selecione_uma_squad", null, formState.getLocale()));
             for (int i = 0; i < squadsArray.length(); i++) {
                 JSONObject squad = squadsArray.getJSONObject(i);
                 String squadName = squad.optString("name", "");
@@ -123,8 +130,8 @@ public class SquadSelectionHandler extends AbstractInteractionHandler {
                 }
             }
             EmbedBuilder embed = new EmbedBuilder()
-                .setTitle("🏢 Selecione uma Squad")
-                .setDescription("Escolha a squad para o seu log:")
+                .setTitle("🏢 " + messageSource.getMessage("txt_selecione_uma_squad", null, formState.getLocale()))
+                .setDescription(messageSource.getMessage("txt_escolha_a_squad_para_o_seu_log", null, formState.getLocale()) + ":")
                 .setColor(0x0099FF);
             event.getHook().editOriginalEmbeds(embed.build())
                 .setActionRow(squadMenuBuilder.build())
@@ -132,11 +139,12 @@ public class SquadSelectionHandler extends AbstractInteractionHandler {
         } catch (Exception e) {
             log.error("Erro ao carregar squads: {}", e.getMessage());
             EmbedBuilder errorEmbed = new EmbedBuilder()
-                .setTitle("❌ Erro ao carregar squads")
-                .setDescription("Ocorreu um erro ao carregar as squads. Tente novamente.")
+                .setTitle("❌ "+ messageSource.getMessage("txt_erro_carregar_squads", null, formState.getLocale()))
+                .setDescription(messageSource.getMessage("txt_erro_carregar_squads", null, formState.getLocale()) + ". " +
+                        messageSource.getMessage("txt_tente_novamente", null, formState.getLocale()) + ".")
                 .setColor(0xFF0000);
             event.getHook().editOriginalEmbeds(errorEmbed.build())
-                .setActionRow(Button.primary("voltar-inicio", "🏠 Voltar ao Início"))
+                .setActionRow(Button.primary("voltar-inicio", "🏠 " + messageSource.getMessage("txt_voltar_inicio", null, formState.getLocale())))
                 .queue();
         }
     }
@@ -147,7 +155,7 @@ public class SquadSelectionHandler extends AbstractInteractionHandler {
             JSONObject obj = new JSONObject(squadsJson);
             JSONArray squadsArray = obj.optJSONArray("items");
             if (squadsArray == null || squadsArray.length() == 0) {
-                showError(event, "Nenhuma squad encontrada na resposta da API.");
+                showError(event, messageSource.getMessage("txt_nenhuma_squad_encontrada_na_resposta_da_api", null, formState.getLocale()) + ".");
                 return;
             }
             JSONObject selectedSquad = null;
@@ -159,20 +167,20 @@ public class SquadSelectionHandler extends AbstractInteractionHandler {
                 }
             }
             if (selectedSquad == null) {
-                showError(event, "Squad selecionada não encontrada.");
+                showError(event, messageSource.getMessage("txt_squad_selecionada_nao_encontrada", null, formState.getLocale()) + ".");
                 return;
             }
             JSONArray userSquads = selectedSquad.optJSONArray("user_squads");
             if (userSquads == null || userSquads.length() == 0) {
-                showError(event, "Nenhum usuário encontrado na squad selecionada.");
+                showError(event, messageSource.getMessage("txt_nenhum_usuario_encontrado_na_squad_selecionada", null, formState.getLocale())+".");
                 return;
             }
             EmbedBuilder embed = new EmbedBuilder()
-                .setTitle("👤 Seleção de Usuário")
-                .setDescription("Selecione o usuário que irá responder ao questionário:")
+                .setTitle("👤 " + messageSource.getMessage("txt_selecao_de_usuario", null, formState.getLocale()))
+                .setDescription(messageSource.getMessage("txt_selecione_o_usuario_que_irá_responder_ao_questionário", null, formState.getLocale())+":")
                 .setColor(0x0099FF);
             StringSelectMenu.Builder menuBuilder = StringSelectMenu.create("user-select")
-                .setPlaceholder("Escolha um usuário...");
+                .setPlaceholder(messageSource.getMessage("txt_escolha_um_usuario", null, formState.getLocale())+ "...");
             
             menuBuilder.addOption("All team", squadId);
             
@@ -201,7 +209,7 @@ public class SquadSelectionHandler extends AbstractInteractionHandler {
                 .queue();
         } catch (Exception e) {
             log.error("Erro ao exibir seleção de usuário: {}", e.getMessage());
-            showError(event, "Erro ao carregar seleção de usuário.");
+            showError(event,  messageSource.getMessage("txt_erro_carregar_selecao_de_usuario", null, formState.getLocale())+".");
         }
     }
     private void showSummary(StringSelectInteractionEvent event) {
@@ -212,11 +220,11 @@ public class SquadSelectionHandler extends AbstractInteractionHandler {
     }
     private void showError(StringSelectInteractionEvent event, String message) {
         EmbedBuilder errorEmbed = new EmbedBuilder()
-            .setTitle("❌ Erro")
+            .setTitle("❌ " + messageSource.getMessage("txt_erro", null, formState.getLocale()))
             .setDescription(message)
             .setColor(0xFF0000);
         event.getHook().editOriginalEmbeds(errorEmbed.build())
-            .setActionRow(Button.primary("voltar-inicio", "🏠 Voltar ao Início"))
+            .setActionRow(Button.primary("voltar-inicio", "🏠 "+ messageSource.getMessage("txt_voltar_inicio", null, formState.getLocale())))
             .queue();
     }
     @Override
