@@ -12,6 +12,8 @@ import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.text.TextInput;
 import net.dv8tion.jda.api.interactions.components.text.TextInputStyle;
 import net.dv8tion.jda.api.interactions.modals.Modal;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import java.time.LocalDate;
@@ -66,24 +68,29 @@ public class ModalInputHandler extends AbstractInteractionHandler {
             handleFieldEditDatesModal(event, state);
         }
     }
+    @Autowired
+    private MessageSource messageSource;
+
+    @Autowired
+    private FormState formState;
     private void handleEditDescriptionButton(ButtonInteractionEvent event, FormState state) {
         log.info("Editando descrição");
-        TextInput.Builder descriptionBuilder = TextInput.create("description", "Descrição", TextInputStyle.PARAGRAPH)
-            .setPlaceholder("Digite a descrição do log...")
+        TextInput.Builder descriptionBuilder = TextInput.create("description", messageSource.getMessage("txt_descricao", null, formState.getLocale()), TextInputStyle.PARAGRAPH)
+            .setPlaceholder(messageSource.getMessage("txt_digite_a_descricao_do_log", null, formState.getLocale()) + "...")
             .setMaxLength(1000)
             .setRequired(true);
         if (state.getDescription() != null && !state.getDescription().trim().isEmpty()) {
             descriptionBuilder.setValue(state.getDescription());
         }
         TextInput descriptionInput = descriptionBuilder.build();
-        Modal modal = Modal.create("modal-edit-description", "📝 Editar Descrição")
+        Modal modal = Modal.create("modal-edit-description", "📝 " + messageSource.getMessage("txt_editar_descrição", null, formState.getLocale()))
             .addActionRow(descriptionInput)
             .build();
         event.replyModal(modal).queue();
     }
     private void handleEditDatesButton(ButtonInteractionEvent event, FormState state) {
         log.info("Editando datas");
-        TextInput.Builder startDateBuilder = TextInput.create("start_date", "Data de Início (DD-MM-AAAA)", TextInputStyle.SHORT)
+        TextInput.Builder startDateBuilder = TextInput.create("start_date", messageSource.getMessage("txt_data_de_inicio", null, formState.getLocale()) + " (DD-MM-AAAA)", TextInputStyle.SHORT)
             .setPlaceholder("Ex: 20-06-1986")
             .setMaxLength(10)
             .setRequired(true);
@@ -94,8 +101,9 @@ public class ModalInputHandler extends AbstractInteractionHandler {
             }
         }
         TextInput startDateInput = startDateBuilder.build();
-        TextInput.Builder endDateBuilder = TextInput.create("end_date", "Data de Fim (DD-MM-AAAA) - Opcional", TextInputStyle.SHORT)
-            .setPlaceholder("Ex: 25-06-1986 (deixe vazio se não houver)")
+        TextInput.Builder endDateBuilder = TextInput.create("end_date", messageSource.getMessage("txt_data_de_fim", null, formState.getLocale()) + " (DD-MM-AAAA) - "
+                        + messageSource.getMessage("txt_opcional", null, formState.getLocale()), TextInputStyle.SHORT)
+            .setPlaceholder("Ex: 25-06-1986 (" + messageSource.getMessage("txt_deixe_vazio_se_nao_houver", null, formState.getLocale()) +")")
             .setMaxLength(10)
             .setRequired(false);
         if (state.getEndDate() != null && !state.getEndDate().trim().isEmpty()) {
@@ -105,7 +113,7 @@ public class ModalInputHandler extends AbstractInteractionHandler {
             }
         }
         TextInput endDateInput = endDateBuilder.build();
-        Modal modal = Modal.create("modal-edit-dates", "📅 Editar Datas")
+        Modal modal = Modal.create("modal-edit-dates", "📅 " + messageSource.getMessage("txt_editar_datas", null, formState.getLocale()) )
             .addActionRow(startDateInput)
             .addActionRow(endDateInput)
             .build();
@@ -123,13 +131,14 @@ public class ModalInputHandler extends AbstractInteractionHandler {
             
             event.deferEdit().queue();
             EmbedBuilder errorEmbed = new EmbedBuilder()
-                .setTitle("❌ Data de Início Inválida")
-                .setDescription("Data de início inválida: `" + startDate + "`\n\nUse o formato **DD-MM-AAAA** (ex: 20-06-1986)")
+                .setTitle("❌ " + messageSource.getMessage("txt_data_de_inicio_invalida", null, formState.getLocale()) )
+                .setDescription(messageSource.getMessage("txt_data_de_inicio_invalida", null, formState.getLocale())
+                        + ": `" + startDate + "`\n\n" +messageSource.getMessage("txt_use_o_formato", null, formState.getLocale())  +" **DD-MM-AAAA** (ex: 20-06-1986)")
                 .setColor(0xFF0000);
             event.getHook().editOriginalEmbeds(errorEmbed.build())
                 .setActionRow(
-                    Button.primary("retry-create-modal", "🔄 Preencher Novamente"),
-                    Button.secondary("voltar-inicio", "🏠 Voltar ao Início")
+                    Button.primary("retry-create-modal", "🔄 " + messageSource.getMessage("txt_preencher_novamente", null, formState.getLocale()) ),
+                    Button.secondary("voltar-inicio", "🏠 " + messageSource.getMessage("txt_voltar_inicio", null, formState.getLocale()) )
                 )
                 .queue();
             return;
@@ -141,13 +150,14 @@ public class ModalInputHandler extends AbstractInteractionHandler {
             
             event.deferEdit().queue();
             EmbedBuilder errorEmbed = new EmbedBuilder()
-                .setTitle("❌ Data de Fim Inválida")
-                .setDescription("Data de fim inválida: `" + endDate + "`\n\nUse o formato **DD-MM-AAAA** (ex: 25-06-1986)")
+                .setTitle("❌ " + messageSource.getMessage("txt_data_de_fim_invalida", null, formState.getLocale()))
+                .setDescription(messageSource.getMessage("txt_data_de_fim_invalida", null, formState.getLocale()) + ": `" + endDate + "`\n\n"+
+                        messageSource.getMessage("txt_use_o_formato", null, formState.getLocale()) + " **DD-MM-AAAA** (ex: 25-06-1986)")
                 .setColor(0xFF0000);
             event.getHook().editOriginalEmbeds(errorEmbed.build())
                 .setActionRow(
-                    Button.primary("retry-create-modal", "🔄 Preencher Novamente"),
-                    Button.secondary("voltar-inicio", "🏠 Voltar ao Início")
+                    Button.primary("retry-create-modal", "🔄 " + messageSource.getMessage("txt_preencher_novamente", null, formState.getLocale())),
+                    Button.secondary("voltar-inicio", "🏠 " + messageSource.getMessage("txt_voltar_inicio", null, formState.getLocale()))
                 )
                 .queue();
             return;
@@ -159,16 +169,16 @@ public class ModalInputHandler extends AbstractInteractionHandler {
             
             event.deferEdit().queue();
             EmbedBuilder errorEmbed = new EmbedBuilder()
-                .setTitle("❌ Data de Fim Inválida")
-                .setDescription("A data de fim não pode ser anterior à data de início.\n\n" +
-                              "**Data de início:** " + startDate + "\n" +
-                              "**Data de fim:** " + endDate + "\n\n" +
-                              "Por favor, corrija as datas.")
+                .setTitle("❌ Data de Fim Inválida" + messageSource.getMessage("", null, formState.getLocale()))
+                .setDescription(messageSource.getMessage("txt_data_de_fim_nao_pode_ser_anterior_a_data_de_inicio", null, formState.getLocale()) + ".\n\n**" +
+                        messageSource.getMessage("txt_data_de_inicio", null, formState.getLocale()) + ":** " + startDate + "\n" +
+                        messageSource.getMessage("txt_data_de_fim", null, formState.getLocale()) + ":** " + endDate + "\n\n**" +
+                        messageSource.getMessage("txt_por_favor_corrija_as_datas", null, formState.getLocale()) + ".")
                 .setColor(0xFF0000);
             event.getHook().editOriginalEmbeds(errorEmbed.build())
                 .setActionRow(
-                    Button.primary("retry-create-modal", "🔄 Preencher Novamente"),
-                    Button.secondary("voltar-inicio", "🏠 Voltar ao Início")
+                    Button.primary("retry-create-modal", "🔄 " + messageSource.getMessage("txt_preencher_novamente", null, formState.getLocale())),
+                    Button.secondary("voltar-inicio", "🏠 "+ messageSource.getMessage("txt_voltar_inicio", null, formState.getLocale()))
                 )
                 .queue();
             return;
@@ -199,13 +209,14 @@ public class ModalInputHandler extends AbstractInteractionHandler {
             
             event.deferEdit().queue();
             EmbedBuilder errorEmbed = new EmbedBuilder()
-                .setTitle("❌ Data de Início Inválida")
-                .setDescription("Data de início inválida: `" + startDate + "`\n\nUse o formato **DD-MM-AAAA** (ex: 20-06-1986)")
+                .setTitle("❌ " + messageSource.getMessage("txt_data_de_inicio_invalida", null, formState.getLocale()))
+                .setDescription(messageSource.getMessage("txt_data_de_inicio_invalida", null, formState.getLocale()) + ": `" + startDate + "`\n\n"+
+                        messageSource.getMessage("txt_use_o_formato", null, formState.getLocale()) + " **DD-MM-AAAA** (ex: 20-06-1986)")
                 .setColor(0xFF0000);
             event.getHook().editOriginalEmbeds(errorEmbed.build())
                 .setActionRow(
-                    Button.primary("retry-edit-dates-modal", "🔄 Preencher Novamente"),
-                    Button.secondary("voltar-inicio", "🏠 Voltar ao Início")
+                    Button.primary("retry-edit-dates-modal", "🔄 " + messageSource.getMessage("txt_preencher_novamente", null, formState.getLocale())),
+                    Button.secondary("voltar-inicio", "🏠 "+ messageSource.getMessage("txt_voltar_inicio", null, formState.getLocale()))
                 )
                 .queue();
             return;
@@ -216,13 +227,14 @@ public class ModalInputHandler extends AbstractInteractionHandler {
             
             event.deferEdit().queue();
             EmbedBuilder errorEmbed = new EmbedBuilder()
-                .setTitle("❌ Data de Fim Inválida")
-                .setDescription("Data de fim inválida: `" + endDate + "`\n\nUse o formato **DD-MM-AAAA** (ex: 25-06-1986)")
+                .setTitle("❌ " + messageSource.getMessage("txt_data_de_fim_invalida", null, formState.getLocale()))
+                .setDescription(messageSource.getMessage("txt_data_de_fim_invalida", null, formState.getLocale()) + ": `" + endDate + "`\n\n"
+                        + messageSource.getMessage("txt_use_o_formato", null, formState.getLocale()) +" **DD-MM-AAAA** (ex: 25-06-1986)")
                 .setColor(0xFF0000);
             event.getHook().editOriginalEmbeds(errorEmbed.build())
                 .setActionRow(
-                    Button.primary("retry-edit-dates-modal", "🔄 Preencher Novamente"),
-                    Button.secondary("voltar-inicio", "🏠 Voltar ao Início")
+                    Button.primary("retry-edit-dates-modal", "🔄 " + messageSource.getMessage("txt_preencher_novamente", null, formState.getLocale())),
+                    Button.secondary("voltar-inicio", "🏠 "+ messageSource.getMessage("txt_voltar_inicio", null, formState.getLocale()))
                 )
                 .queue();
             return;
@@ -233,16 +245,16 @@ public class ModalInputHandler extends AbstractInteractionHandler {
             
             event.deferEdit().queue();
             EmbedBuilder errorEmbed = new EmbedBuilder()
-                .setTitle("❌ Data de Fim Inválida")
-                .setDescription("A data de fim não pode ser anterior à data de início.\n\n" +
-                              "**Data de início:** " + startDate + "\n" +
-                              "**Data de fim:** " + endDate + "\n\n" +
-                              "Por favor, corrija as datas.")
+                .setTitle("❌ " + messageSource.getMessage("txt_data_de_fim_invalida", null, formState.getLocale()))
+                .setDescription(messageSource.getMessage("txt_data_de_fim_nao_pode_ser_anterior_a_data_de_inicio", null, formState.getLocale()) + ".\n\n**" +
+                        messageSource.getMessage("txt_data_de_inicio", null, formState.getLocale()) + ":** " + startDate + "\n**" +
+                        messageSource.getMessage("txt_data_de_fim", null, formState.getLocale()) + ":** " + endDate + "\n\n" +
+                        messageSource.getMessage("txt_por_favor_corrija_as_datas", null, formState.getLocale()) + ".")
                 .setColor(0xFF0000);
             event.getHook().editOriginalEmbeds(errorEmbed.build())
                 .setActionRow(
-                    Button.primary("retry-edit-dates-modal", "🔄 Preencher Novamente"),
-                    Button.secondary("voltar-inicio", "🏠 Voltar ao Início")
+                    Button.primary("retry-edit-dates-modal", "🔄 " + messageSource.getMessage("txt_preencher_novamente", null, formState.getLocale())),
+                    Button.secondary("voltar-inicio", "🏠 "+ messageSource.getMessage("txt_voltar_inicio", null, formState.getLocale()))
                 )
                 .queue();
             return;
@@ -323,8 +335,8 @@ public class ModalInputHandler extends AbstractInteractionHandler {
         net.dv8tion.jda.api.EmbedBuilder embed = buildCompleteSummaryEmbed(state);
         event.getHook().editOriginalEmbeds(embed.build())
             .setActionRow(
-                net.dv8tion.jda.api.interactions.components.buttons.Button.success("criar-log", "✅ Criar Log"),
-                net.dv8tion.jda.api.interactions.components.buttons.Button.secondary("editar-log", "✏️ Editar")
+                net.dv8tion.jda.api.interactions.components.buttons.Button.success("criar-log", "✅ " + messageSource.getMessage("txt_criar_log", null, formState.getLocale())),
+                net.dv8tion.jda.api.interactions.components.buttons.Button.secondary("editar-log", "✏️ " + messageSource.getMessage("txt_editar", null, formState.getLocale()))
             )
             .queue();
     }
@@ -336,35 +348,35 @@ public class ModalInputHandler extends AbstractInteractionHandler {
             EmbedBuilder embed = buildCompleteSummaryEmbed(state);
             event.getHook().editOriginalEmbeds(embed.build())
                 .setComponents(ActionRow.of(
-                    Button.success("criar-log", "💾 Salvar"),
-                    Button.secondary("editar-log", "✏️ Alterar"),
-                    Button.primary("voltar-logs", "↩️ Voltar")
+                    Button.success("criar-log", "💾 " + messageSource.getMessage("txt_salvar", null, formState.getLocale())),
+                    Button.secondary("editar-log", "✏️ " + messageSource.getMessage("txt_alterar", null, formState.getLocale())),
+                    Button.primary("voltar-logs", "↩️ " + messageSource.getMessage("txt_voltar", null, formState.getLocale()))
                 ))
                 .queue();
         }
     }
     private EmbedBuilder buildCompleteSummaryEmbed(FormState state) {
         EmbedBuilder embed = new EmbedBuilder()
-            .setTitle("📋 Resumo Completo do Squad Log")
-            .setDescription("Verifique todos os dados antes de criar o log:")
+            .setTitle("📋 " + messageSource.getMessage("txt_resumo_completo_do_squad_log", null, formState.getLocale()))
+            .setDescription(messageSource.getMessage("txt_verifique_todos_os_dados_antes_de_criar_o_log", null, formState.getLocale()) + ":")
             .setColor(0x0099FF);
-        String squadName = state.getSquadName() != null ? state.getSquadName() : "Não informado";
-        embed.addField("🏢 Squad", squadName, false);
-        String userName = state.getUserName() != null ? state.getUserName() : "Não informado";
-        embed.addField("👤 Pessoa", userName, false);
-        String typeName = state.getTypeName() != null ? state.getTypeName() : "Não informado";
-        embed.addField("📝 Tipo", typeName, false);
+        String squadName = state.getSquadName() != null ? state.getSquadName() : messageSource.getMessage("txt_nao_informado", null, formState.getLocale() );
+        embed.addField("🏢 " + messageSource.getMessage("txt_squad", null, formState.getLocale()), squadName, false);
+        String userName = state.getUserName() != null ? state.getUserName() : messageSource.getMessage("txt_nao_informado", null, formState.getLocale() );
+        embed.addField("👤 " + messageSource.getMessage("txt_pessoa", null, formState.getLocale()), userName, false);
+        String typeName = state.getTypeName() != null ? state.getTypeName() : messageSource.getMessage("txt_nao_informado", null, formState.getLocale() );
+        embed.addField("📝 " + messageSource.getMessage("txt_tipo", null, formState.getLocale()), typeName, false);
         String categoryNames = (!state.getCategoryNames().isEmpty()) ?
-            String.join(", ", state.getCategoryNames()) : "Não informado";
-        embed.addField("🏷️ Categorias", categoryNames, false);
-        String description = state.getDescription() != null ? state.getDescription() : "Não informado";
-        embed.addField("📄 Descrição", description, false);
+            String.join(", ", state.getCategoryNames()) : messageSource.getMessage("txt_nao_informado", null, formState.getLocale() );
+        embed.addField("🏷️ " + messageSource.getMessage("txt_categorias", null, formState.getLocale()), categoryNames, false);
+        String description = state.getDescription() != null ? state.getDescription() : messageSource.getMessage("txt_nao_informado", null, formState.getLocale() );
+        embed.addField("📄 " + messageSource.getMessage("txt_descricao", null, formState.getLocale()), description, false);
         String startDateText = state.getStartDate() != null ?
-            formatToBrazilianDate(state.getStartDate()) : "Não informado";
-        embed.addField("📅 Data de Início", startDateText, false);
+            formatToBrazilianDate(state.getStartDate()) : messageSource.getMessage("txt_nao_informado", null, formState.getLocale() );
+        embed.addField("📅 " + messageSource.getMessage("txt_data_inicio", null, formState.getLocale()), startDateText, false);
         String endDateText = state.getEndDate() != null && !state.getEndDate().isEmpty() ?
-            formatToBrazilianDate(state.getEndDate()) : "Não informada";
-        embed.addField("📅 Data de Fim", endDateText, false);
+            formatToBrazilianDate(state.getEndDate()) : messageSource.getMessage("txt_nao_informado", null, formState.getLocale() );
+        embed.addField("📅 " + messageSource.getMessage("txt_data_fim", null, formState.getLocale()) , endDateText, false);
         return embed;
     }
     private void handleFieldEditDescriptionModal(ModalInteractionEvent event, FormState state) {
@@ -388,13 +400,14 @@ public class ModalInputHandler extends AbstractInteractionHandler {
             
             event.deferEdit().queue();
             EmbedBuilder errorEmbed = new EmbedBuilder()
-                .setTitle("❌ Data de Início Inválida")
-                .setDescription("Data de início inválida: `" + startDate + "`\n\nUse o formato **DD-MM-AAAA** (ex: 20-06-1986)")
+                .setTitle("❌ " + messageSource.getMessage("txt_data_de_inicio_invalida", null, formState.getLocale()))
+                .setDescription( messageSource.getMessage("txt_data_de_inicio_invalida", null, formState.getLocale()) +": `" + startDate + "`\n\n"
+                        +  messageSource.getMessage("txt_use_o_formato", null, formState.getLocale()) + " **DD-MM-AAAA** (ex: 20-06-1986)")
                 .setColor(0xFF0000);
             event.getHook().editOriginalEmbeds(errorEmbed.build())
                 .setActionRow(
                     Button.primary("retry-field-edit-dates-modal", "🔄 Preencher Novamente"),
-                    Button.secondary("voltar-inicio", "🏠 Voltar ao Início")
+                    Button.secondary("voltar-inicio", "🏠 "+ messageSource.getMessage("txt_voltar_inicio", null, formState.getLocale()))
                 )
                 .queue();
             return;
@@ -405,13 +418,14 @@ public class ModalInputHandler extends AbstractInteractionHandler {
             
             event.deferEdit().queue();
             EmbedBuilder errorEmbed = new EmbedBuilder()
-                .setTitle("❌ Data de Fim Inválida")
-                .setDescription("Data de fim inválida: `" + endDate + "`\n\nUse o formato **DD-MM-AAAA** (ex: 25-06-1986)")
+                .setTitle("❌ " + messageSource.getMessage("txt_data_de_fim_invalida", null, formState.getLocale()))
+                .setDescription(messageSource.getMessage("txt_data_de_fim_invalida", null, formState.getLocale()) + ": `" + endDate + "`\n\n"
+                        + messageSource.getMessage("txt_use_o_formato", null, formState.getLocale()) + " **DD-MM-AAAA** (ex: 25-06-1986)")
                 .setColor(0xFF0000);
             event.getHook().editOriginalEmbeds(errorEmbed.build())
                 .setActionRow(
-                    Button.primary("retry-field-edit-dates-modal", "🔄 Preencher Novamente"),
-                    Button.secondary("voltar-inicio", "🏠 Voltar ao Início")
+                    Button.primary("retry-field-edit-dates-modal", "🔄 Preencher Novamente" + messageSource.getMessage("txt_preencher_novamente", null, formState.getLocale())),
+                    Button.secondary("voltar-inicio", "🏠 " + messageSource.getMessage("txt_voltar_inicio", null, formState.getLocale()))
                 )
                 .queue();
             return;
@@ -422,16 +436,16 @@ public class ModalInputHandler extends AbstractInteractionHandler {
             
             event.deferEdit().queue();
             EmbedBuilder errorEmbed = new EmbedBuilder()
-                .setTitle("❌ Data de Fim Inválida")
-                .setDescription("A data de fim não pode ser anterior à data de início.\n\n" +
-                              "**Data de início:** " + startDate + "\n" +
-                              "**Data de fim:** " + endDate + "\n\n" +
-                              "Por favor, corrija as datas.")
+                .setTitle("❌ " + messageSource.getMessage("txt_data_de_fim_invalida", null, formState.getLocale()))
+                .setDescription(messageSource.getMessage("txt_data_de_fim_nao_pode_ser_anterior_a_data_de_inicio", null, formState.getLocale()) + ".\n\n" +
+                              "**" + messageSource.getMessage("txt_data_de_inicio", null, formState.getLocale()) +":** " + startDate + "\n" +
+                              "**"+messageSource.getMessage("txt_data_de_fim", null, formState.getLocale()) +":** " + endDate + "\n\n" +
+                                messageSource.getMessage("txt_por_favor_corrija_as_datas", null, formState.getLocale())+".")
                 .setColor(0xFF0000);
             event.getHook().editOriginalEmbeds(errorEmbed.build())
                 .setActionRow(
-                    Button.primary("retry-field-edit-dates-modal", "🔄 Preencher Novamente"),
-                    Button.secondary("voltar-inicio", "🏠 Voltar ao Início")
+                    Button.primary("retry-field-edit-dates-modal", "🔄 " + messageSource.getMessage("txt_preencher_novamente", null, formState.getLocale())),
+                    Button.secondary("voltar-inicio", "🏠 "+ messageSource.getMessage("txt_voltar_inicio", null, formState.getLocale()))
                 )
                 .queue();
             return;
@@ -448,42 +462,43 @@ public class ModalInputHandler extends AbstractInteractionHandler {
         log.info("Retornando ao resumo de edição após modal (descrição/datas)");
         EmbedBuilder embed = new EmbedBuilder()
             .setTitle("📝 Editar Squad Log")
-            .setDescription("Dados atuais do Squad Log. Selecione o campo que deseja editar:")
+            .setDescription(messageSource.getMessage("txt_dados_atuais_do_squad_log", null, formState.getLocale())
+                    + ". " + messageSource.getMessage("txt_selecione_o_campo_que_deseja_editar", null, formState.getLocale()) + ":")
             .setColor(0xFFAA00);
-        String squadName = state.getSquadName() != null ? state.getSquadName() : "Não informado";
-        embed.addField("🏢 Squad", squadName, false);
-        String userName = state.getUserName() != null ? state.getUserName() : "Não informado";
-        embed.addField("👤 Pessoa", userName, false);
-        String typeName = state.getTypeName() != null ? state.getTypeName() : "Não informado";
-        embed.addField("📝 Tipo", typeName, false);
+        String squadName = state.getSquadName() != null ? state.getSquadName() : messageSource.getMessage("txt_nao_informado", null, formState.getLocale() );
+        embed.addField("🏢 "+ messageSource.getMessage("txt_squad", null, formState.getLocale()), squadName, false);
+        String userName = state.getUserName() != null ? state.getUserName() : messageSource.getMessage("txt_nao_informado", null, formState.getLocale() );
+        embed.addField("👤 "+ messageSource.getMessage("txt_pessoa", null, formState.getLocale()), userName, false);
+        String typeName = state.getTypeName() != null ? state.getTypeName() : messageSource.getMessage("txt_nao_informado", null, formState.getLocale() );
+        embed.addField("📝 "+ messageSource.getMessage("Customize Toolbar…", null, formState.getLocale()), typeName, false);
         String categoryNames = (!state.getCategoryNames().isEmpty()) ?
-            String.join(", ", state.getCategoryNames()) : "Não informado";
-        embed.addField("🏷️ Categorias", categoryNames, false);
-        String description = state.getDescription() != null ? state.getDescription() : "Não informado";
+            String.join(", ", state.getCategoryNames()) : messageSource.getMessage("txt_nao_informado", null, formState.getLocale() );
+        embed.addField("🏷️ "+ messageSource.getMessage("txt_categorias", null, formState.getLocale()), categoryNames, false);
+        String description = state.getDescription() != null ? state.getDescription() : messageSource.getMessage("txt_nao_informado", null, formState.getLocale() );
         if (description.length() > 100) {
             description = description.substring(0, 97) + "...";
         }
-        embed.addField("📄 Descrição", description, false);
-        String startDate = state.getStartDate() != null ? formatToBrazilianDate(state.getStartDate()) : "Não informado";
-        String endDate = state.getEndDate() != null ? formatToBrazilianDate(state.getEndDate()) : "Não informado";
-        embed.addField("📅 Data Início", startDate, false);
-        embed.addField("📅 Data Fim", endDate, false);
+        embed.addField("📄 Descrição"+ messageSource.getMessage("txt_descricao", null, formState.getLocale()), description, false);
+        String startDate = state.getStartDate() != null ? formatToBrazilianDate(state.getStartDate()) : messageSource.getMessage("txt_nao_informado", null, formState.getLocale() );
+        String endDate = state.getEndDate() != null ? formatToBrazilianDate(state.getEndDate()) : messageSource.getMessage("txt_nao_informado", null, formState.getLocale() );
+        embed.addField("📅 "+ messageSource.getMessage("txt_data_inicio", null, formState.getLocale()), startDate, false);
+        embed.addField("📅 " + messageSource.getMessage("txt_data_fim", null, formState.getLocale()) , endDate, false);
         event.getHook().editOriginal("")
             .setEmbeds(embed.build())
             .setComponents(
                 ActionRow.of(
-                    Button.secondary("edit-squad", "🏢 Squad"),
-                    Button.secondary("edit-user", "👤 Pessoa"),
-                    Button.secondary("edit-type", "📝 Tipo")
+                    Button.secondary("edit-squad", "🏢 "+ messageSource.getMessage("txt_squad", null, formState.getLocale())),
+                    Button.secondary("edit-user", "👤 "+ messageSource.getMessage("txt_pessoa", null, formState.getLocale())),
+                    Button.secondary("edit-type", "📝 "+ messageSource.getMessage("txt_tipo", null, formState.getLocale()))
                 ),
                 ActionRow.of(
-                    Button.secondary("edit-categories", "🏷️ Categorias"),
-                    Button.secondary("edit-description", "📄 Descrição"),
-                    Button.secondary("edit-dates", "📅 Datas")
+                    Button.secondary("edit-categories", "🏷️ " + messageSource.getMessage("txt_categorias", null, formState.getLocale())),
+                    Button.secondary("edit-description", "📄 " + messageSource.getMessage("txt_descricao", null, formState.getLocale())),
+                    Button.secondary("edit-dates", "📅 " + messageSource.getMessage("txt_datas", null, formState.getLocale()))
                 ),
                 ActionRow.of(
-                    Button.success("confirmar-atualizacao", "✅ Salvar Alterações"),
-                    Button.danger("cancelar-edicao", "❌ Cancelar")
+                    Button.success("confirmar-atualizacao", "✅ " + messageSource.getMessage("txt_salvar_alteracoes", null, formState.getLocale())),
+                    Button.danger("cancelar-edicao", "❌ " + messageSource.getMessage("txt_cancelar", null, formState.getLocale()))
                 )
             )
             .queue();
@@ -491,42 +506,43 @@ public class ModalInputHandler extends AbstractInteractionHandler {
     private void returnToFieldEditSummaryWithHook(ModalInteractionEvent event, FormState state) {
         log.info("Retornando ao resumo de edição após modal (descrição/datas) via hook");
         EmbedBuilder embed = new EmbedBuilder()
-            .setTitle("📝 Editar Squad Log")
-            .setDescription("Dados atuais do Squad Log. Selecione o campo que deseja editar:")
+            .setTitle("📝 " + messageSource.getMessage("txt_editar_squad_log", null, formState.getLocale()))
+            .setDescription(messageSource.getMessage("txt_dados_atuais_do_squad_log", null, formState.getLocale())
+                    + ". "+ messageSource.getMessage("txt_selecione_o_campo_que_deseja_editar", null, formState.getLocale())+":")
             .setColor(0xFFAA00);
-        String squadName = state.getSquadName() != null ? state.getSquadName() : "Não informado";
-        embed.addField("🏢 Squad", squadName, false);
-        String userName = state.getUserName() != null ? state.getUserName() : "Não informado";
-        embed.addField("👤 Pessoa", userName, false);
-        String typeName = state.getTypeName() != null ? state.getTypeName() : "Não informado";
-        embed.addField("📝 Tipo", typeName, false);
+        String squadName = state.getSquadName() != null ? state.getSquadName() : messageSource.getMessage("txt_nao_informado", null, formState.getLocale() );
+        embed.addField("🏢 "+ messageSource.getMessage("txt_squad", null, formState.getLocale()), squadName, false);
+        String userName = state.getUserName() != null ? state.getUserName() : messageSource.getMessage("txt_nao_informado", null, formState.getLocale() );
+        embed.addField("👤 "+ messageSource.getMessage("txt_pessoa", null, formState.getLocale()), userName, false);
+        String typeName = state.getTypeName() != null ? state.getTypeName() : messageSource.getMessage("txt_nao_informado", null, formState.getLocale() );
+        embed.addField("📝 "+ messageSource.getMessage("txt_tipo", null, formState.getLocale()), typeName, false);
         String categoryNames = (!state.getCategoryNames().isEmpty()) ?
-            String.join(", ", state.getCategoryNames()) : "Não informado";
-        embed.addField("🏷️ Categorias", categoryNames, false);
-        String description = state.getDescription() != null ? state.getDescription() : "Não informado";
+            String.join(", ", state.getCategoryNames()) : messageSource.getMessage("txt_nao_informado", null, formState.getLocale() );
+        embed.addField("🏷️ "+ messageSource.getMessage("txt_categorias", null, formState.getLocale()), categoryNames, false);
+        String description = state.getDescription() != null ? state.getDescription() : messageSource.getMessage("txt_nao_informado", null, formState.getLocale() );
         if (description.length() > 100) {
             description = description.substring(0, 97) + "...";
         }
-        embed.addField("📄 Descrição", description, false);
-        String startDate = state.getStartDate() != null ? formatToBrazilianDate(state.getStartDate()) : "Não informado";
-        String endDate = state.getEndDate() != null ? formatToBrazilianDate(state.getEndDate()) : "Não informado";
-        embed.addField("📅 Data Início", startDate, false);
-        embed.addField("📅 Data Fim", endDate, false);
+        embed.addField("📄 "+ messageSource.getMessage("txt_descricao", null, formState.getLocale()) , description, false);
+        String startDate = state.getStartDate() != null ? formatToBrazilianDate(state.getStartDate()) : messageSource.getMessage("txt_nao_informado", null, formState.getLocale() );
+        String endDate = state.getEndDate() != null ? formatToBrazilianDate(state.getEndDate()) : messageSource.getMessage("txt_nao_informado", null, formState.getLocale() );
+        embed.addField("📅 "+ messageSource.getMessage("txt_data_de_inicio", null, formState.getLocale()), startDate, false);
+        embed.addField("📅 " + messageSource.getMessage("txt_data_de_fim", null, formState.getLocale()), endDate, false);
         event.getHook().editOriginalEmbeds(embed.build())
             .setComponents(
                 ActionRow.of(
-                    Button.secondary("edit-squad", "🏢 Squad"),
-                    Button.secondary("edit-user", "👤 Pessoa"),
-                    Button.secondary("edit-type", "📝 Tipo")
+                    Button.secondary("edit-squad", "🏢 "+ messageSource.getMessage("txt_squad", null, formState.getLocale())),
+                    Button.secondary("edit-user", "👤 "+ messageSource.getMessage("txt_pessoa", null, formState.getLocale())),
+                    Button.secondary("edit-type", "📝 "+ messageSource.getMessage("txt_tipo", null, formState.getLocale()))
                 ),
                 ActionRow.of(
-                    Button.secondary("edit-categories", "🏷️ Categorias"),
-                    Button.secondary("edit-description", "📄 Descrição"),
-                    Button.secondary("edit-dates", "📅 Datas")
+                    Button.secondary("edit-categories", "🏷️ "+ messageSource.getMessage("txt_categorias", null, formState.getLocale())),
+                    Button.secondary("edit-description", "📄 "+ messageSource.getMessage("txt_descricao", null, formState.getLocale())),
+                    Button.secondary("edit-dates", "📅 " + messageSource.getMessage("txt_datas", null, formState.getLocale()))
                 ),
                 ActionRow.of(
-                    Button.success("confirmar-atualizacao", "✅ Salvar Alterações"),
-                    Button.danger("cancelar-edicao", "❌ Cancelar")
+                    Button.success("confirmar-atualizacao", "✅ " + messageSource.getMessage("txt_salvar_alteracoes", null, formState.getLocale())),
+                    Button.danger("cancelar-edicao", "❌ " + messageSource.getMessage("txt_cancelar", null, formState.getLocale()))
                 )
             )
             .queue();
@@ -534,8 +550,8 @@ public class ModalInputHandler extends AbstractInteractionHandler {
     private void handleRetryCreateModal(ButtonInteractionEvent event, FormState state) {
         log.info("Reabrindo modal de criação após erro de data");
         
-        TextInput.Builder descriptionBuilder = TextInput.create("description", "Descrição", TextInputStyle.PARAGRAPH)
-            .setPlaceholder("Digite a descrição do log...")
+        TextInput.Builder descriptionBuilder = TextInput.create("description", messageSource.getMessage("txt_descricao", null, formState.getLocale()), TextInputStyle.PARAGRAPH)
+            .setPlaceholder(messageSource.getMessage("txt_digite_a_descricao_do_log", null, formState.getLocale()) + "...")
             .setMaxLength(1000)
             .setRequired(true);
         if (state.getDescription() != null && !state.getDescription().trim().isEmpty()) {
@@ -543,14 +559,15 @@ public class ModalInputHandler extends AbstractInteractionHandler {
         }
         TextInput descriptionInput = descriptionBuilder.build();
 
-        TextInput startDateInput = TextInput.create("start_date", "Data de Início (DD-MM-AAAA)", TextInputStyle.SHORT)
+        TextInput startDateInput = TextInput.create("start_date",  messageSource.getMessage("txt_data_inicio", null, formState.getLocale()) + " (DD-MM-AAAA)", TextInputStyle.SHORT)
             .setPlaceholder("Ex: 20-06-1986")
             .setMaxLength(10)
             .setRequired(true)
             .build();
 
-        TextInput.Builder endDateBuilder = TextInput.create("end_date", "Data de Fim (DD-MM-AAAA) - Opcional", TextInputStyle.SHORT)
-            .setPlaceholder("Ex: 25-06-1986 (deixe vazio se não houver)")
+        TextInput.Builder endDateBuilder = TextInput.create("end_date", messageSource.getMessage("txt_data_fim", null, formState.getLocale()) + " (DD-MM-AAAA) - "
+                        + messageSource.getMessage("txt_opcional", null, formState.getLocale()), TextInputStyle.SHORT)
+            .setPlaceholder("Ex: 25-06-1986 ("+ messageSource.getMessage("txt_deixe_vazio_se_nao_houver", null, formState.getLocale()) +")")
             .setMaxLength(10)
             .setRequired(false);
         if (state.getEndDate() != null && !state.getEndDate().trim().isEmpty()) {
@@ -558,7 +575,7 @@ public class ModalInputHandler extends AbstractInteractionHandler {
         }
         TextInput endDateInput = endDateBuilder.build();
 
-        Modal modal = Modal.create("create-complete-modal", "📝 Finalizar Criação do Log")
+        Modal modal = Modal.create("create-complete-modal", "📝 " + messageSource.getMessage("txt_finalizar_criacao_do_log", null, formState.getLocale()) )
             .addActionRow(descriptionInput)
             .addActionRow(startDateInput)
             .addActionRow(endDateInput)
@@ -570,7 +587,7 @@ public class ModalInputHandler extends AbstractInteractionHandler {
     private void handleRetryEditDatesModal(ButtonInteractionEvent event, FormState state) {
         log.info("Reabrindo modal de edição de datas após erro");
         
-        TextInput.Builder startDateBuilder = TextInput.create("start_date", "Data de Início (DD-MM-AAAA)", TextInputStyle.SHORT)
+        TextInput.Builder startDateBuilder = TextInput.create("start_date", messageSource.getMessage("txt_data_de_inicio", null, formState.getLocale()) + " (DD-MM-AAAA)", TextInputStyle.SHORT)
             .setPlaceholder("Ex: 20-06-1986")
             .setMaxLength(10)
             .setRequired(true);
@@ -581,8 +598,9 @@ public class ModalInputHandler extends AbstractInteractionHandler {
             }
         }
 
-        TextInput.Builder endDateBuilder = TextInput.create("end_date", "Data de Fim (DD-MM-AAAA) - Opcional", TextInputStyle.SHORT)
-            .setPlaceholder("Ex: 25-06-1986 (deixe vazio se não houver)")
+        TextInput.Builder endDateBuilder = TextInput.create("end_date", messageSource.getMessage("txt_data_de_fim ", null, formState.getLocale()) + " (DD-MM-AAAA) - "
+                        + messageSource.getMessage("txt_opcional", null, formState.getLocale()), TextInputStyle.SHORT)
+            .setPlaceholder("Ex: 25-06-1986 (" + messageSource.getMessage("txt_deixe_vazio_se_nao_houver", null, formState.getLocale()) +")")
             .setMaxLength(10)
             .setRequired(false);
         if (state.getEndDate() != null && !state.getEndDate().trim().isEmpty()) {
@@ -592,7 +610,7 @@ public class ModalInputHandler extends AbstractInteractionHandler {
             }
         }
 
-        Modal modal = Modal.create("modal-edit-dates", "📅 Editar Datas")
+        Modal modal = Modal.create("modal-edit-dates", "📅 " + messageSource.getMessage("txt_editar_datas", null, formState.getLocale()))
             .addActionRow(startDateBuilder.build())
             .addActionRow(endDateBuilder.build())
             .build();
@@ -603,7 +621,7 @@ public class ModalInputHandler extends AbstractInteractionHandler {
     private void handleRetryFieldEditDatesModal(ButtonInteractionEvent event, FormState state) {
         log.info("Reabrindo modal de edição de datas de campo após erro");
         
-        TextInput.Builder startDateBuilder = TextInput.create("start_date", "Data de Início (DD-MM-AAAA)", TextInputStyle.SHORT)
+        TextInput.Builder startDateBuilder = TextInput.create("start_date", messageSource.getMessage("txt_data_de_inicio", null, formState.getLocale()) + " (DD-MM-AAAA)", TextInputStyle.SHORT)
             .setPlaceholder("Ex: 20-06-1986")
             .setMaxLength(10)
             .setRequired(true);
@@ -614,8 +632,8 @@ public class ModalInputHandler extends AbstractInteractionHandler {
             }
         }
 
-        TextInput.Builder endDateBuilder = TextInput.create("end_date", "Data de Fim (DD-MM-AAAA)", TextInputStyle.SHORT)
-            .setPlaceholder("Ex: 25-06-1986 (opcional)")
+        TextInput.Builder endDateBuilder = TextInput.create("end_date", messageSource.getMessage("txt_data_de_fim ", null, formState.getLocale()) + " (DD-MM-AAAA)", TextInputStyle.SHORT)
+            .setPlaceholder("Ex: 25-06-1986 (" + messageSource.getMessage("txt_opcional", null, formState.getLocale()) +")")
             .setMaxLength(10)
             .setRequired(false);
         if (state.getEndDate() != null && !state.getEndDate().trim().isEmpty()) {
@@ -625,7 +643,7 @@ public class ModalInputHandler extends AbstractInteractionHandler {
             }
         }
 
-        Modal modal = Modal.create("edit-dates-modal", "📅 Editar Datas")
+        Modal modal = Modal.create("edit-dates-modal", "📅 "+messageSource.getMessage("txt_editar_datas", null, formState.getLocale() ))
             .addActionRow(startDateBuilder.build())
             .addActionRow(endDateBuilder.build())
             .build();
