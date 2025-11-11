@@ -15,19 +15,28 @@ import net.dv8tion.jda.api.interactions.modals.Modal;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+
 @Slf4j
 @Component
 @Order(4)
 public class CategorySelectionHandler extends AbstractInteractionHandler {
     private final SquadLogService squadLogService;
+
+    @Autowired
+    private FormState formState;
+
+    @Autowired
+    private MessageSource messageSource;
+
     @Autowired
     private SummaryHandler summaryHandler;
-    
+
     public CategorySelectionHandler(FormStateService formStateService, SquadLogService squadLogService) {
         super(formStateService);
         this.squadLogService = squadLogService;
@@ -91,7 +100,7 @@ public class CategorySelectionHandler extends AbstractInteractionHandler {
             }
         } catch (Exception e) {
             log.error("Erro na seleção de categorias: {}", e.getMessage());
-            showError(event, "Erro ao processar seleção das categorias.");
+            showError(event, messageSource.getMessage("txt_erro_processar_selecao_das_categorias", null, formState.getLocale() ));
         }
     }
     private void showCategorySelection(ButtonInteractionEvent event) {
@@ -100,7 +109,7 @@ public class CategorySelectionHandler extends AbstractInteractionHandler {
             String categoriesJson = withUserContext(event.getUser().getId(), () -> squadLogService.getSquadCategories());
             JSONArray categoriesArray = new JSONArray(categoriesJson);
             StringSelectMenu.Builder categoryMenuBuilder = StringSelectMenu.create("category-select")
-                    .setPlaceholder("Selecione as categorias")
+                    .setPlaceholder(messageSource.getMessage("txt_selecione_as_categorias", null, formState.getLocale() ))
                     .setMinValues(1)
                     .setMaxValues(Math.min(categoriesArray.length(), 25)); 
             boolean hasCategories = false;
@@ -114,15 +123,15 @@ public class CategorySelectionHandler extends AbstractInteractionHandler {
                 }
             }
             EmbedBuilder embed = new EmbedBuilder()
-                .setTitle("🏷️ Selecione as Categorias")
-                .setDescription("Escolha uma ou mais categorias:")
+                .setTitle("🏷️ " + messageSource.getMessage("txt_selecione_as_categorias", null, formState.getLocale() ))
+                .setDescription(messageSource.getMessage("txt_escolha_uma_ou_mais_categorias", null, formState.getLocale() ) + ":")
                 .setColor(0x0099FF);
             if (hasCategories) {
                 event.getHook().editOriginalEmbeds(embed.build())
                     .setActionRow(categoryMenuBuilder.build())
                     .queue();
             } else {
-                embed.setDescription("❌ Nenhuma categoria disponível no momento.");
+                embed.setDescription("❌ " + messageSource.getMessage("txt_nenhuma_categoria_disponivel", null, formState.getLocale() ) + ".");
                 event.getHook().editOriginalEmbeds(embed.build())
                     .setComponents()
                     .queue();
@@ -130,32 +139,33 @@ public class CategorySelectionHandler extends AbstractInteractionHandler {
         } catch (Exception e) {
             log.error("Erro ao carregar categorias: {}", e.getMessage());
             EmbedBuilder errorEmbed = new EmbedBuilder()
-                .setTitle("❌ Erro ao carregar categorias")
-                .setDescription("Ocorreu um erro ao carregar as categorias. Tente novamente.")
+                .setTitle("❌ " +  messageSource.getMessage("txt_erro_carregar_categorias", null, formState.getLocale() ))
+                .setDescription(messageSource.getMessage("txt_erro_carregar_categorias_mensagem", null, formState.getLocale() ) + ".")
                 .setColor(0xFF0000);
             event.getHook().editOriginalEmbeds(errorEmbed.build())
-                .setActionRow(Button.primary("voltar-inicio", "🏠 Voltar ao Início"))
+                .setActionRow(Button.primary("voltar-inicio", "🏠 " + messageSource.getMessage("txt_voltar_inicio", null, formState.getLocale() )))
                 .queue();
         }
     }
     private void openDescriptionModal(StringSelectInteractionEvent event, FormState state) {
         log.info("Abrindo modal de descrição e datas");
-        TextInput descriptionInput = TextInput.create("description", "Descrição", TextInputStyle.PARAGRAPH)
-            .setPlaceholder("Digite a descrição do log...")
+        TextInput descriptionInput = TextInput.create("description", messageSource.getMessage("txt_descricao", null, formState.getLocale() ), TextInputStyle.PARAGRAPH)
+            .setPlaceholder(messageSource.getMessage("txt_digite_a_descricao_do_log", null, formState.getLocale() ) + "...")
             .setMaxLength(1000)
             .setRequired(true)
             .build();
-        TextInput startDateInput = TextInput.create("start_date", "Data de Início (DD-MM-AAAA)", TextInputStyle.SHORT)
+        TextInput startDateInput = TextInput.create("start_date", messageSource.getMessage("txt_data_inicio", null, formState.getLocale() ) + " (DD-MM-AAAA)", TextInputStyle.SHORT)
             .setPlaceholder("Ex: 20-06-1986")
             .setMaxLength(10)
             .setRequired(true)
             .build();
-        TextInput endDateInput = TextInput.create("end_date", "Data de Fim (DD-MM-AAAA) - Opcional", TextInputStyle.SHORT)
-            .setPlaceholder("Ex: 25-06-1986 (deixe vazio se não houver)")
+        TextInput endDateInput = TextInput.create("end_date", messageSource.getMessage("txt_data_fim", null, formState.getLocale() ) + " (DD-MM-AAAA) - "
+                        + messageSource.getMessage("txt_opcional", null, formState.getLocale() ), TextInputStyle.SHORT)
+            .setPlaceholder("Ex: 25-06-1986 " + messageSource.getMessage("txt_deixe_vazio_se_nao_houver", null, formState.getLocale() ))
             .setMaxLength(10)
             .setRequired(false)
             .build();
-        Modal modal = Modal.create("create-complete-modal", "📝 Finalizar Criação do Log")
+        Modal modal = Modal.create("create-complete-modal", "📝 " + messageSource.getMessage("txt_finalizar_criacao_do_log", null, formState.getLocale() ))
             .addActionRow(descriptionInput)
             .addActionRow(startDateInput)
             .addActionRow(endDateInput)
