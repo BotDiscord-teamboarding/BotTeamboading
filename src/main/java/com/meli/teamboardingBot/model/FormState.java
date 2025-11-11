@@ -3,12 +3,16 @@ package com.meli.teamboardingBot.model;
 import lombok.Getter;
 import lombok.Setter;
 import com.meli.teamboardingBot.enums.FormStep;
+import org.springframework.stereotype.Component;
+
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 @Getter
 @Setter
+@Component
 public class FormState {
     private FormStep step = FormStep.INITIAL;
     private boolean isCreating = false;
@@ -26,8 +30,9 @@ public class FormState {
     private String startDate;
     private String endDate;
     private Long squadLogId;
-    
-    // Pagination state (thread-safe per user)
+    private String language = "es-ES";
+    private Locale locale;
+
     private int currentPage = 1;
     private int totalPages = 1;
 

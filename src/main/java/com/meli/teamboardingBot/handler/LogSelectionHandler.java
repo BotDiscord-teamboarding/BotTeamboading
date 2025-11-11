@@ -12,7 +12,6 @@ import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
@@ -21,17 +20,16 @@ import org.springframework.stereotype.Component;
 @Component
 @Order(8)
 public class LogSelectionHandler extends AbstractInteractionHandler {
-    @Autowired
-    private SquadLogService squadLogService;
+    private final SquadLogService squadLogService;
+    private final MessageSource messageSource;
+    private final FormState formState;
 
-    @Autowired
-    private MessageSource messageSource;
 
-    @Autowired
-    private FormState formState;
-    
-    public LogSelectionHandler(FormStateService formStateService) {
+    public LogSelectionHandler(FormStateService formStateService, SquadLogService squadLogService, MessageSource messageSource, FormState formState) {
         super(formStateService);
+        this.squadLogService = squadLogService;
+        this.messageSource = messageSource;
+        this.formState = formState;
     }
     @Override
     public boolean canHandle(String componentId) {
@@ -73,7 +71,7 @@ public class LogSelectionHandler extends AbstractInteractionHandler {
             showUpdateSummaryWithHook(event.getHook(), state);
         } catch (Exception e) {
             log.error("Erro na seleção de log: {}", e.getMessage());
-            event.reply("❌ " + messageSource.getMessage("txt_erro_carregar_dados_do_questionario", null, formState.getLocale()) + ".").setEphemeral(true).queue();
+            event.reply("❌ " + messageSource.getMessage("txt_erro_carregar_dados_do_questionario", null, state.getLocale()) + ".").setEphemeral(true).queue();
         }
     }
     private void loadLogDataIntoState(JSONObject logJson, FormState state) {
@@ -153,22 +151,23 @@ public class LogSelectionHandler extends AbstractInteractionHandler {
     }
     public void showLogSelection(net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent event) {
         try {
+            FormState state = getFormState(event.getUser().getIdLong());
             String squadLogsJson = withUserContext(event.getUser().getId(), () -> squadLogService.getSquadLogAll());
             JSONObject obj = new JSONObject(squadLogsJson);
             JSONArray squadLogsArray = obj.optJSONArray("items");
             if (squadLogsArray == null || squadLogsArray.length() == 0) {
-                event.editMessage("❌ " + messageSource.getMessage("txt_nenhum_questionario_encontrado", null, formState.getLocale()) + ".")
+                event.editMessage("❌ " + messageSource.getMessage("txt_nenhum_questionario_encontrado", null, state.getLocale()) + ".")
                     .setEmbeds()
                     .setComponents()
                     .queue();
                 return;
             }
             StringSelectMenu.Builder logMenuBuilder = StringSelectMenu.create("log-select")
-                    .setPlaceholder(messageSource.getMessage("txt_selecione_um_questionario", null, formState.getLocale() ));
+                    .setPlaceholder(messageSource.getMessage("txt_selecione_um_questionario", null, state.getLocale() ));
             buildLogSelectMenu(squadLogsArray, logMenuBuilder);
             EmbedBuilder embed = new EmbedBuilder()
-                .setTitle("📋 Selecione um Questionário" + messageSource.getMessage("txt_selecione_um_questionario", null, formState.getLocale() ))
-                .setDescription(messageSource.getMessage("txt_escolha_o_questionario_que_deseja_atualizar", null, formState.getLocale()) + ":")
+                .setTitle("📋 Selecione um Questionário" + messageSource.getMessage("txt_selecione_um_questionario", null, state.getLocale() ))
+                .setDescription(messageSource.getMessage("txt_escolha_o_questionario_que_deseja_atualizar", null, state.getLocale()) + ":")
                 .setColor(0x0099FF);
             event.editMessageEmbeds(embed.build())
                 .setActionRow(logMenuBuilder.build())
@@ -242,43 +241,43 @@ public class LogSelectionHandler extends AbstractInteractionHandler {
         log.info("Mostrando resumo para edição do squad log ID: {}", state.getSquadLogId());
         EmbedBuilder embed = new EmbedBuilder()
             .setTitle("📝 " + messageSource.getMessage("txt_editar_squad_log", null, state.getLocale()))
-            .setDescription(messageSource.getMessage("txt_dados_atuais_do_squad_log ", null, formState.getLocale()) + ". "
+            .setDescription(messageSource.getMessage("txt_dados_atuais_do_squad_log ", null, state.getLocale()) + ". "
                     + messageSource.getMessage("txt_selecione_o_campo_que_deseja_editar", null, state.getLocale()) + ":")
             .setColor(0xFFAA00);
-        String squadName = state.getSquadName() != null ? state.getSquadName() : messageSource.getMessage("txt_nao_informado", null, formState.getLocale() );
-        embed.addField("🏢 "+ messageSource.getMessage("txt_squad", null, formState.getLocale()), squadName, false);
-        String userName = state.getUserName() != null ? state.getUserName() : messageSource.getMessage("txt_nao_informado", null, formState.getLocale() );
-        embed.addField("👤 "+ messageSource.getMessage("txt_pessoa", null, formState.getLocale()), userName, false);
-        String typeName = state.getTypeName() != null ? state.getTypeName() : messageSource.getMessage("txt_nao_informado", null, formState.getLocale() );
-        embed.addField("📝 "+ messageSource.getMessage("txt_tipo", null, formState.getLocale()), typeName, false);
+        String squadName = state.getSquadName() != null ? state.getSquadName() : messageSource.getMessage("txt_nao_informado", null, state.getLocale() );
+        embed.addField("🏢 "+ messageSource.getMessage("txt_squad", null, state.getLocale()), squadName, false);
+        String userName = state.getUserName() != null ? state.getUserName() : messageSource.getMessage("txt_nao_informado", null, state.getLocale() );
+        embed.addField("👤 "+ messageSource.getMessage("txt_pessoa", null, state.getLocale()), userName, false);
+        String typeName = state.getTypeName() != null ? state.getTypeName() : messageSource.getMessage("txt_nao_informado", null, state.getLocale() );
+        embed.addField("📝 "+ messageSource.getMessage("txt_tipo", null, state.getLocale()), typeName, false);
         String categoryNames = (!state.getCategoryNames().isEmpty()) ?
-            String.join(", ", state.getCategoryNames()) : messageSource.getMessage("txt_nao_informado", null, formState.getLocale() );
-        embed.addField("🏷️ "+ messageSource.getMessage("txt_categorias", null, formState.getLocale()), categoryNames, false);
-        String description = state.getDescription() != null ? state.getDescription() : messageSource.getMessage("txt_nao_informado", null, formState.getLocale() );
+            String.join(", ", state.getCategoryNames()) : messageSource.getMessage("txt_nao_informado", null, state.getLocale() );
+        embed.addField("🏷️ "+ messageSource.getMessage("txt_categorias", null, state.getLocale()), categoryNames, false);
+        String description = state.getDescription() != null ? state.getDescription() : messageSource.getMessage("txt_nao_informado", null, state.getLocale() );
         if (description.length() > 100) {
             description = description.substring(0, 97) + "...";
         }
-        embed.addField("📄 " + messageSource.getMessage("txt_descricao", null, formState.getLocale()), description, false);
-        String startDate = state.getStartDate() != null ? formatToBrazilianDate(state.getStartDate()) : messageSource.getMessage("txt_nao_informado", null, formState.getLocale());
-        String endDate = state.getEndDate() != null ? formatToBrazilianDate(state.getEndDate()) : messageSource.getMessage("txt_nao_informado", null, formState.getLocale());
-        embed.addField("📅 "+ messageSource.getMessage("txt_data_de_inicio", null, formState.getLocale()), startDate, false);
-        embed.addField("📅 "+ messageSource.getMessage("txt_data_de_fim ", null, formState.getLocale()), endDate, false);
+        embed.addField("📄 " + messageSource.getMessage("txt_descricao", null, state.getLocale()), description, false);
+        String startDate = state.getStartDate() != null ? formatToBrazilianDate(state.getStartDate()) : messageSource.getMessage("txt_nao_informado", null, state.getLocale());
+        String endDate = state.getEndDate() != null ? formatToBrazilianDate(state.getEndDate()) : messageSource.getMessage("txt_nao_informado", null, state.getLocale());
+        embed.addField("📅 "+ messageSource.getMessage("txt_data_de_inicio", null, state.getLocale()), startDate, false);
+        embed.addField("📅 "+ messageSource.getMessage("txt_data_de_fim ", null, state.getLocale()), endDate, false);
         event.getHook().editOriginal("")
                 .setEmbeds(embed.build())
             .setComponents(
                 ActionRow.of(
-                    Button.secondary("edit-squad", "🏢 " + messageSource.getMessage("txt_squad", null, formState.getLocale())),
-                    Button.secondary("edit-user", "👤 " +  messageSource.getMessage("txt_pessoa", null, formState.getLocale())),
-                    Button.secondary("edit-type", "📝 " +  messageSource.getMessage("txt_tipo", null, formState.getLocale()))
+                    Button.secondary("edit-squad", "🏢 " + messageSource.getMessage("txt_squad", null, state.getLocale())),
+                    Button.secondary("edit-user", "👤 " +  messageSource.getMessage("txt_pessoa", null, state.getLocale())),
+                    Button.secondary("edit-type", "📝 " +  messageSource.getMessage("txt_tipo", null, state.getLocale()))
                 ),
                 ActionRow.of(
-                    Button.secondary("edit-categories", "🏷️ " +  messageSource.getMessage("txt_categorias", null, formState.getLocale())),
-                    Button.secondary("edit-description", "📄 " +  messageSource.getMessage("txt_descricao", null, formState.getLocale())),
-                    Button.secondary("edit-dates", "📅 " + messageSource.getMessage("txt_datas", null, formState.getLocale()))
+                    Button.secondary("edit-categories", "🏷️ " +  messageSource.getMessage("txt_categorias", null, state.getLocale())),
+                    Button.secondary("edit-description", "📄 " +  messageSource.getMessage("txt_descricao", null, state.getLocale())),
+                    Button.secondary("edit-dates", "📅 " + messageSource.getMessage("txt_datas", null, state.getLocale()))
                 ),
                 ActionRow.of(
-                    Button.success("confirmar-atualizacao", "✅ " +  messageSource.getMessage("txt_salvar_alteracoes", null, formState.getLocale())),
-                    Button.danger("cancelar-edicao", "❌ " +  messageSource.getMessage("txt_cancelar", null, formState.getLocale()))
+                    Button.success("confirmar-atualizacao", "✅ " +  messageSource.getMessage("txt_salvar_alteracoes", null, state.getLocale())),
+                    Button.danger("cancelar-edicao", "❌ " +  messageSource.getMessage("txt_cancelar", null, state.getLocale()))
                 )
             )
             .queue();
@@ -287,43 +286,43 @@ public class LogSelectionHandler extends AbstractInteractionHandler {
         log.info("Mostrando resumo para edição do squad log ID: {}", state.getSquadLogId());
         EmbedBuilder embed = new EmbedBuilder()
             .setTitle("📝 " + messageSource.getMessage("txt_editar_squad_log", null, state.getLocale()))
-            .setDescription(messageSource.getMessage("txt_dados_atuais_do_squad_log", null, formState.getLocale())
-                    + ". " + messageSource.getMessage("txt_selecione_o_campo_que_deseja_editar", null, formState.getLocale())  +":")
+            .setDescription(messageSource.getMessage("txt_dados_atuais_do_squad_log", null, state.getLocale())
+                    + ". " + messageSource.getMessage("txt_selecione_o_campo_que_deseja_editar", null, state.getLocale())  +":")
             .setColor(0xFFAA00);
-        String squadName = state.getSquadName() != null ? state.getSquadName() : messageSource.getMessage("txt_nao_informado", null, formState.getLocale());
-        embed.addField("🏢 "+ messageSource.getMessage("txt_squad", null, formState.getLocale()), squadName, false);
-        String userName = state.getUserName() != null ? state.getUserName() : messageSource.getMessage("txt_nao_informado", null, formState.getLocale());
-        embed.addField("👤 "+ messageSource.getMessage("txt_pessoa ", null, formState.getLocale()), userName, false);
-        String typeName = state.getTypeName() != null ? state.getTypeName() : messageSource.getMessage("txt_nao_informado", null, formState.getLocale());
-        embed.addField("📝 "+ messageSource.getMessage("txt_tipo", null, formState.getLocale()), typeName, false);
+        String squadName = state.getSquadName() != null ? state.getSquadName() : messageSource.getMessage("txt_nao_informado", null, state.getLocale());
+        embed.addField("🏢 "+ messageSource.getMessage("txt_squad", null, state.getLocale()), squadName, false);
+        String userName = state.getUserName() != null ? state.getUserName() : messageSource.getMessage("txt_nao_informado", null, state.getLocale());
+        embed.addField("👤 "+ messageSource.getMessage("txt_pessoa ", null, state.getLocale()), userName, false);
+        String typeName = state.getTypeName() != null ? state.getTypeName() : messageSource.getMessage("txt_nao_informado", null, state.getLocale());
+        embed.addField("📝 "+ messageSource.getMessage("txt_tipo", null, state.getLocale()), typeName, false);
         String categoryNames = (!state.getCategoryNames().isEmpty()) ?
-            String.join(", ", state.getCategoryNames()) : messageSource.getMessage("txt_nao_informado", null, formState.getLocale());
-        embed.addField("🏷️ "+ messageSource.getMessage("txt_categorias", null, formState.getLocale()), categoryNames, false);
-        String description = state.getDescription() != null ? state.getDescription() : messageSource.getMessage("txt_nao_informado", null, formState.getLocale());
+            String.join(", ", state.getCategoryNames()) : messageSource.getMessage("txt_nao_informado", null, state.getLocale());
+        embed.addField("🏷️ "+ messageSource.getMessage("txt_categorias", null, state.getLocale()), categoryNames, false);
+        String description = state.getDescription() != null ? state.getDescription() : messageSource.getMessage("txt_nao_informado", null, state.getLocale());
         if (description.length() > 100) {
             description = description.substring(0, 97) + "...";
         }
-        embed.addField("📄 "+ messageSource.getMessage("txt_descricao", null, formState.getLocale()), description, false);
-        String startDate = state.getStartDate() != null ? formatToBrazilianDate(state.getStartDate()) : messageSource.getMessage("txt_nao_informado", null, formState.getLocale());
-        String endDate = state.getEndDate() != null ? formatToBrazilianDate(state.getEndDate()) : messageSource.getMessage("txt_nao_informado", null, formState.getLocale());
-        embed.addField("📅 "+ messageSource.getMessage("txt_data_inicio", null, formState.getLocale()), startDate, false);
-        embed.addField("📅 "+ messageSource.getMessage("txt_data_fim", null, formState.getLocale()), endDate, false);
+        embed.addField("📄 "+ messageSource.getMessage("txt_descricao", null, state.getLocale()), description, false);
+        String startDate = state.getStartDate() != null ? formatToBrazilianDate(state.getStartDate()) : messageSource.getMessage("txt_nao_informado", null, state.getLocale());
+        String endDate = state.getEndDate() != null ? formatToBrazilianDate(state.getEndDate()) : messageSource.getMessage("txt_nao_informado", null, state.getLocale());
+        embed.addField("📅 "+ messageSource.getMessage("txt_data_inicio", null, state.getLocale()), startDate, false);
+        embed.addField("📅 "+ messageSource.getMessage("txt_data_fim", null, state.getLocale()), endDate, false);
         hook.editOriginal("")
                 .setEmbeds(embed.build())
             .setComponents(
                 ActionRow.of(
-                    Button.secondary("edit-squad", "🏢 Squad"+ messageSource.getMessage("txt_squad", null, formState.getLocale())),
-                    Button.secondary("edit-user", "👤 Pessoa"+ messageSource.getMessage("txt_pessoa", null, formState.getLocale())),
-                    Button.secondary("edit-type", "📝 Tipo" + messageSource.getMessage("txt_tipo", null, formState.getLocale()))
+                    Button.secondary("edit-squad", "🏢 Squad"+ messageSource.getMessage("txt_squad", null, state.getLocale())),
+                    Button.secondary("edit-user", "👤 Pessoa"+ messageSource.getMessage("txt_pessoa", null, state.getLocale())),
+                    Button.secondary("edit-type", "📝 Tipo" + messageSource.getMessage("txt_tipo", null, state.getLocale()))
                 ),
                 ActionRow.of(
-                    Button.secondary("edit-categories", "🏷️ " + messageSource.getMessage("txt_categorias", null, formState.getLocale())),
-                    Button.secondary("edit-description", "📄 " + messageSource.getMessage("txt_descricao", null, formState.getLocale())),
-                    Button.secondary("edit-dates", "📅 " + messageSource.getMessage("txt_datas", null, formState.getLocale()))
+                    Button.secondary("edit-categories", "🏷️ " + messageSource.getMessage("txt_categorias", null, state.getLocale())),
+                    Button.secondary("edit-description", "📄 " + messageSource.getMessage("txt_descricao", null, state.getLocale())),
+                    Button.secondary("edit-dates", "📅 " + messageSource.getMessage("txt_datas", null, state.getLocale()))
                 ),
                 ActionRow.of(
-                    Button.success("confirmar-atualizacao", "✅ " + messageSource.getMessage("txt_salvar_alteracoes", null, formState.getLocale())),
-                    Button.danger("cancelar-edicao", "❌ " + messageSource.getMessage("txt_cancelar", null, formState.getLocale()))
+                    Button.success("confirmar-atualizacao", "✅ " + messageSource.getMessage("txt_salvar_alteracoes", null, state.getLocale())),
+                    Button.danger("cancelar-edicao", "❌ " + messageSource.getMessage("txt_cancelar", null, state.getLocale()))
                 )
             )
             .queue();

@@ -9,10 +9,7 @@ public class DiscordUserContext {
     // ThreadLocal para manter o ID da thread atual
     private static final ThreadLocal<Long> currentThreadId = new ThreadLocal<>();
 
-    /**
-     * Define o ID do usuário para a thread atual
-     * @param userId ID do usuário do Discord
-     */
+
     public static void setCurrentUserId(String userId) {
         long threadId = Thread.currentThread().getId();
         userContextMap.put(threadId, userId);
