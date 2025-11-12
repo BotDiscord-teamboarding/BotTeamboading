@@ -3,10 +3,12 @@ package com.meli.teamboardingBot.handler;
 import com.meli.teamboardingBot.context.DiscordUserContext;
 import com.meli.teamboardingBot.enums.FormStep;
 import com.meli.teamboardingBot.model.FormState;
+import com.meli.teamboardingBot.config.MessageConfig;
 import com.meli.teamboardingBot.service.DiscordUserAuthenticationService;
 import com.meli.teamboardingBot.service.FormStateService;
 import com.meli.teamboardingBot.service.GoogleAuthIntegrationService;
 import com.meli.teamboardingBot.service.SquadLogService;
+import com.meli.teamboardingBot.config.MessageConfig;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
@@ -21,6 +23,8 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Component;
 
 
@@ -44,6 +48,11 @@ public class LoginModalHandler extends ListenerAdapter {
         this.googleAuthIntegration = googleAuthIntegration;
         this.channelService = channelService;
     }
+    @Autowired
+    private MessageSource messageSource;
+
+    @Autowired
+    private FormState formState;
 
     @Override
     public void onButtonInteraction(@NotNull ButtonInteractionEvent event) {
@@ -90,17 +99,17 @@ public class LoginModalHandler extends ListenerAdapter {
 
         event.deferEdit().queue(hook -> {
             EmbedBuilder embed = new EmbedBuilder()
-                    .setTitle("🔐 Escolha a forma de autenticação")
-                    .setDescription("Selecione como deseja fazer login no sistema:")
-                    .addField("📝 Manual", "Digite suas credenciais (e-mail e senha)", false)
-                    .addField("🌐 Google", "Autentique-se usando sua conta Google", false)
+                    .setTitle("🔐 " + messageSource.getMessage("txt_escolha_a_forma_de_autenticacao", null, formState.getLocale()) )
+                    .setDescription(messageSource.getMessage("selecione_como_dejea_fazer_login_no_sistema", null, formState.getLocale()) )
+                    .addField("📝 "+ messageSource.getMessage("txt_manual", null, formState.getLocale()), messageSource.getMessage("txt_digite_suas_credenciais", null, formState.getLocale()) , false)
+                    .addField("🌐 " + messageSource.getMessage("txt_google", null, formState.getLocale()) , messageSource.getMessage("txt_autentique_usando_sua_conta_coogle", null, formState.getLocale()) , false)
                     .setColor(0x5865F2);
 
             hook.editOriginalEmbeds(embed.build())
                     .setActionRow(
-                            Button.primary("btn-auth-manual", "📝 Manual"),
-                            Button.success("btn-auth-google", "🌐 Google"),
-                            Button.secondary("voltar-inicio", "🏠 Voltar")
+                            Button.primary("btn-auth-manual", "📝 " + messageSource.getMessage("txt_manual", null, formState.getLocale()) ),
+                            Button.success("btn-auth-google", "🌐 " + messageSource.getMessage("txt_google", null, formState.getLocale()) ),
+                            Button.secondary("voltar-inicio", "🏠 " + messageSource.getMessage("txt_voltar", null, formState.getLocale()) )
                     )
                     .queue();
         });
@@ -110,21 +119,21 @@ public class LoginModalHandler extends ListenerAdapter {
     private void handleManualAuthButton(ButtonInteractionEvent event) {
         logger.info("Autenticação manual selecionada pelo usuário: {}", event.getUser().getId());
 
-        TextInput username = TextInput.create("username", "E-mail", TextInputStyle.SHORT)
-                .setPlaceholder("Digite seu e-mail")
+        TextInput username = TextInput.create("username", messageSource.getMessage("txt_email", null, formState.getLocale()) , TextInputStyle.SHORT)
+                .setPlaceholder(messageSource.getMessage("txt_digite_seu_email", null, formState.getLocale()) )
                 .setRequired(true)
                 .setMinLength(5)
                 .setMaxLength(100)
                 .build();
 
-        TextInput password = TextInput.create("password", "Senha", TextInputStyle.SHORT)
-                .setPlaceholder("Digite sua senha")
+        TextInput password = TextInput.create("password", messageSource.getMessage("txt_senha", null, formState.getLocale()), TextInputStyle.SHORT)
+                .setPlaceholder(messageSource.getMessage("txt_digite_sua_senha", null, formState.getLocale()) )
                 .setRequired(true)
                 .setMinLength(1)
                 .setMaxLength(100)
                 .build();
 
-        Modal modal = Modal.create("login-modal", "🔐 Login - Squad Log")
+        Modal modal = Modal.create("login-modal", "🔐 " + messageSource.getMessage("txt_login_squad_log", null, formState.getLocale()) )
                 .addActionRow(username)
                 .addActionRow(password)
                 .build();
@@ -151,18 +160,20 @@ public class LoginModalHandler extends ListenerAdapter {
                 logger.info("URL de autenticação Google obtida da API: {}", authUrl);
 
                 EmbedBuilder embed = new EmbedBuilder()
-                        .setTitle("🌐 Autenticação Google")
-                        .setDescription("**Passo 1:** Clique no link abaixo para fazer login com sua conta Google:\n\n" +
-                                "🔗 [**Clique aqui para autenticar**](" + authUrl + ")\n\n" +
-                                "**Passo 2:** Após autenticar, você receberá uma confirmação aqui mesmo.\n\n" +
-                                "⚠️ **Aguarde** após fazer login no Google. A resposta aparecerá automaticamente neste canal.")
+                        .setTitle("🌐 " + messageSource.getMessage("txt_autenticar_com_google", null, formState.getLocale()) )
+                            .setDescription("**" + messageSource.getMessage("txt_passo1", null, formState.getLocale()) + ":** " +
+                                            messageSource.getMessage("txt_clique_no_link_abaixo_para_fazer_login_com_sua_conta_google", null, formState.getLocale()) +":\n\n" +
+
+                                "🔗 [**" + messageSource.getMessage("txt_clique_aqui_para_autenticar", null, formState.getLocale()) + "**](" + authUrl + ")\n\n **" +
+                                            messageSource.getMessage("txt_passo2", null, formState.getLocale()) +":** " + messageSource.getMessage("txt_apos_autenticar_vc_recebera_uma_confirmacao", null, formState.getLocale()) + ".\n\n" +
+                                "⚠️ **" + messageSource.getMessage("txt_aguarde", null, formState.getLocale()) + "** " + messageSource.getMessage("txt_apos_fazer_login_no_google_a_resposta_aparecera", null, formState.getLocale()) + ".")
                         .setColor(0x4285F4)
                         .setFooter("Discord User ID: " + userId);
 
                 hook.editOriginalEmbeds(embed.build())
                         .setActionRow(
-                                Button.link(authUrl, "🌐 Autenticar com Google"),
-                                Button.secondary("voltar-inicio", "🏠 Cancelar")
+                                Button.link(authUrl, "🌐 " + messageSource.getMessage("txt_autenticar_com_google", null, formState.getLocale()) ),
+                                Button.secondary("voltar-inicio", "🏠 " + messageSource.getMessage("txt_cancelar", null, formState.getLocale()) )
                         )
                         .queue();
 
@@ -170,12 +181,13 @@ public class LoginModalHandler extends ListenerAdapter {
                 logger.error("Erro ao obter URL de autenticação Google", e);
 
                 EmbedBuilder errorEmbed = new EmbedBuilder()
-                        .setTitle("❌ Erro")
-                        .setDescription("Não foi possível obter a URL de autenticação. Tente novamente.")
+                        .setTitle("❌ " + messageSource.getMessage("txt_erro", null, formState.getLocale()))
+                        .setDescription(messageSource.getMessage("txt_nao_foi_possivel_obter_a_url_de_autenticacao", null, formState.getLocale()) +". "+
+                                messageSource.getMessage("txt_tente_novamente", null, formState.getLocale()) + ".")
                         .setColor(0xFF0000);
 
                 hook.editOriginalEmbeds(errorEmbed.build())
-                        .setActionRow(Button.secondary("voltar-inicio", "🏠 Voltar ao Início"))
+                        .setActionRow(Button.secondary("voltar-inicio", "🏠 " + messageSource.getMessage("txt_voltar_inicio", null, formState.getLocale()) ))
                         .queue();
             }
         });
@@ -184,14 +196,14 @@ public class LoginModalHandler extends ListenerAdapter {
     private void handleGoogleCodeSubmission(ButtonInteractionEvent event) {
         logger.info("Botão inserir código Google clicado pelo usuário: {}", event.getUser().getId());
 
-        TextInput codeInput = TextInput.create("google-code", "Código de Autorização", TextInputStyle.PARAGRAPH)
-                .setPlaceholder("Cole aqui o código obtido após autenticação")
+        TextInput codeInput = TextInput.create("google-code", messageSource.getMessage("txt_codigo_de_autorizacao", null, formState.getLocale()) , TextInputStyle.PARAGRAPH)
+                .setPlaceholder(messageSource.getMessage("txt_cole_aqui_o_codigo_obtido_apos_autenticacao", null, formState.getLocale()) )
                 .setMinLength(10)
                 .setMaxLength(2000)
                 .setRequired(true)
                 .build();
 
-        Modal modal = Modal.create("modal-google-code", "🔑 Código de Autorização Google")
+        Modal modal = Modal.create("modal-google-code", "🔑 " + messageSource.getMessage("txt_codigo_de_autorizacao_google", null, formState.getLocale()) )
                 .addActionRow(codeInput)
                 .build();
 
@@ -237,17 +249,17 @@ public class LoginModalHandler extends ListenerAdapter {
 
                     if (squadsArray == null || squadsArray.length() == 0) {
                         EmbedBuilder errorEmbed = new EmbedBuilder()
-                                .setTitle("❌ Nenhuma squad encontrada")
-                                .setDescription("Não há squads disponíveis no momento.")
+                                .setTitle("❌ " + messageSource.getMessage("txt_nenhuma_squad_encontrada", null, formState.getLocale()) )
+                                .setDescription(messageSource.getMessage("txt_nao_ha_squads_disponiveis_no_momento", null, formState.getLocale()) + "." )
                                 .setColor(0xFF0000);
                         hook.editOriginalEmbeds(errorEmbed.build())
-                                .setActionRow(Button.primary("voltar-inicio", "🏠 Voltar ao Início"))
+                                .setActionRow(Button.primary("voltar-inicio", "🏠 " + messageSource.getMessage("txt_voltar_inicio", null, formState.getLocale()) ))
                                 .queue();
                         return;
                     }
 
                     StringSelectMenu.Builder squadMenuBuilder = StringSelectMenu.create("squad-select")
-                            .setPlaceholder("Selecione uma squad");
+                            .setPlaceholder(messageSource.getMessage("txt_selecione_uma_squad", null, formState.getLocale()) );
                     for (int i = 0; i < squadsArray.length(); i++) {
                         JSONObject squad = squadsArray.getJSONObject(i);
                         String squadName = squad.optString("name", "");
@@ -258,8 +270,8 @@ public class LoginModalHandler extends ListenerAdapter {
                     }
 
                     EmbedBuilder embed = new EmbedBuilder()
-                            .setTitle("✅ Login realizado com sucesso!")
-                            .setDescription("🏢 Selecione a squad para o seu log:")
+                            .setTitle("✅ " + messageSource.getMessage("txt_login_realizado_com_sucesso", null, formState.getLocale()) + "!")
+                            .setDescription("🏢 " + messageSource.getMessage("txt_selecione_a_squad_para_o_seu_log", null, formState.getLocale()) + ":" )
                             .setColor(0x00FF00);
 
                     hook.editOriginalEmbeds(embed.build())
@@ -269,25 +281,25 @@ public class LoginModalHandler extends ListenerAdapter {
                 } catch (Exception e) {
                     logger.error("Erro ao carregar squads após login: {}", e.getMessage());
                     EmbedBuilder errorEmbed = new EmbedBuilder()
-                            .setTitle("❌ Erro ao carregar squads")
-                            .setDescription("Login realizado, mas ocorreu um erro ao carregar as squads.\n\n" +
-                                    "Use o comando `/squad-log` novamente.")
+                            .setTitle("❌ " + messageSource.getMessage("txt_erro_carregar_squads", null, formState.getLocale()) )
+                            .setDescription(messageSource.getMessage("txt_login_realizado_mas_ocorreu_erro_ao_carregar_as_squads", null, formState.getLocale()) + ".\n\n" +
+                                    messageSource.getMessage("txt_use_o_comando_squad_log_novamente", null, formState.getLocale()) + ".")
                             .setColor(0xFF0000);
                     hook.editOriginalEmbeds(errorEmbed.build())
-                            .setActionRow(Button.primary("voltar-inicio", "🏠 Voltar ao Início"))
+                            .setActionRow(Button.primary("voltar-inicio", "🏠 " + messageSource.getMessage("txt_voltar_inicio", null, formState.getLocale()) ))
                             .queue();
                 } finally {
                     DiscordUserContext.clear();
                 }
             } else {
                 EmbedBuilder errorEmbed = new EmbedBuilder()
-                        .setTitle("❌ Falha na Autenticação")
-                        .setDescription(response.getMessage() + "\n\nTente novamente.")
+                        .setTitle("❌ " + messageSource.getMessage("txt_falha_na_autenticacao", null, formState.getLocale()) )
+                        .setDescription(response.getMessage() + "\n\n " + messageSource.getMessage("txt_tente_novamente", null, formState.getLocale()) +".")
                         .setColor(0xFF0000);
                 hook.editOriginalEmbeds(errorEmbed.build())
                         .setActionRow(
-                                Button.success("btn-autenticar", "🔐 Tentar Novamente"),
-                                Button.primary("voltar-inicio", "🏠 Voltar ao Início")
+                                Button.success("btn-autenticar", "🔐 " + messageSource.getMessage("txt_tente_novamente", null, formState.getLocale()) ),
+                                Button.primary("voltar-inicio", "🏠 " + messageSource.getMessage("txt_voltar_inicio", null, formState.getLocale()) )
                         )
                         .queue();
             }
@@ -315,9 +327,9 @@ public class LoginModalHandler extends ListenerAdapter {
 
                 // Mostrar mensagem de sucesso PRIMEIRO
                 EmbedBuilder successEmbed = new EmbedBuilder()
-                        .setTitle("✅ Autenticado com sucesso!")
-                        .setDescription("Sua autenticação via Google foi realizada com sucesso!\n\n" +
-                                "🔄 Carregando squads disponíveis...")
+                        .setTitle("✅ Autenticado com sucesso" + messageSource.getMessage("txt_autenticado_com_sucesso", null, formState.getLocale()) + "!")
+                        .setDescription(messageSource.getMessage("txt_sua_autenticacao_via_google_foi_realizada_com_sucesso", null, formState.getLocale()) +  "!\n\n" +
+                                "🔄 " + messageSource.getMessage("txt_carregando_squads_disponiveis", null, formState.getLocale()) + "...")
                         .setColor(0x00FF00);
                 
                 hook.editOriginalEmbeds(successEmbed.build()).queue();
@@ -352,17 +364,17 @@ public class LoginModalHandler extends ListenerAdapter {
 
                     if (squadsArray == null || squadsArray.length() == 0) {
                         EmbedBuilder errorEmbed = new EmbedBuilder()
-                                .setTitle("❌ Nenhuma squad encontrada")
-                                .setDescription("Não há squads disponíveis no momento.")
+                                .setTitle("❌ " + messageSource.getMessage("txt_nenhuma_squad_encontrada", null, formState.getLocale()) )
+                                .setDescription(messageSource.getMessage("txt_nao_ha_squads_disponiveis_no_momento", null, formState.getLocale()) + ".")
                                 .setColor(0xFF0000);
                         hook.editOriginalEmbeds(errorEmbed.build())
-                                .setActionRow(Button.primary("voltar-inicio", "🏠 Voltar ao Início"))
+                                .setActionRow(Button.primary("voltar-inicio", "🏠 " + messageSource.getMessage("txt_voltar_inicio", null, formState.getLocale()) ))
                                 .queue();
                         return;
                     }
 
                     StringSelectMenu.Builder squadMenuBuilder = StringSelectMenu.create("squad-select")
-                            .setPlaceholder("Escolha sua squad");
+                            .setPlaceholder(messageSource.getMessage("txt_escolha_sua_squad", null, formState.getLocale()) );
 
                     for (int i = 0; i < squadsArray.length(); i++) {
                         JSONObject squad = squadsArray.getJSONObject(i);
@@ -374,8 +386,8 @@ public class LoginModalHandler extends ListenerAdapter {
                     }
 
                     EmbedBuilder embed = new EmbedBuilder()
-                            .setTitle("✅ Login realizado com sucesso!")
-                            .setDescription("🏢 Selecione a squad para o seu log:")
+                            .setTitle("✅ " + messageSource.getMessage("txt_login_realizado_com_sucesso", null, formState.getLocale()) + "!")
+                            .setDescription("🏢 " + messageSource.getMessage("txt_selecione_a_squad_para_o_seu_log", null, formState.getLocale()) + ":")
                             .setColor(0x00FF00);
 
                     logger.info("🎯 PRESTES A ENVIAR MENSAGEM COM MENU DE SQUADS");
@@ -395,16 +407,17 @@ public class LoginModalHandler extends ListenerAdapter {
                     logger.error("Stack trace:", e);
                     
                     EmbedBuilder errorEmbed = new EmbedBuilder()
-                            .setTitle("✅ Autenticado | ❌ Erro ao carregar squads")
-                            .setDescription("**Sua autenticação foi bem-sucedida!**\n\n" +
-                                    "Porém, ocorreu um erro ao carregar as squads disponíveis.\n\n" +
-                                    "**Detalhes do erro:**\n" +
+                            .setTitle( "✅ Autenticado "+messageSource.getMessage("txt_autenticado", null, formState.getLocale()) +" | ❌ "
+                                    + messageSource.getMessage("txt_erro_carregar_squads", null, formState.getLocale()))
+                            .setDescription("**" + messageSource.getMessage("txt_sua_autenticacao_foi_bem_sucedida", null, formState.getLocale()) + "!**\n\n" +
+                                    messageSource.getMessage("txt_porem_ocorreu_um_erro_ao_carregar_as_squads_disponiveis", null, formState.getLocale()) + ".\n\n**" +
+                                    messageSource.getMessage("txt_detalhes_do_erro", null, formState.getLocale()) + ":**\n" +
                                     "```\n" + e.getMessage() + "\n```\n\n" +
-                                    "💡 Use o comando `/squad-log` novamente para tentar carregar as squads.")
+                                    "💡 " + messageSource.getMessage("txt_use_o_comando_squad_log_novamente", null, formState.getLocale()) + ".")
                             .setColor(0xFFA500);
                     
                     hook.editOriginalEmbeds(errorEmbed.build())
-                            .setActionRow(Button.primary("voltar-inicio", "🏠 Voltar ao Início"))
+                            .setActionRow(Button.primary("voltar-inicio", "🏠 " + messageSource.getMessage("txt_voltar_inicio", null, formState.getLocale()) ))
                             .queue();
                 } finally {
                     DiscordUserContext.clear();
@@ -418,21 +431,22 @@ public class LoginModalHandler extends ListenerAdapter {
                 logger.error("Stack trace completo:", e);
 
                 EmbedBuilder errorEmbed = new EmbedBuilder()
-                        .setTitle("❌ Falha na autenticação")
-                        .setDescription("**Não foi possível autenticar com o código fornecido.**\n\n" +
-                                "**Possíveis causas:**\n" +
-                                "• Código inválido ou expirado\n" +
-                                "• Código já foi usado anteriormente\n" +
-                                "• Erro de comunicação com a API\n\n" +
-                                "**Detalhes do erro:**\n" +
+                        .setTitle("❌ " + messageSource.getMessage("txt_falha_na_autenticacao", null, formState.getLocale()) )
+                        .setDescription("**"+messageSource.getMessage("txt_nao_foi_possivel_autenticar_com_codigo_fornecido", null, formState.getLocale()) +
+                                ".**\n\n **" + messageSource.getMessage("txt_possiveis_causas", null, formState.getLocale()) +":**\n•" +
+                                messageSource.getMessage("txt_codigo_invalido_ou_expirado", null, formState.getLocale()) + "\n•" +
+                                messageSource.getMessage("txt_codigo_ja_foi_usado_anteriormente", null, formState.getLocale()) +"\n•" +
+                                messageSource.getMessage("txt_erro_de_comunicacao_com_api", null, formState.getLocale()) +"\n\n**" +
+                                messageSource.getMessage("txt_detalhes_do_erro", null, formState.getLocale()) +":**\n" +
                                 "```\n" + e.getMessage() + "\n```\n\n" +
-                                "💡 **Tente novamente** clicando no botão abaixo.")
+                                "💡 **" + messageSource.getMessage("txt_tente_novamente", null, formState.getLocale()) + "** " +
+                                messageSource.getMessage("txt_clicando_no_botao_abaixo", null, formState.getLocale())+ "." )
                         .setColor(0xFF0000);
 
                 hook.editOriginalEmbeds(errorEmbed.build())
                         .setActionRow(
-                                Button.success("btn-autenticar", "🔐 Tentar Novamente"),
-                                Button.primary("voltar-inicio", "🏠 Voltar ao Início")
+                                Button.success("btn-autenticar", "🔐 " + messageSource.getMessage("txt_tente_novamente", null, formState.getLocale()) ),
+                                Button.primary("voltar-inicio", "🏠 " + messageSource.getMessage("txt_voltar_inicio", null, formState.getLocale()) )
                         )
                         .queue();
             }

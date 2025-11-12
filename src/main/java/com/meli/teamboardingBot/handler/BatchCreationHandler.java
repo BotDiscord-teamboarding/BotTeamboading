@@ -1040,7 +1040,7 @@ public class BatchCreationHandler extends AbstractInteractionHandler {
     private void showPostCreationMenu(ButtonInteractionEvent event) {
         EmbedBuilder embed = new EmbedBuilder()
                 .setTitle("🎉 " + messageSource.getMessage("txt_squad_logs_criados_com_sucesso", null, formState.getLocale()) + "!")
-                .setDescription(messageSource.getMessage("txt_oque_deseja_fazer_agora", null, formState.getLocale()) + "?")
+                .setDescription(messageSource.getMessage("txt_o_que_deseja_fazer_agora", null, formState.getLocale()) + "?")
                 .setColor(Color.GREEN);
 
         Button createMoreButton = Button.primary("batch-create-more", "📝 " + messageSource.getMessage("txt_criar_mais_lotes", null, formState.getLocale()));
