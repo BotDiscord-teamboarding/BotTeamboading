@@ -14,6 +14,8 @@ import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -39,6 +41,12 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
         this.discordAuthService = discordAuthService;
         this.pendingAuthMessageService = pendingAuthMessageService;
     }
+
+    @Autowired
+    private MessageSource messageSource;
+
+    @Autowired
+    private FormState formState;
     @Override
     public boolean canHandle(String componentId) {
         return "criar-log".equals(componentId) ||
@@ -87,7 +95,8 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
             }
         } catch (Exception e) {
             log.error("Error handling button click: {}", e.getMessage(), e);
-            showErrorMessage(event, "❌ Ocorreu um erro ao processar sua solicitação. Por favor, tente novamente.");
+            showErrorMessage(event, "❌ " + messageSource.getMessage("txt_ocorreu_um_erro_ao_processar_sua_solicitacao", null, formState.getLocale()) + ". " +
+                    messageSource.getMessage("", null, formState.getLocale())+ ", " + messageSource.getMessage("txt_tente_novamente", null, formState.getLocale()) + "." );
         }
     }
     
@@ -100,11 +109,11 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
         event.deferEdit().queue();
         if (!isStateValid(state)) {
             EmbedBuilder errorEmbed = new EmbedBuilder()
-                .setTitle("❌ Dados Incompletos")
-                .setDescription("Verifique se todos os campos foram preenchidos.")
+                .setTitle("❌ " + messageSource.getMessage("txt_dados_incompletos", null, formState.getLocale()) )
+                .setDescription(messageSource.getMessage("txt_verifique_se_todos_os_campos_foram_preenchidos", null, formState.getLocale()) + ".")
                 .setColor(0xFF0000);
             event.getHook().editOriginalEmbeds(errorEmbed.build())
-                .setActionRow(primary("voltar-inicio", "🏠 Voltar ao Início"))
+                .setActionRow(primary("voltar-inicio", "🏠 " + messageSource.getMessage("txt_voltar_inicio", null, formState.getLocale()) ))
                 .queue();
             return;
         }
@@ -114,14 +123,14 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
             ResponseEntity<String> response = withUserContext(event.getUser().getId(), 
                 () -> squadLogService.createSquadLog(payload));
             if (response.getStatusCode().is2xxSuccessful()) {
-                showSuccessMessageWithHook(event, "✅ Squad Log criado com sucesso!", true);
+                showSuccessMessageWithHook(event, "✅ " + messageSource.getMessage("txt_log_criado_com_sucesso", null, formState.getLocale()) + "!" , true);
                 formStateService.removeState(event.getUser().getIdLong());
             } else {
-                showErrorMessageWithHook(event, "❌ Erro ao criar Squad Log. Código: " + response.getStatusCode());
+                showErrorMessageWithHook(event, "❌ " + messageSource.getMessage("txt_erro_criar_log", null, formState.getLocale()) + "." + response.getStatusCode());
             }
         } catch (Exception e) {
             log.error("Erro ao criar squad log: {}", e.getMessage());
-            showErrorMessageWithHook(event, "❌ Erro interno ao criar Squad Log. Tente novamente.");
+            showErrorMessageWithHook(event, "❌ " + messageSource.getMessage("txt_erro_criar_log_mensagem", null, formState.getLocale()) + ".");
         }
     }
     private void handleUpdateSquadLog(ButtonInteractionEvent event, FormState state) {
@@ -129,11 +138,11 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
         event.deferEdit().queue();
         if (!isStateValid(state) || state.getSquadLogId() == null) {
             EmbedBuilder errorEmbed = new EmbedBuilder()
-                .setTitle("❌ Dados Incompletos")
-                .setDescription("Dados incompletos ou ID do log não encontrado.")
+                .setTitle("❌ " + messageSource.getMessage("txt_dados_incompletos", null, formState.getLocale()) )
+                .setDescription(messageSource.getMessage("txt_dados_incompletos_ou_id_log_nao_encontrado", null, formState.getLocale()) +".")
                 .setColor(0xFF0000);
             event.getHook().editOriginalEmbeds(errorEmbed.build())
-                .setActionRow(primary("voltar-inicio", "🏠 Voltar ao Início"))
+                .setActionRow(primary("voltar-inicio", "🏠 " + messageSource.getMessage("txt_voltar_inicio", null, formState.getLocale()) ))
                 .queue();
             return;
         }
@@ -146,14 +155,15 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
             ResponseEntity<String> response = withUserContext(event.getUser().getId(), 
                 () -> squadLogService.updateSquadLog(state.getSquadLogId(), payload));
             if (response.getStatusCode().is2xxSuccessful()) {
-                showSuccessMessageWithHook(event, "✅ Squad Log atualizado com sucesso!", false);
+                showSuccessMessageWithHook(event, "✅ " + messageSource.getMessage("txt_log_atualizado_com_sucesso", null, formState.getLocale()) + "!" , false);
                 formStateService.removeState(event.getUser().getIdLong());
             } else {
-                showErrorMessageWithHook(event, "❌ Erro ao atualizar Squad Log. Código: " + response.getStatusCode());
+                showErrorMessageWithHook(event, "❌ " + messageSource.getMessage("txt_erro_atualizar_log", null, formState.getLocale())  + response.getStatusCode() + ":");
             }
         } catch (Exception e) {
             log.error("Erro ao atualizar squad log: {}", e.getMessage());
-            showErrorMessageWithHook(event, "❌ Erro interno ao atualizar Squad Log. Tente novamente.");
+            showErrorMessageWithHook(event, "❌ ." + messageSource.getMessage("txt_erro_atualizar_log_mensagem", null, formState.getLocale()) +". " +
+                    messageSource.getMessage("txt_tente_novamente", null, formState.getLocale()) + ".");
         }
     }
     private boolean isStateValid(FormState state) {
@@ -237,14 +247,14 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
         EmbedBuilder embed = new EmbedBuilder()
             .setTitle(message)
             .setDescription(isCreation ? 
-                "O Squad Log foi criado com sucesso! O que deseja fazer agora?" :
-                "O Squad Log foi atualizado com sucesso! O que deseja fazer agora?")
+                messageSource.getMessage("txt_squad_log_criado_com_sucesso", null, formState.getLocale()) + "?"  :
+                messageSource.getMessage("txt_squad_log_atualizado_com_sucesso", null, formState.getLocale()) + "?" )
             .setColor(0x00FF00);
         event.getHook().editOriginalEmbeds(embed.build())
             .setActionRow(
-                primary("criar-novo-log", "🆕 Criar Novo Squad-Log"),
-                secondary("atualizar-log-existente", "📝 Atualizar Squad-Log Existente"),
-                danger("sair-bot", "🚪 Sair")
+                primary("criar-novo-log", "🆕 " + messageSource.getMessage("txt_criar_novo_squad_log ", null, formState.getLocale()) ),
+                secondary("atualizar-log-existente", "📝 " + messageSource.getMessage("txt_atualizar_squad_log_existente", null, formState.getLocale()) ),
+                danger("sair-bot", "🚪 " + messageSource.getMessage("txt_sair", null, formState.getLocale()) )
             )
             .queue();
     }
@@ -265,20 +275,20 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
             JSONArray squadsArray = obj.optJSONArray("items");
             if (squadsArray == null || squadsArray.length() == 0) {
                 EmbedBuilder errorEmbed = new EmbedBuilder()
-                    .setTitle("❌ Erro ao carregar squads")
-                    .setDescription("Nenhuma squad encontrada.")
+                    .setTitle("❌ " +messageSource.getMessage("txt_erro_carregar_squads", null, formState.getLocale()) )
+                    .setDescription(messageSource.getMessage("txt_nenhuma_squad_encontrada", null, formState.getLocale()) +".")
                     .setColor(0xFF0000);
                 event.getHook().editOriginalEmbeds(errorEmbed.build())
-                    .setActionRow(primary("voltar-inicio", "🏠 Voltar ao Início"))
+                    .setActionRow(primary("voltar-inicio", "🏠 " + messageSource.getMessage("txt_voltar_inicio", null, formState.getLocale()) ))
                     .queue();
                 return;
             }
             EmbedBuilder embed = new EmbedBuilder()
-                .setTitle("🏢 Seleção de Squad")
-                .setDescription("Selecione a squad para criar o log:")
+                .setTitle("🏢 " + messageSource.getMessage("txt_selecao_de_squad ", null, formState.getLocale()) )
+                .setDescription(messageSource.getMessage("txt_selecione_a_squad_para_criar_o_log", null, formState.getLocale())  + ":")
                 .setColor(0x0099FF);
             StringSelectMenu.Builder menuBuilder = StringSelectMenu.create("squad-select")
-                .setPlaceholder("Escolha uma squad...");
+                .setPlaceholder(messageSource.getMessage("txt_escolha_uma_squad", null, formState.getLocale()) + "..." );
             for (int i = 0; i < squadsArray.length(); i++) {
                 JSONObject squad = squadsArray.getJSONObject(i);
                 String squadId = String.valueOf(squad.get("id"));
@@ -291,11 +301,12 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
         } catch (Exception e) {
             log.error("Erro ao exibir seleção de squad: {}", e.getMessage());
             EmbedBuilder errorEmbed = new EmbedBuilder()
-                .setTitle("❌ Erro ao carregar squads")
-                .setDescription("Ocorreu um erro ao carregar as squads. Tente novamente.")
+                .setTitle("❌ " + messageSource.getMessage("txt_erro_carregar_squads", null, formState.getLocale()) )
+                .setDescription(messageSource.getMessage("txt_ocorreu_um_erro_ao_carregar_as_squads", null, formState.getLocale()) + ". " +
+                        messageSource.getMessage("txt_tente_novamente", null, formState.getLocale()) + "." )
                 .setColor(0xFF0000);
             event.getHook().editOriginalEmbeds(errorEmbed.build())
-                .setActionRow(primary("voltar-inicio", "🏠 Voltar ao Início"))
+                .setActionRow(primary("voltar-inicio", "🏠 " + messageSource.getMessage("txt_voltar_inicio", null, formState.getLocale()) ))
                 .queue();
         }
     }
@@ -305,11 +316,11 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
         if (!discordAuthService.isUserAuthenticated(userId)) {
             log.warn("Usuário {} não autenticado tentando atualizar squad-log", userId);
             EmbedBuilder embed = new EmbedBuilder()
-                .setTitle("🔒 Autenticação Necessária")
-                .setDescription("faça a autenticação atraves do comando `/start`")
+                .setTitle("🔒 " + messageSource.getMessage("txt_autenticacao_necessaria", null, formState.getLocale()) )
+                .setDescription(messageSource.getMessage("txt_faca_a_autenticacao_atraves_do_comando", null, formState.getLocale()) )
                 .setColor(0xFFA500);
             event.editMessageEmbeds(embed.build())
-                .setActionRow(primary("voltar-inicio", "🏠 Voltar ao Início"))
+                .setActionRow(primary("voltar-inicio", "🏠 " + messageSource.getMessage("txt_voltar_inicio", null, formState.getLocale()) ))
                 .queue(message -> pendingAuthMessageService.storePendingAuthMessage(userId, event.getMessage()));
             return;
         }
@@ -333,7 +344,7 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
             state.setTotalPages((int) Math.ceil((double) totalItems / (double) LIMIT_PAGE));
             formStateService.updateState(event.getUser().getIdLong(), state);
             if (squadLogsArray == null || squadLogsArray.length() == 0) {
-                event.getHook().editOriginal("❌ Nenhum Squad Log encontrado para atualização.")
+                event.getHook().editOriginal("❌ "+ messageSource.getMessage("txt_nenhum_squad_log_encontrado_atualizacao", null, formState.getLocale()) +".")
                     .setEmbeds()
                     .setComponents()
                     .queue();
@@ -341,16 +352,17 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
             }
             StringSelectMenu.Builder logMenuBuilder =
                 StringSelectMenu.create("log-select")
-                    .setPlaceholder("Selecione um Squad Log para atualizar ");
+                    .setPlaceholder(messageSource.getMessage("txt_selecione_um_squad_log_para_atualizar", null, formState.getLocale()) );
             buildLogSelectMenu(squadLogsArray, logMenuBuilder);
             EmbedBuilder embed = new EmbedBuilder()
-                .setTitle("📝 Atualizar Squad Log Existente")
-                .setDescription("Escolha o Squad Log que deseja atualizar:\n📄 Página " + state.getCurrentPage() + " de " + state.getTotalPages())
+                .setTitle("📝 " + messageSource.getMessage("txt_atualizar_squad_log_existente", null, formState.getLocale()) )
+                .setDescription(messageSource.getMessage("txt_escolha_o_squad_log_que_deseja_atualizar", null, formState.getLocale()) +":\n📄 " +
+                        messageSource.getMessage("txt_pagina", null, formState.getLocale()) +" " + state.getCurrentPage() + " de " + state.getTotalPages())
                 .setColor(0xFFAA00);
 
 
-            Button voltarBtn = secondary("voltar", "⬅️ Anterior");
-            Button avancarBtn = secondary("avancar", "➡️ Próxima");
+            Button voltarBtn = secondary("voltar", "⬅️ " + messageSource.getMessage("txt_anterior", null, formState.getLocale()) );
+            Button avancarBtn = secondary("avancar", "➡️ " + messageSource.getMessage("txt_proxima", null, formState.getLocale()) );
             
 
             if (state.getCurrentPage() <= 1) {
@@ -366,14 +378,14 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
                             ActionRow.of(
                                     voltarBtn,
                                     avancarBtn,
-                                    primary("voltar-inicio", "🏠 Voltar ao Início")
+                                    primary("voltar-inicio", "🏠 " + messageSource.getMessage("txt_voltar_inicio", null, formState.getLocale()) )
                             )
                     )
                     .queue();
 
         } catch (Exception e) {
             log.error("Erro ao carregar Squad Logs: {}", e.getMessage(), e);
-            event.getHook().editOriginal("❌ Erro ao carregar Squad Logs: " + e.getMessage())
+            event.getHook().editOriginal("❌ " + messageSource.getMessage("txt_erro_carregar_squad_logs ", null, formState.getLocale()) + ": " + e.getMessage())
                 .setEmbeds()
                 .setComponents()
                 .queue();
@@ -407,19 +419,19 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
     private void showErrorMessage(ButtonInteractionEvent event, String message) {
         EmbedBuilder embed = new EmbedBuilder()
             .setTitle(message)
-            .setDescription("Tente novamente ou entre em contato com o suporte.")
+            .setDescription(messageSource.getMessage("txt_tente_novamente_ou_entre_em_contato_com_o_suporte", null, formState.getLocale()) + ".")
             .setColor(0xFF0000);
         event.editMessageEmbeds(embed.build())
-            .setActionRow(primary("voltar-inicio", "🏠 Voltar ao Início"))
+            .setActionRow(primary("voltar-inicio", "🏠 " + messageSource.getMessage("txt_voltar_inicio", null, formState.getLocale()) ))
             .queue();
     }
     private void showErrorMessageWithHook(ButtonInteractionEvent event, String message) {
         EmbedBuilder embed = new EmbedBuilder()
             .setTitle(message)
-            .setDescription("Tente novamente ou entre em contato com o suporte.")
+            .setDescription(messageSource.getMessage("txt_tente_novamente_ou_entre_em_contato_com_o_suporte", null, formState.getLocale()) +".")
             .setColor(0xFF0000);
         event.getHook().editOriginalEmbeds(embed.build())
-            .setActionRow(primary("voltar-inicio", "🏠 Voltar ao Início"))
+            .setActionRow(primary("voltar-inicio", "🏠 " + messageSource.getMessage("txt_voltar_inicio", null, formState.getLocale()) ))
             .queue();
     }
     private void handleExitBot(ButtonInteractionEvent event) {
@@ -429,8 +441,8 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
         event.deferEdit().queue();
         
         EmbedBuilder thankYouEmbed = new EmbedBuilder()
-            .setTitle("🙏 Obrigado por usar o Bot TeamBoarding!")
-            .setDescription("Esperamos que tenha tido uma ótima experiência. Até a próxima!")
+            .setTitle("🙏 " + messageSource.getMessage("txt_obrigado_por_usar_o_bot_teamboarding", null, formState.getLocale()) )
+            .setDescription(messageSource.getMessage("txt_esperamos_que_tenha_tido_uma_otima_experiencia", null, formState.getLocale()) +"!" )
             .setColor(0x0099FF);
         
         event.getHook().editOriginalEmbeds(thankYouEmbed.build())
@@ -440,8 +452,8 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
                     Thread.sleep(2000);
                     
                     EmbedBuilder exitingEmbed = new EmbedBuilder()
-                        .setTitle("👋 Saindo...")
-                        .setDescription("Finalizando sessão...")
+                        .setTitle("👋 " + messageSource.getMessage("txt_saindo", null, formState.getLocale()) + "...")
+                        .setDescription(messageSource.getMessage("txt_finalizando_sessao", null, formState.getLocale()) +"..." )
                         .setColor(0xFFAA00);
                     
                     event.getHook().editOriginalEmbeds(exitingEmbed.build())
@@ -469,13 +481,13 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
         formStateService.removeState(event.getUser().getIdLong());
         event.deferEdit().queue();
         EmbedBuilder embed = new EmbedBuilder()
-            .setTitle("🏠 Squad Log")
-            .setDescription("Escolha uma opção")
+            .setTitle("🏠 " + messageSource.getMessage("txt_squad_log", null, formState.getLocale()) )
+            .setDescription(messageSource.getMessage("txt_escolha_uma_opcao", null, formState.getLocale()) )
             .setColor(0x0099FF);
         event.getHook().editOriginalEmbeds(embed.build())
             .setActionRow(
-                Button.success("criar", "🆕 Criar"),
-                secondary("atualizar", "📝 Atualizar")
+                Button.success("criar", "🆕 " + messageSource.getMessage("txt_criar", null, formState.getLocale()) ),
+                secondary("atualizar", "📝 " + messageSource.getMessage("txt_atualizar", null, formState.getLocale()) )
             )
             .queue();
     }
@@ -489,7 +501,7 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
             refreshLogSelection(event, state);
         } else {
             log.warn("Tentativa de voltar da primeira página");
-            event.reply("❌ Você já está na primeira página!").setEphemeral(true).queue();
+            event.reply("❌ " + messageSource.getMessage("txt_voce_ja_esta_na_primeira_pagina", null, formState.getLocale()) + "!" ).setEphemeral(true).queue();
         }
     }
     
@@ -501,8 +513,8 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
             formStateService.updateState(event.getUser().getIdLong(), state);
             refreshLogSelection(event, state);
         } else {
-            log.warn("Tentativa de avançar da última página");
-            event.reply("❌ Você já está na última página!").setEphemeral(true).queue();
+            log.warn(messageSource.getMessage("txt_tentativa_de_avancar_da_ultima_pagina", null, formState.getLocale()) );
+            event.reply("❌ " +  messageSource.getMessage("txt_voce_ja_esta_na_ultima_pagina", null, formState.getLocale()) +"!").setEphemeral(true).queue();
         }
     }
     
@@ -520,7 +532,7 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
             formStateService.updateState(event.getUser().getIdLong(), state);
             
             if (squadLogsArray == null || squadLogsArray.length() == 0) {
-                event.getHook().editOriginal("❌ Nenhum Squad Log encontrado nesta página.")
+                event.getHook().editOriginal("❌ " + messageSource.getMessage("txt_nenhum_squad_log_encontrado_nesta_pagina", null, formState.getLocale()) + "." )
                     .setEmbeds()
                     .setComponents()
                     .queue();
@@ -529,17 +541,18 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
             
             StringSelectMenu.Builder logMenuBuilder =
                 StringSelectMenu.create("log-select")
-                    .setPlaceholder("Selecione um Squad Log para atualizar");
+                    .setPlaceholder(messageSource.getMessage("txt_selecione_um_squad_log_para_atualizar", null, formState.getLocale()) );
             
             buildLogSelectMenu(squadLogsArray, logMenuBuilder);
             
             EmbedBuilder embed = new EmbedBuilder()
-                .setTitle("📝 Atualizar Squad Log Existente")
-                .setDescription("Escolha o Squad Log que deseja atualizar:\n📄 Página " + state.getCurrentPage() + " de " + state.getTotalPages())
+                .setTitle("📝 " + messageSource.getMessage("txt_atualizar_squad_log_existente", null, formState.getLocale()) )
+                .setDescription(messageSource.getMessage("txt_escolha_o_squad_log_que_deseja_atualizar", null, formState.getLocale()) + ":\n📄  " +
+                        messageSource.getMessage("txt_pagina", null, formState.getLocale()) + state.getCurrentPage() + " de " + state.getTotalPages())
                 .setColor(0xFFAA00);
 
-            Button voltarBtn = secondary("voltar", "⬅️ Anterior");
-            Button avancarBtn = secondary("avancar", "➡️ Próxima");
+            Button voltarBtn = secondary("voltar", "⬅️ " + messageSource.getMessage("txt_anterior", null, formState.getLocale()) );
+            Button avancarBtn = secondary("avancar", "➡️ " + messageSource.getMessage("txt_proxima", null, formState.getLocale()) );
             
             if (state.getCurrentPage() <= 1) {
                 voltarBtn = voltarBtn.asDisabled();
@@ -554,14 +567,14 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
                             ActionRow.of(
                                     voltarBtn,
                                     avancarBtn,
-                                    primary("voltar-inicio", "🏠 Voltar ao Início")
+                                    primary("voltar-inicio", "🏠 " + messageSource.getMessage("txt_voltar_inicio", null, formState.getLocale()) )
                             )
                     )
                     .queue();
             
         } catch (Exception e) {
             log.error("Erro ao atualizar lista de Squad Logs: {}", e.getMessage(), e);
-            event.getHook().editOriginal("❌ Erro ao carregar Squad Logs: " + e.getMessage())
+            event.getHook().editOriginal("❌ "+ messageSource.getMessage("txt_erro_carregar_squad_logs", null, formState.getLocale()) + ": " + e.getMessage())
                 .setEmbeds()
                 .setComponents()
                 .queue();
