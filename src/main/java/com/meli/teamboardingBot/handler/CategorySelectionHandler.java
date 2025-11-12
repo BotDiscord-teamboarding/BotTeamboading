@@ -3,6 +3,7 @@ import com.meli.teamboardingBot.enums.FormStep;
 import com.meli.teamboardingBot.model.FormState;
 import com.meli.teamboardingBot.service.FormStateService;
 import com.meli.teamboardingBot.service.SquadLogService;
+import com.meli.teamboardingBot.config.MessageConfig;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
@@ -27,15 +28,20 @@ import java.util.concurrent.TimeUnit;
 @Order(4)
 public class CategorySelectionHandler extends AbstractInteractionHandler {
     private final SquadLogService squadLogService;
-    private final MessageSource messageSource;
+
 
     @Autowired
     private SummaryHandler summaryHandler;
 
-    public CategorySelectionHandler(FormStateService formStateService, SquadLogService squadLogService, MessageSource messageSource) {
+    @Autowired
+    private MessageSource messageSource;
+
+    @Autowired
+    private FormState formState;
+
+    public CategorySelectionHandler(FormStateService formStateService, SquadLogService squadLogService) {
         super(formStateService);
         this.squadLogService = squadLogService;
-        this.messageSource = messageSource;
     }
     @Override
     public boolean canHandle(String componentId) {
@@ -173,7 +179,7 @@ public class CategorySelectionHandler extends AbstractInteractionHandler {
             log.info("Modal aberto com sucesso!");
         } catch (Exception modalError) {
             log.error("Erro ao abrir modal: {}", modalError.getMessage());
-            showError(event, "Erro ao processar seleção das categorias.");
+            showError(event, messageSource.getMessage("txt_erro_ao_processar_selecao_das_categorias", null, formState.getLocale()) + ".");
         }
     }
     private void showSummary(StringSelectInteractionEvent event) {
@@ -184,7 +190,7 @@ public class CategorySelectionHandler extends AbstractInteractionHandler {
     }
     private void showError(StringSelectInteractionEvent event, String message) {
         EmbedBuilder errorEmbed = new EmbedBuilder()
-            .setTitle("❌ Erro")
+            .setTitle("❌ " + messageSource.getMessage("txt_erro", null, formState.getLocale()))
             .setDescription(message)
             .setColor(0xFF0000);
         if (event.getHook() != null) {
