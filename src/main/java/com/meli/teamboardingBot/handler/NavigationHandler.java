@@ -162,9 +162,9 @@ public class NavigationHandler extends AbstractInteractionHandler {
         EmbedBuilder embed = buildSummaryEmbed(state, "📋 "+messageSource.getMessage("txt_resumo_do_questionario_selecionado", null, formState.getLocale()), messageSource.getMessage("txt_dados_atuais_do_questionario", null, formState.getLocale()) +":");
         event.getHook().editOriginalEmbeds(embed.build())
             .setActionRow(
-                Button.success("criar-log", "💾 Salvar"+ messageSource.getMessage("txt_salvar", null, formState.getLocale())),
-                Button.secondary("editar-log", "✏️ Alterar"+ messageSource.getMessage("txt_alterar", null, formState.getLocale())),
-                Button.primary("voltar-logs", "↩️ Voltar"+ messageSource.getMessage("txt_voltar", null, formState.getLocale()))
+                Button.success("criar-log", "💾 "+ messageSource.getMessage("txt_salvar", null, formState.getLocale())),
+                Button.secondary("editar-log", "✏️ "+ messageSource.getMessage("txt_alterar", null, formState.getLocale())),
+                Button.primary("voltar-logs", "↩️ "+ messageSource.getMessage("txt_voltar", null, formState.getLocale()))
             )
             .queue();
     }

@@ -204,7 +204,7 @@ public class UserSelectionHandler extends AbstractInteractionHandler {
             try {
                 event.deferEdit().queue();
                 EmbedBuilder errorEmbed = new EmbedBuilder()
-                    .setTitle("❌ Erro ao carregar usuários"+ messageSource.getMessage("txt_erro_carregar_usuarios", null, formState.getLocale()))
+                    .setTitle("❌ "+ messageSource.getMessage("txt_erro_carregar_usuarios", null, formState.getLocale()))
                     .setDescription(message)
                     .setColor(0xFF0000);
                 event.getHook().editOriginalEmbeds(errorEmbed.build())
@@ -232,7 +232,7 @@ public class UserSelectionHandler extends AbstractInteractionHandler {
                 }
             }
             EmbedBuilder embed = new EmbedBuilder()
-                .setTitle("📝 "+ messageSource.getMessage("txt_selecione_o_tipo", null, formState.getLocale()))
+                .setTitle("📝 " + messageSource.getMessage("txt_selecione_o_tipo", null, formState.getLocale()))
                 .setDescription(messageSource.getMessage("txt_escolha_o_tipo_do_log", null, formState.getLocale())+":")
                 .setColor(0x0099FF);
             if (hasTypes) {
@@ -240,7 +240,7 @@ public class UserSelectionHandler extends AbstractInteractionHandler {
                     .setActionRow(typeMenuBuilder.build())
                     .queue();
             } else {
-                embed.setDescription("❌ "+ messageSource.getMessage("txt_nenhum_tipo_disponivel_no_momento", null, formState.getLocale()) +".");
+                embed.setDescription("❌ " + messageSource.getMessage("txt_nenhum_tipo_disponivel_no_momento", null, formState.getLocale()) +".");
                 event.getHook().editOriginalEmbeds(embed.build())
                     .setComponents()
                     .queue();
@@ -249,7 +249,7 @@ public class UserSelectionHandler extends AbstractInteractionHandler {
             log.error("Erro ao carregar tipos: {}", e.getMessage());
             EmbedBuilder errorEmbed = new EmbedBuilder()
                 .setTitle("❌ "+ messageSource.getMessage("txt_erro_carregar_tipos", null, formState.getLocale()))
-                .setDescription(messageSource.getMessage("", null, formState.getLocale())+ ". "+messageSource.getMessage("txt_tente_novamente", null, formState.getLocale())+".")
+                .setDescription(messageSource.getMessage("txt_erro_carregar_tipos", null, formState.getLocale())+ ". "+messageSource.getMessage("txt_tente_novamente", null, formState.getLocale())+".")
                 .setColor(0xFF0000);
             event.getHook().editOriginalEmbeds(errorEmbed.build()).setComponents().queue();
         }

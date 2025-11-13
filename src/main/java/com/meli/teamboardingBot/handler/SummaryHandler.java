@@ -53,21 +53,21 @@ public class SummaryHandler extends AbstractInteractionHandler {
         EmbedBuilder embed = buildSummaryEmbed(state, "📋 "+messageSource.getMessage("txt_resumo_do_questionario_selecionado", null, state.getLocale()), messageSource.getMessage("txt_dados_atuais_do_questionario", null, state.getLocale())+":");
         event.getHook().editOriginalEmbeds(embed.build())
             .setActionRow(
-                Button.success("criar-log", "💾 r" + messageSource.getMessage("txt_salvar", null, state.getLocale())),
+                Button.success("criar-log", "💾 " + messageSource.getMessage("txt_salvar", null, state.getLocale())),
                 Button.secondary("editar-log", "✏️ " + messageSource.getMessage("txt_alterar", null, state.getLocale())),
-                Button.primary("voltar-logs", "↩️ "+messageSource.getMessage("txt_voltar", null, state.getLocale()))
+                Button.primary("voltar-logs", "↩️ " + messageSource.getMessage("txt_voltar", null, state.getLocale()))
             )
             .queue();
     }
     public void showUpdateSummary(StringSelectInteractionEvent event, FormState state) {
         log.info("Mostrando resumo de atualização via select");
         event.deferEdit().queue();
-        EmbedBuilder embed = buildSummaryEmbed(state, "📋 "+messageSource.getMessage("txt_resumo_do_questionario_selecionado", null, state.getLocale()), messageSource.getMessage("txt_dados_atuais_do_questionario", null, state.getLocale())+":");
+        EmbedBuilder embed = buildSummaryEmbed(state, "📋 " + messageSource.getMessage("txt_resumo_do_questionario_selecionado", null, state.getLocale()), messageSource.getMessage("txt_dados_atuais_do_questionario", null, state.getLocale())+":");
         event.getHook().editOriginalEmbeds(embed.build())
             .setComponents(ActionRow.of(
-                Button.success("criar-log", "💾 r" + messageSource.getMessage("txt_salvar", null, state.getLocale())),
+                Button.success("criar-log", "💾 " + messageSource.getMessage("txt_salvar", null, state.getLocale())),
                 Button.secondary("editar-log", "✏️ " + messageSource.getMessage("txt_alterar", null, state.getLocale())),
-                Button.primary("voltar-logs", "↩️ "+messageSource.getMessage("txt_voltar", null, state.getLocale()))
+                Button.primary("voltar-logs", "↩️ " + messageSource.getMessage("txt_voltar", null, state.getLocale()))
             ))
             .queue();
     }
@@ -81,13 +81,12 @@ public class SummaryHandler extends AbstractInteractionHandler {
                 .setComponents(ActionRow.of(
                     Button.success("criar-log", "💾 " + messageSource.getMessage("txt_salvar", null, state.getLocale())),
                     Button.secondary("editar-log", "✏️ " + messageSource.getMessage("txt_alterar", null, state.getLocale())),
-                    Button.primary("voltar-logs", "↩️ " +messageSource.getMessage("txt_voltar", null, state.getLocale()))
+                    Button.primary("voltar-logs", "↩️ " + messageSource.getMessage("txt_voltar", null, state.getLocale()))
                 ))
                 .queue();
         }
     }
     public void showSummary(StringSelectInteractionEvent event) {
-        // Método vazio - considerar remoção se não for utilizado
         log.warn("Método showSummary(StringSelectInteractionEvent) chamado mas não implementado");
     }
     private EmbedBuilder buildSummaryEmbed(FormState state, String title, String description) {
@@ -107,13 +106,13 @@ public class SummaryHandler extends AbstractInteractionHandler {
             formatToBrazilianDate(state.getStartDate()) : messageSource.getMessage("txt_nao_informado", null, state.getLocale() );
         String endDateText = state.getEndDate() != null ? 
             formatToBrazilianDate(state.getEndDate()) : messageSource.getMessage("txt_nao_informado", null, state.getLocale() );
-        embed.addField("🏢 Squad"+ messageSource.getMessage("txt_squad", null, state.getLocale()), squadName, false);
-        embed.addField("👤 Pessoa"+ messageSource.getMessage("txt_pessoa", null, state.getLocale()), userName, false);
-        embed.addField("📝 Tipo"+ messageSource.getMessage("txt_tipo", null, state.getLocale()), typeName, false);
-        embed.addField("🏷️ Categorias"+ messageSource.getMessage("txt_categorias", null, state.getLocale()), categoryNames, false);
-        embed.addField("📄 Descrição"+ messageSource.getMessage("txt_descricao", null, state.getLocale()), description2, false);
-        embed.addField("📅 Data de Início"+ messageSource.getMessage("txt_data_de_inicio", null, state.getLocale()), startDateText, false);
-        embed.addField("📅 Data de Fim"+ messageSource.getMessage("txt_data_de_fim", null, state.getLocale()) , endDateText, false);
+        embed.addField("🏢 " + messageSource.getMessage("txt_squad", null, state.getLocale()), squadName, false);
+        embed.addField("👤 " + messageSource.getMessage("txt_pessoa", null, state.getLocale()), userName, false);
+        embed.addField("📝 " + messageSource.getMessage("txt_tipo", null, state.getLocale()), typeName, false);
+        embed.addField("🏷️ " + messageSource.getMessage("txt_categorias", null, state.getLocale()), categoryNames, false);
+        embed.addField("📄 " + messageSource.getMessage("txt_descricao", null, state.getLocale()), description2, false);
+        embed.addField("📅 " + messageSource.getMessage("txt_data_de_inicio", null, state.getLocale()), startDateText, false);
+        embed.addField("📅 " + messageSource.getMessage("txt_data_de_fim", null, state.getLocale()) , endDateText, false);
         return embed;
     }
     @Override

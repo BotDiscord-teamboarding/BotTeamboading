@@ -100,7 +100,7 @@ public class LoginModalHandler extends ListenerAdapter {
         event.deferEdit().queue(hook -> {
             EmbedBuilder embed = new EmbedBuilder()
                     .setTitle("🔐 " + messageSource.getMessage("txt_escolha_a_forma_de_autenticacao", null, formState.getLocale()) )
-                    .setDescription(messageSource.getMessage("selecione_como_dejea_fazer_login_no_sistema", null, formState.getLocale()) )
+                    .setDescription(messageSource.getMessage("txt_selecione_como_dejea_fazer_login_no_sistema", null, formState.getLocale()) )
                     .addField("📝 "+ messageSource.getMessage("txt_manual", null, formState.getLocale()), messageSource.getMessage("txt_digite_suas_credenciais", null, formState.getLocale()) , false)
                     .addField("🌐 " + messageSource.getMessage("txt_google", null, formState.getLocale()) , messageSource.getMessage("txt_autentique_usando_sua_conta_coogle", null, formState.getLocale()) , false)
                     .setColor(0x5865F2);
@@ -327,7 +327,7 @@ public class LoginModalHandler extends ListenerAdapter {
 
                 // Mostrar mensagem de sucesso PRIMEIRO
                 EmbedBuilder successEmbed = new EmbedBuilder()
-                        .setTitle("✅ Autenticado com sucesso" + messageSource.getMessage("txt_autenticado_com_sucesso", null, formState.getLocale()) + "!")
+                        .setTitle("✅ " + messageSource.getMessage("txt_autenticado_com_sucesso", null, formState.getLocale()) + "!")
                         .setDescription(messageSource.getMessage("txt_sua_autenticacao_via_google_foi_realizada_com_sucesso", null, formState.getLocale()) +  "!\n\n" +
                                 "🔄 " + messageSource.getMessage("txt_carregando_squads_disponiveis", null, formState.getLocale()) + "...")
                         .setColor(0x00FF00);
@@ -407,7 +407,7 @@ public class LoginModalHandler extends ListenerAdapter {
                     logger.error("Stack trace:", e);
                     
                     EmbedBuilder errorEmbed = new EmbedBuilder()
-                            .setTitle( "✅ Autenticado "+messageSource.getMessage("txt_autenticado", null, formState.getLocale()) +" | ❌ "
+                            .setTitle( "✅ "+messageSource.getMessage("txt_autenticado", null, formState.getLocale()) +" | ❌ "
                                     + messageSource.getMessage("txt_erro_carregar_squads", null, formState.getLocale()))
                             .setDescription("**" + messageSource.getMessage("txt_sua_autenticacao_foi_bem_sucedida", null, formState.getLocale()) + "!**\n\n" +
                                     messageSource.getMessage("txt_porem_ocorreu_um_erro_ao_carregar_as_squads_disponiveis", null, formState.getLocale()) + ".\n\n**" +

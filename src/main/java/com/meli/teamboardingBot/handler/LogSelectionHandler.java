@@ -166,7 +166,7 @@ public class LogSelectionHandler extends AbstractInteractionHandler {
                     .setPlaceholder(messageSource.getMessage("txt_selecione_um_questionario", null, state.getLocale() ));
             buildLogSelectMenu(squadLogsArray, logMenuBuilder);
             EmbedBuilder embed = new EmbedBuilder()
-                .setTitle("📋 Selecione um Questionário" + messageSource.getMessage("txt_selecione_um_questionario", null, state.getLocale() ))
+                .setTitle("📋 " + messageSource.getMessage("txt_selecione_um_questionario", null, state.getLocale() ))
                 .setDescription(messageSource.getMessage("txt_escolha_o_questionario_que_deseja_atualizar", null, state.getLocale()) + ":")
                 .setColor(0x0099FF);
             event.editMessageEmbeds(embed.build())
@@ -311,9 +311,9 @@ public class LogSelectionHandler extends AbstractInteractionHandler {
                 .setEmbeds(embed.build())
             .setComponents(
                 ActionRow.of(
-                    Button.secondary("edit-squad", "🏢 Squad"+ messageSource.getMessage("txt_squad", null, state.getLocale())),
-                    Button.secondary("edit-user", "👤 Pessoa"+ messageSource.getMessage("txt_pessoa", null, state.getLocale())),
-                    Button.secondary("edit-type", "📝 Tipo" + messageSource.getMessage("txt_tipo", null, state.getLocale()))
+                    Button.secondary("edit-squad", "🏢 "+ messageSource.getMessage("txt_squad", null, state.getLocale())),
+                    Button.secondary("edit-user", "👤 "+ messageSource.getMessage("txt_pessoa", null, state.getLocale())),
+                    Button.secondary("edit-type", "📝 " + messageSource.getMessage("txt_tipo", null, state.getLocale()))
                 ),
                 ActionRow.of(
                     Button.secondary("edit-categories", "🏷️ " + messageSource.getMessage("txt_categorias", null, state.getLocale())),

@@ -30,7 +30,7 @@ public class FormState {
     private String startDate;
     private String endDate;
     private Long squadLogId;
-    private String language = "es-ES";
+    private String language = "es=ES";
     private Locale locale;
 
     private int currentPage = 1;

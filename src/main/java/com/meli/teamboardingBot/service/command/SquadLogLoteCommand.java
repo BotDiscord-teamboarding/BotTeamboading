@@ -1,11 +1,13 @@
 package com.meli.teamboardingBot.service.command;
 
 import com.meli.teamboardingBot.handler.BatchCreationHandler;
+import com.meli.teamboardingBot.model.FormState;
 import com.meli.teamboardingBot.service.DiscordUserAuthenticationService;
 import com.meli.teamboardingBot.service.PendingAuthMessageService;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -20,6 +22,12 @@ public class SquadLogLoteCommand implements SlashCommandHandler {
     @Autowired
     private PendingAuthMessageService pendingAuthMessageService;
 
+    @Autowired
+    private MessageSource messageSource;
+
+    @Autowired
+    private FormState formState;
+
     @Override
     public String getName() {
         return "squad-log-lote";
@@ -31,8 +39,8 @@ public class SquadLogLoteCommand implements SlashCommandHandler {
         
         if (!authService.isUserAuthenticated(userId)) {
             EmbedBuilder embed = new EmbedBuilder()
-                .setTitle("🔒 Autenticação Necessária")
-                .setDescription("faça a autenticação atraves do comando `/start`")
+                .setTitle("🔒 " + messageSource.getMessage("txt_autenticacao_necessaria", null, formState.getLocale()))
+                .setDescription(messageSource.getMessage("Create new scratch file from selection", null, formState.getLocale()))
                 .setColor(0xFFA500);
             event.replyEmbeds(embed.build())
                 .setEphemeral(true)

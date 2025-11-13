@@ -162,7 +162,7 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
             }
         } catch (Exception e) {
             log.error("Erro ao atualizar squad log: {}", e.getMessage());
-            showErrorMessageWithHook(event, "❌ ." + messageSource.getMessage("txt_erro_atualizar_log_mensagem", null, formState.getLocale()) +". " +
+            showErrorMessageWithHook(event, "❌ " + messageSource.getMessage("txt_erro_atualizar_log_mensagem", null, formState.getLocale()) +". " +
                     messageSource.getMessage("txt_tente_novamente", null, formState.getLocale()) + ".");
         }
     }
@@ -344,7 +344,7 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
             state.setTotalPages((int) Math.ceil((double) totalItems / (double) LIMIT_PAGE));
             formStateService.updateState(event.getUser().getIdLong(), state);
             if (squadLogsArray == null || squadLogsArray.length() == 0) {
-                event.getHook().editOriginal("❌ "+ messageSource.getMessage("txt_nenhum_squad_log_encontrado_atualizacao", null, formState.getLocale()) +".")
+                event.getHook().editOriginal("❌ " + messageSource.getMessage("txt_nenhum_squad_log_encontrado_atualizacao", null, formState.getLocale()) +".")
                     .setEmbeds()
                     .setComponents()
                     .queue();

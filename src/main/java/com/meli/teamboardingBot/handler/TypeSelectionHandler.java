@@ -115,7 +115,7 @@ public class TypeSelectionHandler extends AbstractInteractionHandler {
                 }
             }
             EmbedBuilder embed = new EmbedBuilder()
-                .setTitle("📝 "+ messageSource.getMessage("txt_selecione_um_tipo", null, formState.getLocale()))
+                .setTitle("📝 " + messageSource.getMessage("txt_selecione_um_tipo", null, formState.getLocale()))
                 .setDescription( messageSource.getMessage("txt_escolha_o_tipo_do_log", null, formState.getLocale()) + ":")
                 .setColor(0x0099FF);
             if (hasTypes) {
@@ -123,7 +123,7 @@ public class TypeSelectionHandler extends AbstractInteractionHandler {
                     .setActionRow(typeMenuBuilder.build())
                     .queue();
             } else {
-                embed.setDescription("❌ ."+ messageSource.getMessage("txt_nenhum_tipo_disponivel_no_momento", null, formState.getLocale()) + ".");
+                embed.setDescription("❌ "+ messageSource.getMessage("txt_nenhum_tipo_disponivel_no_momento", null, formState.getLocale()) + ".");
                 event.getHook().editOriginalEmbeds(embed.build())
                     .setComponents()
                     .queue();
@@ -132,7 +132,7 @@ public class TypeSelectionHandler extends AbstractInteractionHandler {
             log.error("Erro ao carregar tipos: {}", e.getMessage());
             EmbedBuilder errorEmbed = new EmbedBuilder()
                 .setTitle("❌ "+ messageSource.getMessage("txt_erro_carregar_tipos", null, formState.getLocale()))
-                .setDescription(messageSource.getMessage("txt_erro_carregar_tipos", null, formState.getLocale())+". " +messageSource.getMessage("txt_tente_novamente", null, formState.getLocale())+".")
+                .setDescription(messageSource.getMessage("txt_erro_carregar_tipos", null, formState.getLocale()) + ". " +messageSource.getMessage("txt_tente_novamente", null, formState.getLocale())+".")
                 .setColor(0xFF0000);
             event.getHook().editOriginalEmbeds(errorEmbed.build())
                 .setActionRow(Button.primary("voltar-inicio", "🏠 "+ messageSource.getMessage("txt_voltar_inicio", null, formState.getLocale())))
@@ -158,7 +158,7 @@ public class TypeSelectionHandler extends AbstractInteractionHandler {
                 }
             }
             EmbedBuilder embed = new EmbedBuilder()
-                .setTitle("🏷️ "+ messageSource.getMessage("txt_selecione_as_categorias", null, formState.getLocale()))
+                .setTitle("🏷️ " + messageSource.getMessage("txt_selecione_as_categorias", null, formState.getLocale()))
                 .setDescription(messageSource.getMessage("txt_escolha_uma_ou_mais_categorias", null, formState.getLocale()) + ":")
                 .setColor(0x0099FF);
             if (hasCategories) {
@@ -175,10 +175,10 @@ public class TypeSelectionHandler extends AbstractInteractionHandler {
             log.error("Erro ao carregar categorias: {}", e.getMessage());
             EmbedBuilder errorEmbed = new EmbedBuilder()
                 .setTitle("❌ "+ messageSource.getMessage("txt_erro_carregar_categorias", null, formState.getLocale()))
-                .setDescription(messageSource.getMessage("txt_erro_carregar_categorias", null, formState.getLocale())+ ". "+messageSource.getMessage("txt_tente_novamente", null, formState.getLocale()) + "." )
+                .setDescription(messageSource.getMessage("txt_erro_carregar_categorias", null, formState.getLocale()) + ". " + messageSource.getMessage("txt_tente_novamente", null, formState.getLocale()) + "." )
                 .setColor(0xFF0000);
             event.getHook().editOriginalEmbeds(errorEmbed.build())
-                .setActionRow(Button.primary("voltar-inicio", "🏠 "+ messageSource.getMessage("txt_voltar_inicio", null, formState.getLocale())))
+                .setActionRow(Button.primary("voltar-inicio", "🏠 " + messageSource.getMessage("txt_voltar_inicio", null, formState.getLocale())))
                 .queue();
         }
     }
@@ -190,11 +190,11 @@ public class TypeSelectionHandler extends AbstractInteractionHandler {
     }
     private void showError(StringSelectInteractionEvent event, String message) {
         EmbedBuilder errorEmbed = new EmbedBuilder()
-            .setTitle("❌ "+ messageSource.getMessage("txt_erro", null, formState.getLocale()))
+            .setTitle("❌ " + messageSource.getMessage("txt_erro", null, formState.getLocale()))
             .setDescription(message)
             .setColor(0xFF0000);
         event.getHook().editOriginalEmbeds(errorEmbed.build())
-            .setActionRow(Button.primary("voltar-inicio", "🏠 "+ messageSource.getMessage("txt_voltar_inicio", null, formState.getLocale())))
+            .setActionRow(Button.primary("voltar-inicio", "🏠 " + messageSource.getMessage("txt_voltar_inicio", null, formState.getLocale())))
             .queue();
     }
     @Override

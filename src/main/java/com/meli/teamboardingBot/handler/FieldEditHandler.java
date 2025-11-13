@@ -254,9 +254,9 @@ public class FieldEditHandler extends AbstractInteractionHandler {
         hook.editOriginalEmbeds(embed.build())
             .setComponents(
                 ActionRow.of(
-                    Button.secondary("edit-squad", "🏢 Squad"+ messageSource.getMessage("txt_squad", null, formState.getLocale())),
-                    Button.secondary("edit-user", "👤 Pessoa"+ messageSource.getMessage("txt_pessoa", null, formState.getLocale())),
-                    Button.secondary("edit-type", "📝 Tipo" + messageSource.getMessage("txt_tipo", null, formState.getLocale()))
+                    Button.secondary("edit-squad", "🏢 "+ messageSource.getMessage("txt_squad", null, formState.getLocale())),
+                    Button.secondary("edit-user", "👤 "+ messageSource.getMessage("txt_pessoa", null, formState.getLocale())),
+                    Button.secondary("edit-type", "📝 " + messageSource.getMessage("txt_tipo", null, formState.getLocale()))
                 ),
                 ActionRow.of(
                     Button.secondary("edit-categories", "🏷️ " + messageSource.getMessage("txt_categorias", null, formState.getLocale())),
@@ -450,7 +450,7 @@ public class FieldEditHandler extends AbstractInteractionHandler {
             log.info("Resposta da API de tipos: {}", typesJson);
             if (typesJson == null || typesJson.trim().isEmpty()) {
                 log.error("API retornou resposta vazia para tipos");
-                event.getHook().editOriginal("❌ Erro: API retornou resposta vazia para tipos.").queue();
+                event.getHook().editOriginal("❌ " +messageSource.getMessage("txt_Erro_API_retornou_resposta_vazia_para_tipos", null, formState.getLocale()) + ".").queue();
                 return;
             }
             JSONArray typesArray;

@@ -1,12 +1,20 @@
 package com.meli.teamboardingBot.service.command;
+import com.meli.teamboardingBot.model.FormState;
 import jakarta.annotation.PostConstruct;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Component;
 @Component
 public class SlashCommandRegister {
+    @Autowired
+    private MessageSource messageSource;
+
+    @Autowired
+    private FormState formState;
+
     @Autowired
     private JDA jda;
     @Value("${discord.guild.id}")
@@ -14,10 +22,10 @@ public class SlashCommandRegister {
     @PostConstruct
     public void registerCommands() {
         jda.getGuildById(guildId).updateCommands().addCommands(
-                Commands.slash("start", "Iniciar e fazer autenticação no bot"),
-                Commands.slash("squad-log", "Squad Log"),
-                Commands.slash("squad-log-lote", "Criar múltiplos squad logs de uma vez usando texto livre"),
-                Commands.slash("stop", "Cancelar o fluxo de criação ou edição atual")
+                Commands.slash("start",  messageSource.getMessage("txt_iniciar_e_fazer_autenticacao_no_bot", null, formState.getLocale())),
+                Commands.slash("squad-log", messageSource.getMessage("txt_squad_log", null, formState.getLocale())),
+                Commands.slash("squad-log-lote", messageSource.getMessage("txt_criar_multiplos_squad_logs_de_uma_vez_usando_texto_livre", null, formState.getLocale())),
+                Commands.slash("stop", messageSource.getMessage("txt_stop", null, formState.getLocale()))
         ).queue();
     }
 }

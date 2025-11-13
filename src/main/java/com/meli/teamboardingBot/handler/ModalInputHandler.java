@@ -424,7 +424,7 @@ public class ModalInputHandler extends AbstractInteractionHandler {
                 .setColor(0xFF0000);
             event.getHook().editOriginalEmbeds(errorEmbed.build())
                 .setActionRow(
-                    Button.primary("retry-field-edit-dates-modal", "🔄 Preencher Novamente" + messageSource.getMessage("txt_preencher_novamente", null, formState.getLocale())),
+                    Button.primary("retry-field-edit-dates-modal", "🔄 " + messageSource.getMessage("txt_preencher_novamente", null, formState.getLocale())),
                     Button.secondary("voltar-inicio", "🏠 " + messageSource.getMessage("txt_voltar_inicio", null, formState.getLocale()))
                 )
                 .queue();
@@ -461,7 +461,7 @@ public class ModalInputHandler extends AbstractInteractionHandler {
     private void returnToFieldEditSummary(ModalInteractionEvent event, FormState state) {
         log.info("Retornando ao resumo de edição após modal (descrição/datas)");
         EmbedBuilder embed = new EmbedBuilder()
-            .setTitle("📝 Editar Squad Log")
+            .setTitle("📝 " + messageSource.getMessage("txt_editar_squad_log", null, formState.getLocale()))
             .setDescription(messageSource.getMessage("txt_dados_atuais_do_squad_log", null, formState.getLocale())
                     + ". " + messageSource.getMessage("txt_selecione_o_campo_que_deseja_editar", null, formState.getLocale()) + ":")
             .setColor(0xFFAA00);
@@ -478,7 +478,7 @@ public class ModalInputHandler extends AbstractInteractionHandler {
         if (description.length() > 100) {
             description = description.substring(0, 97) + "...";
         }
-        embed.addField("📄 Descrição"+ messageSource.getMessage("txt_descricao", null, formState.getLocale()), description, false);
+        embed.addField("📄 "+ messageSource.getMessage("txt_descricao", null, formState.getLocale()), description, false);
         String startDate = state.getStartDate() != null ? formatToBrazilianDate(state.getStartDate()) : messageSource.getMessage("txt_nao_informado", null, formState.getLocale() );
         String endDate = state.getEndDate() != null ? formatToBrazilianDate(state.getEndDate()) : messageSource.getMessage("txt_nao_informado", null, formState.getLocale() );
         embed.addField("📅 "+ messageSource.getMessage("txt_data_inicio", null, formState.getLocale()), startDate, false);

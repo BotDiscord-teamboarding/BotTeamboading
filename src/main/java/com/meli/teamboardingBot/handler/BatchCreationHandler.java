@@ -86,12 +86,12 @@ public class BatchCreationHandler extends AbstractInteractionHandler {
     public void handleBatchCreationCommand(SlashCommandInteractionEvent event) {
         log.info("Iniciando comando /squad-log-lote para usuário: {}", event.getUser().getId());
         
-        TextInput textInput = TextInput.create("batch-text", "Digite os squad logs", TextInputStyle.PARAGRAPH)
-                .setPlaceholder("squad - pessoa - tipo - categoria - data (ex: nati - rafael - issue - tech - 10-09-2025)")
+        TextInput textInput = TextInput.create("batch-text", messageSource.getMessage("txt_digite_os_squad_logs", null, formState.getLocale()), TextInputStyle.PARAGRAPH)
+                .setPlaceholder(messageSource.getMessage("txt_squad_pessoa_categoria_data_ex", null, formState.getLocale()))
                 .setRequiredRange(10, 4000)
                 .build();
 
-        Modal modal = Modal.create("batch-creation-modal", "📋 Criar Squad Logs em Lote" + messageSource.getMessage("", null, formState.getLocale()))
+        Modal modal = Modal.create("batch-creation-modal", "📋 " + messageSource.getMessage("txt_criar_squad_logs_em_lote", null, formState.getLocale()))
                 .addActionRow(textInput)
                 .build();
 
@@ -259,7 +259,7 @@ public class BatchCreationHandler extends AbstractInteractionHandler {
 
     private void showParsingError(ModalInteractionEvent event) {
         EmbedBuilder embed = new EmbedBuilder()
-                .setTitle("❌ Erro no Formato" + messageSource.getMessage("txt_erro_no_formato", null, formState.getLocale()))
+                .setTitle("❌ " + messageSource.getMessage("txt_erro_no_formato", null, formState.getLocale()))
                 .setDescription(messageSource.getMessage("txt_nao_foi_possivel_interpretar_o_texto_fornecido", null, formState.getLocale()) + ".\n\n **" +
                                messageSource.getMessage("txt_formato_esperado", null, formState.getLocale()) + ":**\n`" +
                                 messageSource.getMessage("txt_squad_pessoa_tipo_categorias_data_inicio_data_fim_descricao", null, formState.getLocale()) +"`\n\n**"
@@ -345,7 +345,7 @@ public class BatchCreationHandler extends AbstractInteractionHandler {
                 .setColor(Color.GREEN);
 
         if (result.hasErrors()) {
-            summaryEmbed.addField("⚠️ Avisos" + messageSource.getMessage("txt_avisos", null, formState.getLocale()),
+            summaryEmbed.addField("⚠️ " + messageSource.getMessage("txt_avisos", null, formState.getLocale()),
                                 String.format("%d " + messageSource.getMessage("txt_linhas_foram_ignoradas_devido_a_erros", null, formState.getLocale()), result.getErrorCount()),
                                 false);
         }
@@ -381,9 +381,9 @@ public class BatchCreationHandler extends AbstractInteractionHandler {
                 .withDisabled(!previewNavigator.hasNext(currentIndex, totalCount));
         buttons.add(nextButton);
         
-        buttons.add(Button.primary("batch-edit-entry", "✏️ Editar"+ messageSource.getMessage("txt_editar", null, formState.getLocale())) );
+        buttons.add(Button.primary("batch-edit-entry", "✏️ "+ messageSource.getMessage("txt_editar", null, formState.getLocale())) );
         buttons.add(Button.success("batch-create-all", "✅ " + messageSource.getMessage("txt_criar_todos", null, formState.getLocale())));
-        buttons.add(Button.danger("batch-cancel", "❌ Cancelar" + messageSource.getMessage("txt_cancelar", null, formState.getLocale())));
+        buttons.add(Button.danger("batch-cancel", "❌ " + messageSource.getMessage("txt_cancelar", null, formState.getLocale())));
         
         return buttons;
     }
@@ -555,7 +555,7 @@ public class BatchCreationHandler extends AbstractInteractionHandler {
                 .setRequiredRange(1, 50)
                 .build();
 
-        Modal modal = Modal.create("batch-edit-modal-page1", "✏️ )" + messageSource.getMessage("txt_ediar_squad_log_um_de_dois", null, formState.getLocale()))
+        Modal modal = Modal.create("batch-edit-modal-page1", "✏️ " + messageSource.getMessage("txt_ediar_squad_log_um_de_dois", null, formState.getLocale()))
                 .addActionRow(squadInput)
                 .addActionRow(personInput)
                 .addActionRow(typeInput)
@@ -1074,7 +1074,7 @@ public class BatchCreationHandler extends AbstractInteractionHandler {
 
     private void showBulkEditNotReady(ButtonInteractionEvent event) {
         EmbedBuilder embed = new EmbedBuilder()
-                .setTitle("🚧 Funcionalidade em Desenvolvimento" + messageSource.getMessage("txt_funcionalidade_em_desenvolvimento", null, formState.getLocale()) )
+                .setTitle("🚧 " + messageSource.getMessage("txt_funcionalidade_em_desenvolvimento", null, formState.getLocale()) )
                 .setDescription(messageSource.getMessage("txt_a_funcionalidade_de", null, formState.getLocale())  + "**" +
                         messageSource.getMessage("txt_editar_em_lote", null, formState.getLocale()) + "** " +
                         messageSource.getMessage("txt_ainda_n_disponivel", null, formState.getLocale()) + ".\n\n" +
