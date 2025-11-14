@@ -53,7 +53,8 @@ public class DiscordUserAuthenticationService {
             if (token != null && token.getAccessToken() != null) {
                 UserAuthData authData = new UserAuthData(
                     token,
-                    System.currentTimeMillis() + TOKEN_EXPIRATION_TIME
+                    System.currentTimeMillis() + TOKEN_EXPIRATION_TIME,
+                        "manual"
                 );
                 userTokens.put(discordUserId, authData);
                 
@@ -79,7 +80,8 @@ public class DiscordUserAuthenticationService {
             
             UserAuthData authData = new UserAuthData(
                 token,
-                System.currentTimeMillis() + TOKEN_EXPIRATION_TIME
+                System.currentTimeMillis() + TOKEN_EXPIRATION_TIME,
+                "google"
             );
             userTokens.put(discordUserId, authData);
             
@@ -90,6 +92,14 @@ public class DiscordUserAuthenticationService {
             logger.error("❌ Falha na autenticação Google para usuário Discord {}: {}", discordUserId, e.getMessage());
             return new AuthResponse(false, "❌ Falha na autenticação via Google.");
         }
+    }
+
+    public String getAuthMethod(String discordUserId) {
+        UserAuthData authData = userTokens.get(discordUserId);
+        if (authData == null) {
+            return null;
+        }
+        return authData.authMethod;
     }
     
 
@@ -102,10 +112,13 @@ public class DiscordUserAuthenticationService {
     private static class UserAuthData {
         final AuthTokenResponseDTO token;
         final long expirationTime;
+        final String authMethod;
         
-        UserAuthData(AuthTokenResponseDTO token, long expirationTime) {
+        UserAuthData(AuthTokenResponseDTO token, long expirationTime, String authMethod) {
             this.token = token;
             this.expirationTime = expirationTime;
+            this.authMethod = authMethod;
+
         }
     }
     

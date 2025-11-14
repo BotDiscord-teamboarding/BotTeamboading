@@ -2,6 +2,7 @@ package com.meli.teamboardingBot.listener;
 
 import com.meli.teamboardingBot.service.command.LoginCommand;
 import com.meli.teamboardingBot.service.command.StartCommand;
+import com.meli.teamboardingBot.service.command.StatusCommand;
 import com.meli.teamboardingBot.service.command.StopCommand;
 import com.meli.teamboardingBot.service.command.SquadLogCommand;
 import com.meli.teamboardingBot.service.command.SquadLogLoteCommand;
@@ -26,6 +27,9 @@ public class SlashCommandListener extends ListenerAdapter {
     
     @Autowired
     private StopCommand stopCommand;
+    
+    @Autowired
+    private StatusCommand statusCommand;
 
     @Override
     public void onSlashCommandInteraction(SlashCommandInteractionEvent event) {
@@ -39,6 +43,8 @@ public class SlashCommandListener extends ListenerAdapter {
             startCommand.execute(event);
         } else if (event.getName().equals(stopCommand.getName())) {
             stopCommand.execute(event);
+        } else if (event.getName().equals(statusCommand.getName())) {
+            statusCommand.execute(event);
         }
     }
 }

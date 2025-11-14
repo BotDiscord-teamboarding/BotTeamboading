@@ -25,6 +25,7 @@ public class SlashCommandRegister {
                 Commands.slash("start",  messageSource.getMessage("txt_iniciar_e_fazer_autenticacao_no_bot", null, formState.getLocale())),
                 Commands.slash("squad-log", messageSource.getMessage("txt_squad_log", null, formState.getLocale())),
                 Commands.slash("squad-log-lote", messageSource.getMessage("txt_criar_multiplos_squad_logs_de_uma_vez_usando_texto_livre", null, formState.getLocale())),
+                Commands.slash("status", messageSource.getMessage("txt_status", null, formState.getLocale())),
                 Commands.slash("stop", messageSource.getMessage("txt_stop", null, formState.getLocale()))
         ).queue();
     }

@@ -1,6 +1,7 @@
 package com.meli.teamboardingBot.config;
 
 import com.meli.teamboardingBot.handler.LoginModalHandler;
+import com.meli.teamboardingBot.handler.StatusButtonHandler;
 import com.meli.teamboardingBot.listener.ComponentInteractionListener;
 import com.meli.teamboardingBot.listener.MessageInputListener;
 import com.meli.teamboardingBot.listener.SlashCommandListener;
@@ -19,7 +20,8 @@ public class JdaConfig {
             ComponentInteractionListener componentInteractionListener,
             SlashCommandListener slashCommandListener,
             MessageInputListener messageInputListener,
-            LoginModalHandler loginModalHandler
+            LoginModalHandler loginModalHandler,
+            StatusButtonHandler statusButtonHandler
     ) throws Exception {
         return JDABuilder.createDefault(token)
                 .enableIntents(
@@ -31,7 +33,8 @@ public class JdaConfig {
                     componentInteractionListener, 
                     slashCommandListener,
                     messageInputListener,
-                    loginModalHandler
+                    loginModalHandler,
+                    statusButtonHandler
                 )
                 .build()
                 .awaitReady();
