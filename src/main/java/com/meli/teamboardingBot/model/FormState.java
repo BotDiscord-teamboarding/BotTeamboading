@@ -31,7 +31,7 @@ public class FormState {
     private String endDate;
     private Long squadLogId;
     private String language = "es=ES";
-    private Locale locale;
+    private Locale locale = new Locale("es", "ES");
 
     private int currentPage = 1;
     private int totalPages = 1;
