@@ -40,6 +40,11 @@ public class StatusButtonHandler extends ListenerAdapter {
                 return;
             }
 
+            if ("help-close".equals(buttonId)) {
+                handleClose(event);
+                return;
+            }
+
             if ("status-logout".equals(buttonId)) {
                 handleLogout(event, userId);
                 return;

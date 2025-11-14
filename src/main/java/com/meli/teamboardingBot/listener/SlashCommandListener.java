@@ -6,6 +6,7 @@ import com.meli.teamboardingBot.service.command.StatusCommand;
 import com.meli.teamboardingBot.service.command.StopCommand;
 import com.meli.teamboardingBot.service.command.SquadLogCommand;
 import com.meli.teamboardingBot.service.command.SquadLogLoteCommand;
+import com.meli.teamboardingBot.service.command.HelpCommand;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,6 +31,9 @@ public class SlashCommandListener extends ListenerAdapter {
     
     @Autowired
     private StatusCommand statusCommand;
+    
+    @Autowired
+    private HelpCommand helpCommand;
 
     @Override
     public void onSlashCommandInteraction(SlashCommandInteractionEvent event) {
@@ -45,6 +49,8 @@ public class SlashCommandListener extends ListenerAdapter {
             stopCommand.execute(event);
         } else if (event.getName().equals(statusCommand.getName())) {
             statusCommand.execute(event);
+        } else if (event.getName().equals(helpCommand.getName())) {
+            helpCommand.execute(event);
         }
     }
 }
