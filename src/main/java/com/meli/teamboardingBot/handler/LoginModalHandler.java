@@ -93,6 +93,11 @@ public class LoginModalHandler extends ListenerAdapter {
                 handleAuthenticationMethodSelection(event);
                 return;
             }
+
+            if ("cancel-auth".equals(buttonId)) {
+                handleCancelAuth(event);
+                return;
+            }
         } catch (IllegalStateException e) {
             logger.warn("Interação já foi processada ou expirou para usuário {}: {}", 
                 event.getUser().getId(), e.getMessage());
@@ -176,7 +181,7 @@ public class LoginModalHandler extends ListenerAdapter {
                 hook.editOriginalEmbeds(embed.build())
                         .setActionRow(
                                 Button.link(authUrl, "🌐 " + messageSource.getMessage("txt_autenticar_com_google", null, formState.getLocale()) ),
-                                Button.secondary("voltar-inicio", "🏠 " + messageSource.getMessage("txt_cancelar", null, formState.getLocale()) )
+                                Button.secondary("cancel-auth", "❌ " + messageSource.getMessage("txt_cancelar", null, formState.getLocale()) )
                         )
                         .queue();
 
@@ -447,6 +452,25 @@ public class LoginModalHandler extends ListenerAdapter {
                         )
                         .queue();
             }
+        });
+    }
+
+    private void handleCancelAuth(ButtonInteractionEvent event) {
+        logger.info("Usuário {} cancelou a autenticação", event.getUser().getId());
+        
+        event.deferEdit().queue(hook -> {
+            EmbedBuilder embed = new EmbedBuilder()
+                .setTitle("❌ " + messageSource.getMessage("txt_autenticacao_cancelada", null, formState.getLocale()))
+                .setDescription(messageSource.getMessage("txt_voce_cancelou_o_processo_de_autenticacao", null, formState.getLocale()) + ".\n\n" +
+                    "💡 " + messageSource.getMessage("txt_use_comando_start_ou_clique_botao", null, formState.getLocale()))
+                .setColor(0xFFAA00);
+            
+            hook.editOriginalEmbeds(embed.build())
+                .setActionRow(
+                    Button.primary("btn-autenticar", "🔐 " + messageSource.getMessage("txt_fazer_login", null, formState.getLocale())),
+                    Button.secondary("status-close", "🚪 " + messageSource.getMessage("txt_fechar", null, formState.getLocale()))
+                )
+                .queue();
         });
     }
 }
