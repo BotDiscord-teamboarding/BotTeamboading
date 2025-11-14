@@ -240,65 +240,32 @@ public class LoginModalHandler extends ListenerAdapter {
                     authService.authenticateUser(userId, username, password);
 
             if (response.isSuccess()) {
-                logger.info("Login bem-sucedido, carregando squads para usuário: {}", userId);
+                logger.info("Login manual bem-sucedido para usuário: {}", userId);
 
-                FormState state = formStateService.getOrCreateState(Long.parseLong(userId));
-                state.setCreating(true);
-                state.setEditing(false);
-                state.setStep(FormStep.SQUAD_SELECTION);
-                formStateService.updateState(Long.parseLong(userId), state);
+                EmbedBuilder successEmbed = new EmbedBuilder()
+                        .setTitle("✅ " + messageSource.getMessage("txt_login_realizado_com_sucesso", null, formState.getLocale()) + "!")
+                        .setDescription(messageSource.getMessage("txt_voce_foi_autenticado_com_sucesso", null, formState.getLocale()) + "!\n\n" +
+                                "📋 **" + messageSource.getMessage("txt_comandos_disponiveis", null, formState.getLocale()) + ":**\n" +
+                                "• `/squad-log` - " + messageSource.getMessage("txt_criar_ou_atualizar_squad_log", null, formState.getLocale()) + "\n" +
+                                "• `/squad-log-lote` - " + messageSource.getMessage("txt_criar_multiplos_logs_de_uma_vez", null, formState.getLocale()) + "\n" +
+                                "• `/status` - " + messageSource.getMessage("txt_verificar_seu_status_de_autenticacao", null, formState.getLocale()))
+                        .setColor(0x00FF00)
+                        .setFooter(messageSource.getMessage("txt_esta_mensagem_sera_excluida_automaticamente", null, formState.getLocale()));
 
-                try {
-                    DiscordUserContext.setCurrentUserId(userId);
-
-                    String squadsJson = squadLogService.getSquads();
-                    JSONObject obj = new JSONObject(squadsJson);
-                    JSONArray squadsArray = obj.optJSONArray("items");
-
-                    if (squadsArray == null || squadsArray.length() == 0) {
-                        EmbedBuilder errorEmbed = new EmbedBuilder()
-                                .setTitle("❌ " + messageSource.getMessage("txt_nenhuma_squad_encontrada", null, formState.getLocale()) )
-                                .setDescription(messageSource.getMessage("txt_nao_ha_squads_disponiveis_no_momento", null, formState.getLocale()) + "." )
-                                .setColor(0xFF0000);
-                        hook.editOriginalEmbeds(errorEmbed.build())
-                                .setActionRow(Button.secondary("voltar-inicio", "🏠 " + messageSource.getMessage("txt_voltar_inicio", null, formState.getLocale()) ))
-                                .queue();
-                        return;
-                    }
-
-                    StringSelectMenu.Builder squadMenuBuilder = StringSelectMenu.create("squad-select")
-                            .setPlaceholder(messageSource.getMessage("txt_selecione_uma_squad", null, formState.getLocale()) );
-                    for (int i = 0; i < squadsArray.length(); i++) {
-                        JSONObject squad = squadsArray.getJSONObject(i);
-                        String squadName = squad.optString("name", "");
-                        String squadId = String.valueOf(squad.get("id"));
-                        if (!squadName.isEmpty()) {
-                            squadMenuBuilder.addOption(squadName, squadId);
-                        }
-                    }
-
-                    EmbedBuilder embed = new EmbedBuilder()
-                            .setTitle("✅ " + messageSource.getMessage("txt_login_realizado_com_sucesso", null, formState.getLocale()) + "!")
-                            .setDescription("🏢 " + messageSource.getMessage("txt_selecione_a_squad_para_o_seu_log", null, formState.getLocale()) + ":" )
-                            .setColor(0x00FF00);
-
-                    hook.editOriginalEmbeds(embed.build())
-                            .setActionRow(squadMenuBuilder.build())
-                            .queue();
-
-                } catch (Exception e) {
-                    logger.error("Erro ao carregar squads após login: {}", e.getMessage());
-                    EmbedBuilder errorEmbed = new EmbedBuilder()
-                            .setTitle("❌ " + messageSource.getMessage("txt_erro_carregar_squads", null, formState.getLocale()) )
-                            .setDescription(messageSource.getMessage("txt_login_realizado_mas_ocorreu_erro_ao_carregar_as_squads", null, formState.getLocale()) + ".\n\n" +
-                                    messageSource.getMessage("txt_use_o_comando_squad_log_novamente", null, formState.getLocale()) + ".")
-                            .setColor(0xFF0000);
-                    hook.editOriginalEmbeds(errorEmbed.build())
-                            .setActionRow(Button.secondary("voltar-inicio", "🏠 " + messageSource.getMessage("txt_voltar_inicio", null, formState.getLocale()) ))
-                            .queue();
-                } finally {
-                    DiscordUserContext.clear();
-                }
+                hook.editOriginalEmbeds(successEmbed.build())
+                        .setComponents()
+                        .queue(success -> {
+                            try {
+                                Thread.sleep(10000);
+                                hook.deleteOriginal().queue(
+                                    deleteSuccess -> logger.info("✅ Mensagem de sucesso deletada após 10s"),
+                                    deleteError -> logger.warn("⚠️ Não foi possível deletar mensagem: {}", deleteError.getMessage())
+                                );
+                            } catch (InterruptedException e) {
+                                Thread.currentThread().interrupt();
+                                logger.error("Thread interrompida durante sleep: {}", e.getMessage());
+                            }
+                        });
             } else {
                 EmbedBuilder errorEmbed = new EmbedBuilder()
                         .setTitle("❌ " + messageSource.getMessage("txt_falha_na_autenticacao", null, formState.getLocale()) )
@@ -333,98 +300,29 @@ public class LoginModalHandler extends ListenerAdapter {
 
                 EmbedBuilder successEmbed = new EmbedBuilder()
                         .setTitle("✅ " + messageSource.getMessage("txt_autenticado_com_sucesso", null, formState.getLocale()) + "!")
-                        .setDescription(messageSource.getMessage("txt_sua_autenticacao_via_google_foi_realizada_com_sucesso", null, formState.getLocale()) +  "!\n\n" +
-                                "🔄 " + messageSource.getMessage("txt_carregando_squads_disponiveis", null, formState.getLocale()) + "...")
-                        .setColor(0x00FF00);
+                        .setDescription(messageSource.getMessage("txt_sua_autenticacao_via_google_foi_realizada_com_sucesso", null, formState.getLocale()) + "!\n\n" +
+                                "📋 **" + messageSource.getMessage("txt_comandos_disponiveis", null, formState.getLocale()) + ":**\n" +
+                                "• `/squad-log` - " + messageSource.getMessage("txt_criar_ou_atualizar_squad_log", null, formState.getLocale()) + "\n" +
+                                "• `/squad-log-lote` - " + messageSource.getMessage("txt_criar_multiplos_logs_de_uma_vez", null, formState.getLocale()) + "\n" +
+                                "• `/status` - " + messageSource.getMessage("txt_verificar_seu_status_de_autenticacao", null, formState.getLocale()))
+                        .setColor(0x00FF00)
+                        .setFooter(messageSource.getMessage("txt_esta_mensagem_sera_excluida_automaticamente", null, formState.getLocale()));
                 
-                hook.editOriginalEmbeds(successEmbed.build()).queue();
-                logger.info("✅ Mensagem de sucesso enviada ao usuário");
-
-                FormState state = formStateService.getOrCreateState(Long.parseLong(userId));
-                state.setCreating(true);
-                state.setEditing(false);
-                state.setStep(FormStep.SQUAD_SELECTION);
-                formStateService.updateState(Long.parseLong(userId), state);
-                logger.info("FormState inicializado para usuário {} no step SQUAD_SELECTION", userId);
-                
-                Thread.sleep(1000);
-                
-                try {
-                    DiscordUserContext.setCurrentUserId(userId);
-                    logger.info("✅ Contexto do usuário definido: {}", userId);
-                    
-                    boolean isAuthenticated = authService.isUserAuthenticated(userId);
-                    logger.info("Usuário autenticado? {}", isAuthenticated);
-
-                    logger.info("📞 Chamando squadLogService.getSquads()...");
-                    String squadsJson = squadLogService.getSquads();
-                    logger.info("📦 Resposta de getSquads() recebida: {} caracteres", squadsJson != null ? squadsJson.length() : "null");
-                    
-                    JSONObject obj = new JSONObject(squadsJson);
-                    JSONArray squadsArray = obj.optJSONArray("items");
-                    logger.info("📋 Squads array extraído: {} squads encontradas", squadsArray != null ? squadsArray.length() : "null");
-
-                    if (squadsArray == null || squadsArray.length() == 0) {
-                        EmbedBuilder errorEmbed = new EmbedBuilder()
-                                .setTitle("❌ " + messageSource.getMessage("txt_nenhuma_squad_encontrada", null, formState.getLocale()) )
-                                .setDescription(messageSource.getMessage("txt_nao_ha_squads_disponiveis_no_momento", null, formState.getLocale()) + ".")
-                                .setColor(0xFF0000);
-                        hook.editOriginalEmbeds(errorEmbed.build())
-                                .setActionRow(Button.secondary("voltar-inicio", "🏠 " + messageSource.getMessage("txt_voltar_inicio", null, formState.getLocale()) ))
-                                .queue();
-                        return;
-                    }
-
-                    StringSelectMenu.Builder squadMenuBuilder = StringSelectMenu.create("squad-select")
-                            .setPlaceholder(messageSource.getMessage("txt_escolha_sua_squad", null, formState.getLocale()) );
-
-                    for (int i = 0; i < squadsArray.length(); i++) {
-                        JSONObject squad = squadsArray.getJSONObject(i);
-                        String squadName = squad.optString("name", "");
-                        String squadId = String.valueOf(squad.get("id"));
-                        if (!squadName.isEmpty()) {
-                            squadMenuBuilder.addOption(squadName, squadId);
-                        }
-                    }
-
-                    EmbedBuilder embed = new EmbedBuilder()
-                            .setTitle("✅ " + messageSource.getMessage("txt_login_realizado_com_sucesso", null, formState.getLocale()) + "!")
-                            .setDescription("🏢 " + messageSource.getMessage("txt_selecione_a_squad_para_o_seu_log", null, formState.getLocale()) + ":")
-                            .setColor(0x00FF00);
-
-                    logger.info("🎯 PRESTES A ENVIAR MENSAGEM COM MENU DE SQUADS");
-                    logger.info("Número de opções no menu: {}", squadMenuBuilder.build().getOptions().size());
-                    
-                    hook.editOriginalEmbeds(embed.build())
-                            .setActionRow(squadMenuBuilder.build())
-                            .queue(
-                                success -> logger.info("✅ MENSAGEM COM MENU DE SQUADS ENVIADA COM SUCESSO!"),
-                                error -> logger.error("❌ ERRO AO ENVIAR MENSAGEM COM MENU DE SQUADS", error)
-                            );
-
-                } catch (Exception e) {
-                    logger.error("❌ ERRO AO CARREGAR SQUADS após login Google", e);
-                    logger.error("Tipo de erro: {}", e.getClass().getName());
-                    logger.error("Mensagem: {}", e.getMessage());
-                    logger.error("Stack trace:", e);
-                    
-                    EmbedBuilder errorEmbed = new EmbedBuilder()
-                            .setTitle( "✅ "+messageSource.getMessage("txt_autenticado", null, formState.getLocale()) +" | ❌ "
-                                    + messageSource.getMessage("txt_erro_carregar_squads", null, formState.getLocale()))
-                            .setDescription("**" + messageSource.getMessage("txt_sua_autenticacao_foi_bem_sucedida", null, formState.getLocale()) + "!**\n\n" +
-                                    messageSource.getMessage("txt_porem_ocorreu_um_erro_ao_carregar_as_squads_disponiveis", null, formState.getLocale()) + ".\n\n**" +
-                                    messageSource.getMessage("txt_detalhes_do_erro", null, formState.getLocale()) + ":**\n" +
-                                    "```\n" + e.getMessage() + "\n```\n\n" +
-                                    "💡 " + messageSource.getMessage("txt_use_o_comando_squad_log_novamente", null, formState.getLocale()) + ".")
-                            .setColor(0xFFA500);
-                    
-                    hook.editOriginalEmbeds(errorEmbed.build())
-                            .setActionRow(Button.secondary("voltar-inicio", "🏠 " + messageSource.getMessage("txt_voltar_inicio", null, formState.getLocale()) ))
-                            .queue();
-                } finally {
-                    DiscordUserContext.clear();
-                    logger.info("🧹 Contexto do usuário limpo");
-                }
+                hook.editOriginalEmbeds(successEmbed.build())
+                        .setComponents()
+                        .queue(success -> {
+                            logger.info("✅ Mensagem de sucesso com comandos enviada ao usuário");
+                            try {
+                                Thread.sleep(10000);
+                                hook.deleteOriginal().queue(
+                                    deleteSuccess -> logger.info("✅ Mensagem de sucesso deletada após 10s"),
+                                    deleteError -> logger.warn("⚠️ Não foi possível deletar mensagem: {}", deleteError.getMessage())
+                                );
+                            } catch (InterruptedException e) {
+                                Thread.currentThread().interrupt();
+                                logger.error("Thread interrompida durante sleep: {}", e.getMessage());
+                            }
+                        });
 
             } catch (Exception e) {
                 logger.error("❌ FALHA NA AUTENTICAÇÃO GOOGLE para usuário {}", userId, e);
