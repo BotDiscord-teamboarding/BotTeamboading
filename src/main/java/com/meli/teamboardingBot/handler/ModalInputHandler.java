@@ -470,7 +470,7 @@ public class ModalInputHandler extends AbstractInteractionHandler {
         String userName = state.getUserName() != null ? state.getUserName() : messageSource.getMessage("txt_nao_informado", null, formState.getLocale() );
         embed.addField("👤 "+ messageSource.getMessage("txt_pessoa", null, formState.getLocale()), userName, false);
         String typeName = state.getTypeName() != null ? state.getTypeName() : messageSource.getMessage("txt_nao_informado", null, formState.getLocale() );
-        embed.addField("📝 "+ messageSource.getMessage("Customize Toolbar…", null, formState.getLocale()), typeName, false);
+        embed.addField("📝 "+ messageSource.getMessage("txt_tipo", null, formState.getLocale()), typeName, false);
         String categoryNames = (!state.getCategoryNames().isEmpty()) ?
             String.join(", ", state.getCategoryNames()) : messageSource.getMessage("txt_nao_informado", null, formState.getLocale() );
         embed.addField("🏷️ "+ messageSource.getMessage("txt_categorias", null, formState.getLocale()), categoryNames, false);

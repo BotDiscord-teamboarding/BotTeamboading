@@ -13,7 +13,6 @@ import java.util.concurrent.ConcurrentHashMap;
 @Service
 public class DiscordUserAuthenticationService {
     private static final Logger logger = LoggerFactory.getLogger(DiscordUserAuthenticationService.class);
-    // Token expira após 24 horas (86400 segundos)
     private static final long TOKEN_EXPIRATION_TIME = 24 * 3600 * 1000L;
     
     private final ClientAuthBoarding authClient;

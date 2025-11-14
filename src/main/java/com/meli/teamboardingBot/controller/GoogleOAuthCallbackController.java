@@ -89,17 +89,14 @@ public class GoogleOAuthCallbackController {
             String decodedCode = URLDecoder.decode(code, StandardCharsets.UTF_8);
             logger.info("Code (decoded): {}", decodedCode);
             
-            // 1. Trocar code por token
             String accessToken = googleAuthIntegration.exchangeCodeForToken(decodedCode, state);
             
             if (accessToken != null) {
                 logger.info("✅ Token obtido com sucesso para o usuário Discord: {}", state);
                 
-                // 2. Salvar token no serviço de autenticação
                 authService.authenticateUserWithToken(state, accessToken);
                 logger.info("✅ Token salvo no DiscordUserAuthenticationService para usuário: {}", state);
                 
-                // 3. Enviar mensagem privada ao usuário no Discord com menu de squads
                 logger.info("🔄 Iniciando envio de menu de squads...");
                 try {
                     sendSquadMenuToUser(state);
@@ -135,14 +132,10 @@ public class GoogleOAuthCallbackController {
         }
     }
 
-    /**
-     * Envia menu de squads no canal onde o usuário iniciou a interação
-     */
     private void sendSquadMenuToUser(String discordUserId) {
         try {
             logger.info("📨 [STEP 1/6] Enviando menu de squads para usuário Discord: {}", discordUserId);
             
-            // Buscar canal de interação registrado
             logger.info("📨 [STEP 2/6] Buscando canal registrado...");
             String channelId = channelService.getUserChannelId(discordUserId);
             String messageId = channelService.getUserMessageId(discordUserId);
@@ -155,7 +148,6 @@ public class GoogleOAuthCallbackController {
             
             logger.info("📍 [STEP 3/6] Usando canal registrado: channelId={}, messageId={}", channelId, messageId);
             
-            // Inicializar FormState
             logger.info("📨 [STEP 4/6] Inicializando FormState...");
             FormState state = formStateService.getOrCreateState(Long.parseLong(discordUserId));
             state.setCreating(true);
@@ -164,7 +156,6 @@ public class GoogleOAuthCallbackController {
             formStateService.updateState(Long.parseLong(discordUserId), state);
             logger.info("✅ [STEP 4/6] FormState inicializado para usuário {} no step SQUAD_SELECTION", discordUserId);
             
-            // Buscar canal e enviar menu
             logger.info("📨 [STEP 5/6] Buscando canal no Discord...");
             var channel = jda.getTextChannelById(channelId);
             
@@ -190,7 +181,6 @@ public class GoogleOAuthCallbackController {
                     return;
                 }
                 
-                // Construir menu de squads
                 StringSelectMenu.Builder squadMenuBuilder = StringSelectMenu.create("squad-select")
                         .setPlaceholder("Escolha sua squad");
                 
@@ -203,7 +193,6 @@ public class GoogleOAuthCallbackController {
                     }
                 }
                 
-                // EDITAR MENSAGEM ORIGINAL (mantém ephemeral)
                 EmbedBuilder embed = new EmbedBuilder()
                         .setTitle("✅ Autenticação Google concluída!")
                         .setDescription("🏢 Selecione a squad para o seu log:")
@@ -212,7 +201,6 @@ public class GoogleOAuthCallbackController {
                 logger.info("📨 [STEP 6/6] Editando mensagem original com menu de squads...");
                 
                 if (messageId != null) {
-                    // Editar a mensagem original da interação
                     channel.retrieveMessageById(messageId).queue(
                         message -> {
                             message.editMessageEmbeds(embed.build())
@@ -277,8 +265,6 @@ public class GoogleOAuthCallbackController {
                 .setColor(0xFF0000)
                 .setFooter("Se o erro persistir, contate o administrador do sistema");
         
-        // Nota: Este método é chamado em contexto de erro onde não temos messageId
-        // A mensagem será pública no canal, mas é um caso de erro raro
         logger.warn("⚠️ Enviando mensagem de erro pública no canal (contexto de erro)");
         channel.sendMessageEmbeds(errorEmbed.build())
                 .setActionRow(Button.primary("voltar-inicio", "🏠 Voltar ao Início"))
@@ -321,22 +307,18 @@ public class GoogleOAuthCallbackController {
             
             JSONObject errorJson = new JSONObject(responseBody);
             
-            // Tentar extrair campo "detail"
             if (errorJson.has("detail")) {
                 return errorJson.getString("detail");
             }
             
-            // Tentar extrair campo "message"
             if (errorJson.has("message")) {
                 return errorJson.getString("message");
             }
             
-            // Tentar extrair campo "error"
             if (errorJson.has("error")) {
                 return errorJson.getString("error");
             }
             
-            // Retornar o JSON completo se não encontrar campos conhecidos
             return responseBody;
             
         } catch (Exception e) {

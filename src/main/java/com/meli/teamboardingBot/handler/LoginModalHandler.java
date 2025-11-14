@@ -148,10 +148,8 @@ public class LoginModalHandler extends ListenerAdapter {
         String channelId = event.getChannel().getId();
         String messageId = event.getMessageId();
 
-        // Defer edit e aguardar callback antes de usar o hook
         event.deferEdit().queue(hook -> {
             try {
-                // Registrar canal de interação para usar no callback
                 channelService.registerUserChannel(userId, channelId, messageId);
                 logger.info("📍 Canal registrado: userId={}, channelId={}, messageId={}", userId, channelId, messageId);
                 
@@ -315,17 +313,14 @@ public class LoginModalHandler extends ListenerAdapter {
 
         event.deferReply(true).queue(hook -> {
             try {
-                // Trocar código por token
                 logger.info("🔄 Trocando código por token...");
                 String accessToken = googleAuthIntegration.exchangeCodeForToken(code, userId);
                 logger.info("✅ Token obtido com sucesso!");
 
-                // Autenticar usuário
                 logger.info("🔐 Autenticando usuário...");
                 authService.authenticateUserWithToken(userId, accessToken);
                 logger.info("✅ Usuário {} autenticado via Google com sucesso!", userId);
 
-                // Mostrar mensagem de sucesso PRIMEIRO
                 EmbedBuilder successEmbed = new EmbedBuilder()
                         .setTitle("✅ " + messageSource.getMessage("txt_autenticado_com_sucesso", null, formState.getLocale()) + "!")
                         .setDescription(messageSource.getMessage("txt_sua_autenticacao_via_google_foi_realizada_com_sucesso", null, formState.getLocale()) +  "!\n\n" +
@@ -335,7 +330,6 @@ public class LoginModalHandler extends ListenerAdapter {
                 hook.editOriginalEmbeds(successEmbed.build()).queue();
                 logger.info("✅ Mensagem de sucesso enviada ao usuário");
 
-                // Inicializar FormState
                 FormState state = formStateService.getOrCreateState(Long.parseLong(userId));
                 state.setCreating(true);
                 state.setEditing(false);
@@ -343,10 +337,8 @@ public class LoginModalHandler extends ListenerAdapter {
                 formStateService.updateState(Long.parseLong(userId), state);
                 logger.info("FormState inicializado para usuário {} no step SQUAD_SELECTION", userId);
                 
-                // Aguardar 1 segundo para o usuário ver a mensagem de sucesso
                 Thread.sleep(1000);
                 
-                // Agora carregar squads
                 try {
                     DiscordUserContext.setCurrentUserId(userId);
                     logger.info("✅ Contexto do usuário definido: {}", userId);

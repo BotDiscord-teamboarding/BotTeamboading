@@ -236,7 +236,7 @@ public class FieldEditHandler extends AbstractInteractionHandler {
         String squadName = state.getSquadName() != null ? state.getSquadName() : messageSource.getMessage("txt_nao_informado", null, formState.getLocale());
         embed.addField("🏢 " + messageSource.getMessage("txt_squad", null, formState.getLocale()), squadName, false);
         String userName = state.getUserName() != null ? state.getUserName() : messageSource.getMessage("txt_nao_informado", null, formState.getLocale());
-        embed.addField("👤 " + messageSource.getMessage("txt_pessoa ", null, formState.getLocale()), userName, false);
+        embed.addField("👤 " + messageSource.getMessage("txt_pessoa", null, formState.getLocale()), userName, false);
         String typeName = state.getTypeName() != null ? state.getTypeName() : messageSource.getMessage("txt_nao_informado", null, formState.getLocale());
         embed.addField("📝 " + messageSource.getMessage("txt_tipo", null, formState.getLocale()), typeName, false);
         String categoryNames = (!state.getCategoryNames().isEmpty()) ?

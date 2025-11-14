@@ -3,6 +3,8 @@ package com.meli.teamboardingBot.service.command;
 import com.meli.teamboardingBot.model.FormState;
 import com.meli.teamboardingBot.service.DiscordUserAuthenticationService;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.interactions.commands.build.CommandData;
+import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.interactions.components.text.TextInput;
 import net.dv8tion.jda.api.interactions.components.text.TextInputStyle;
 import net.dv8tion.jda.api.interactions.modals.Modal;
@@ -27,6 +29,11 @@ public class LoginCommand implements SlashCommandHandler {
     @Override
     public String getName() {
         return "login";
+    }
+
+    @Override
+    public CommandData getCommandData() {
+        return Commands.slash("login", "Fazer login manual no sistema");
     }
 
     @Override

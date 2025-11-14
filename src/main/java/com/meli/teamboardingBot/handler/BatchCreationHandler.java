@@ -540,7 +540,7 @@ public class BatchCreationHandler extends AbstractInteractionHandler {
     private void showEditEntryModalPage1(ButtonInteractionEvent event, List<BatchLogEntry> entries, int currentIndex) {
         BatchLogEntry entry = entries.get(currentIndex);
         
-        TextInput squadInput = TextInput.create("edit-squad", messageSource.getMessage("txt_squad ", null, formState.getLocale()), TextInputStyle.SHORT)
+        TextInput squadInput = TextInput.create("edit-squad", messageSource.getMessage("txt_squad", null, formState.getLocale()), TextInputStyle.SHORT)
                 .setValue(entry.getSquadName())
                 .setRequiredRange(1, 100)
                 .build();

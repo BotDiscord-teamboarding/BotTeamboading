@@ -133,7 +133,6 @@ public class NavigationHandler extends AbstractInteractionHandler {
     private void showSquadSelectionWithHook(net.dv8tion.jda.api.interactions.InteractionHook hook) {
     }
     private void showLogSelectionWithHook(net.dv8tion.jda.api.interactions.InteractionHook hook, String userId) {
-        // Delegated to LogSelectionHandler
     }
     private void exitBot(net.dv8tion.jda.api.interactions.InteractionHook hook, Long userId) {
         formStateService.removeState(userId);

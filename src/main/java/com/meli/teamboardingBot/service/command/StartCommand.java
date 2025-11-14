@@ -6,6 +6,8 @@ import com.meli.teamboardingBot.service.PendingAuthMessageService;
 import com.meli.teamboardingBot.config.MessageConfig;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.interactions.commands.build.CommandData;
+import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
@@ -34,6 +36,11 @@ public class StartCommand implements SlashCommandHandler {
     }
 
     @Override
+    public CommandData getCommandData() {
+        return Commands.slash("start", "Iniciar e fazer autenticação no bot");
+    }
+
+    @Override
     public void execute(SlashCommandInteractionEvent event) {
         String userId = event.getUser().getId();
         
@@ -42,7 +49,7 @@ public class StartCommand implements SlashCommandHandler {
         if (authService.isUserAuthenticated(userId)) {
             EmbedBuilder embed = new EmbedBuilder()
                 .setTitle("✅ " + messageSource.getMessage("txt_vc_ja_esta_autenticado", null, formState.getLocale()) + "!")
-                .setDescription(messageSource.getMessage("xt_vc_ja_esta_autenticado", null, formState.getLocale()) + ".\n\n" +
+                .setDescription(messageSource.getMessage("txt_vc_ja_esta_autenticado", null, formState.getLocale()) + ".\n\n" +
                             messageSource.getMessage("txt_use_os_comandos_disponiveis", null, formState.getLocale()) + ":\n" +
                               "• " + messageSource.getMessage("txt_squad_log_gerenciar_squad_logs", null, formState.getLocale()) + "\n" +
                               "• " + messageSource.getMessage("txt_squad_logs_em_log", null, formState.getLocale()))

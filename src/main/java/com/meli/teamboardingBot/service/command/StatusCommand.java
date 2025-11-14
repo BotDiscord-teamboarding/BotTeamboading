@@ -48,8 +48,8 @@ public class StatusCommand implements SlashCommandHandler{
     private void showAuthenticatedStatus(SlashCommandInteractionEvent event, String userId, Locale locale) {
         String authMethod = authService.getAuthMethod(userId);
         String authMethodText = "manual".equals(authMethod) ?
-                messageSource.getMessage("status.authMethod.manual", null, locale) :
-                messageSource.getMessage("status.authMethod.google", null, locale);
+                messageSource.getMessage("status.auth.method.manual", null, locale) :
+                messageSource.getMessage("status.auth.method.google", null, locale);
 
         String userName = event.getUser().getName();
         String description = messageSource.getMessage("status.authenticated.description",
@@ -63,8 +63,8 @@ public class StatusCommand implements SlashCommandHandler{
         event.replyEmbeds(embed.build())
                 .setEphemeral(true)
                 .addActionRow(
-                        Button.secondary("status-close", messageSource.getMessage("Status.button.close", null, locale)),
-                        Button.danger("status-logout", messageSource.getMessage("Status.button.logout", null, locale))
+                        Button.secondary("status-close", messageSource.getMessage("status.button.close", null, locale)),
+                        Button.danger("status-logout", messageSource.getMessage("status.button.logout", null, locale))
                 )
                 .queue();
     }
@@ -82,6 +82,5 @@ public class StatusCommand implements SlashCommandHandler{
                         Button.secondary("status-close", messageSource.getMessage("status.button.close", null, locale))
                 )
                 .queue();
-        }
-
     }
+}

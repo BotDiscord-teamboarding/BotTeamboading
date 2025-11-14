@@ -252,7 +252,7 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
             .setColor(0x00FF00);
         event.getHook().editOriginalEmbeds(embed.build())
             .setActionRow(
-                primary("criar-novo-log", "🆕 " + messageSource.getMessage("txt_criar_novo_squad_log ", null, formState.getLocale()) ),
+                primary("criar-novo-log", "🆕 " + messageSource.getMessage("txt_criar_novo_squad_log", null, formState.getLocale()) ),
                 secondary("atualizar-log-existente", "📝 " + messageSource.getMessage("txt_atualizar_squad_log_existente", null, formState.getLocale()) ),
                 danger("sair-bot", "🚪 " + messageSource.getMessage("txt_sair", null, formState.getLocale()) )
             )
@@ -284,7 +284,7 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
                 return;
             }
             EmbedBuilder embed = new EmbedBuilder()
-                .setTitle("🏢 " + messageSource.getMessage("txt_selecao_de_squad ", null, formState.getLocale()) )
+                .setTitle("🏢 " + messageSource.getMessage("txt_selecao_de_squad", null, formState.getLocale()) )
                 .setDescription(messageSource.getMessage("txt_selecione_a_squad_para_criar_o_log", null, formState.getLocale())  + ":")
                 .setColor(0x0099FF);
             StringSelectMenu.Builder menuBuilder = StringSelectMenu.create("squad-select")
@@ -385,7 +385,7 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
 
         } catch (Exception e) {
             log.error("Erro ao carregar Squad Logs: {}", e.getMessage(), e);
-            event.getHook().editOriginal("❌ " + messageSource.getMessage("txt_erro_carregar_squad_logs ", null, formState.getLocale()) + ": " + e.getMessage())
+            event.getHook().editOriginal("❌ " + messageSource.getMessage("txt_erro_carregar_squad_logs", null, formState.getLocale()) + ": " + e.getMessage())
                 .setEmbeds()
                 .setComponents()
                 .queue();

@@ -292,7 +292,7 @@ public class LogSelectionHandler extends AbstractInteractionHandler {
         String squadName = state.getSquadName() != null ? state.getSquadName() : messageSource.getMessage("txt_nao_informado", null, state.getLocale());
         embed.addField("🏢 "+ messageSource.getMessage("txt_squad", null, state.getLocale()), squadName, false);
         String userName = state.getUserName() != null ? state.getUserName() : messageSource.getMessage("txt_nao_informado", null, state.getLocale());
-        embed.addField("👤 "+ messageSource.getMessage("txt_pessoa ", null, state.getLocale()), userName, false);
+        embed.addField("👤 "+ messageSource.getMessage("txt_pessoa", null, state.getLocale()), userName, false);
         String typeName = state.getTypeName() != null ? state.getTypeName() : messageSource.getMessage("txt_nao_informado", null, state.getLocale());
         embed.addField("📝 "+ messageSource.getMessage("txt_tipo", null, state.getLocale()), typeName, false);
         String categoryNames = (!state.getCategoryNames().isEmpty()) ?

@@ -5,6 +5,8 @@ import com.meli.teamboardingBot.service.FormStateService;
 import com.meli.teamboardingBot.config.MessageConfig;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.interactions.commands.build.CommandData;
+import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,6 +32,11 @@ public class StopCommand implements SlashCommandHandler {
     @Override
     public String getName() {
         return "stop";
+    }
+
+    @Override
+    public CommandData getCommandData() {
+        return Commands.slash("stop", "Cancelar o fluxo de criação ou edição atual");
     }
 
     @Override
