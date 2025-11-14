@@ -1,6 +1,7 @@
 package com.meli.teamboardingBot.handler;
 
 
+import com.meli.teamboardingBot.model.FormState;
 import com.meli.teamboardingBot.service.DiscordUserAuthenticationService;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
@@ -8,6 +9,7 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Component;
 
@@ -18,6 +20,9 @@ public class StatusButtonHandler extends ListenerAdapter {
     private static final Logger logger = LoggerFactory.getLogger(StatusButtonHandler.class);
     private final DiscordUserAuthenticationService authService;
     private final MessageSource messageSource;
+
+    @Autowired
+    private FormState formState;
 
     public StatusButtonHandler(DiscordUserAuthenticationService authService, MessageSource messageSource) {
         this.authService = authService;
@@ -55,7 +60,7 @@ public class StatusButtonHandler extends ListenerAdapter {
 
        authService.logoutUser(userId);
 
-       Locale locale = Locale.forLanguageTag("es-ES");
+       Locale locale = formState.getLocale();
 
        EmbedBuilder embed = new EmbedBuilder()
                 .setTitle(messageSource.getMessage("status.logout.title", null, locale))

@@ -1,11 +1,13 @@
 package com.meli.teamboardingBot.service.command;
 
+import com.meli.teamboardingBot.model.FormState;
 import com.meli.teamboardingBot.service.DiscordUserAuthenticationService;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Component;
 
@@ -16,6 +18,9 @@ import java.util.Locale;
 public class StatusCommand implements SlashCommandHandler{
     private final DiscordUserAuthenticationService authService;
     private final MessageSource messageSource;
+
+    @Autowired
+    private FormState formState;
 
     public StatusCommand(DiscordUserAuthenticationService authService, MessageSource messageSource) {
         this.authService = authService;
@@ -35,7 +40,7 @@ public class StatusCommand implements SlashCommandHandler{
     @Override
     public void execute(SlashCommandInteractionEvent event) {
         String userId = event.getUser().getId();
-        Locale locale = Locale.forLanguageTag("es-ES");
+        Locale locale = formState.getLocale();
 
         if (!authService.isUserAuthenticated(userId)) {
             showUnauthenticatedStatus(event, locale);

@@ -88,6 +88,11 @@ public class LoginModalHandler extends ListenerAdapter {
                 handleGoogleCodeSubmission(event);
                 return;
             }
+
+            if ("start-auth".equals(buttonId)) {
+                handleAuthenticationMethodSelection(event);
+                return;
+            }
         } catch (IllegalStateException e) {
             logger.warn("Interação já foi processada ou expirou para usuário {}: {}", 
                 event.getUser().getId(), e.getMessage());
