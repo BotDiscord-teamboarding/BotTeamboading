@@ -120,12 +120,12 @@ public class NavigationHandler extends AbstractInteractionHandler {
                     Button.secondary("edit-squad", "🏢 "+ messageSource.getMessage("txt_squad", null, formState.getLocale())),
                     Button.secondary("edit-pessoa", "👤 "+ messageSource.getMessage("txt_pessoa", null, formState.getLocale())),
                     Button.secondary("edit-tipo", "📝 "+ messageSource.getMessage("txt_tipo", null, formState.getLocale())),
-                    Button.secondary("edit-categorias", "🏷️ "+ messageSource.getMessage("txt_descricao", null, formState.getLocale()))
+                    Button.secondary("edit-categorias", "🏷️ "+ messageSource.getMessage("txt_categorias", null, formState.getLocale()))
                 ),
                 ActionRow.of(
                     Button.secondary("edit-descricao", "📄 "+ messageSource.getMessage("txt_descricao", null, formState.getLocale())),
                     Button.secondary("edit-datas", "📅 " +  messageSource.getMessage("txt_datas", null, formState.getLocale())),
-                    Button.primary("voltar-resumo", "↩️ "+ messageSource.getMessage("txt_voltar", null, formState.getLocale()))
+                    Button.secondary("voltar-resumo", "↩️ "+ messageSource.getMessage("txt_voltar", null, formState.getLocale()))
                 )
             )
             .queue();

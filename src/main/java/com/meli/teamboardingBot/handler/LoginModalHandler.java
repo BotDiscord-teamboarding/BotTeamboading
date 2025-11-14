@@ -256,7 +256,7 @@ public class LoginModalHandler extends ListenerAdapter {
                                 .setDescription(messageSource.getMessage("txt_nao_ha_squads_disponiveis_no_momento", null, formState.getLocale()) + "." )
                                 .setColor(0xFF0000);
                         hook.editOriginalEmbeds(errorEmbed.build())
-                                .setActionRow(Button.primary("voltar-inicio", "🏠 " + messageSource.getMessage("txt_voltar_inicio", null, formState.getLocale()) ))
+                                .setActionRow(Button.secondary("voltar-inicio", "🏠 " + messageSource.getMessage("txt_voltar_inicio", null, formState.getLocale()) ))
                                 .queue();
                         return;
                     }
@@ -289,7 +289,7 @@ public class LoginModalHandler extends ListenerAdapter {
                                     messageSource.getMessage("txt_use_o_comando_squad_log_novamente", null, formState.getLocale()) + ".")
                             .setColor(0xFF0000);
                     hook.editOriginalEmbeds(errorEmbed.build())
-                            .setActionRow(Button.primary("voltar-inicio", "🏠 " + messageSource.getMessage("txt_voltar_inicio", null, formState.getLocale()) ))
+                            .setActionRow(Button.secondary("voltar-inicio", "🏠 " + messageSource.getMessage("txt_voltar_inicio", null, formState.getLocale()) ))
                             .queue();
                 } finally {
                     DiscordUserContext.clear();
@@ -302,7 +302,7 @@ public class LoginModalHandler extends ListenerAdapter {
                 hook.editOriginalEmbeds(errorEmbed.build())
                         .setActionRow(
                                 Button.success("btn-autenticar", "🔐 " + messageSource.getMessage("txt_tente_novamente", null, formState.getLocale()) ),
-                                Button.primary("voltar-inicio", "🏠 " + messageSource.getMessage("txt_voltar_inicio", null, formState.getLocale()) )
+                                Button.secondary("voltar-inicio", "🏠 " + messageSource.getMessage("txt_voltar_inicio", null, formState.getLocale()) )
                         )
                         .queue();
             }
@@ -365,7 +365,7 @@ public class LoginModalHandler extends ListenerAdapter {
                                 .setDescription(messageSource.getMessage("txt_nao_ha_squads_disponiveis_no_momento", null, formState.getLocale()) + ".")
                                 .setColor(0xFF0000);
                         hook.editOriginalEmbeds(errorEmbed.build())
-                                .setActionRow(Button.primary("voltar-inicio", "🏠 " + messageSource.getMessage("txt_voltar_inicio", null, formState.getLocale()) ))
+                                .setActionRow(Button.secondary("voltar-inicio", "🏠 " + messageSource.getMessage("txt_voltar_inicio", null, formState.getLocale()) ))
                                 .queue();
                         return;
                     }
@@ -414,7 +414,7 @@ public class LoginModalHandler extends ListenerAdapter {
                             .setColor(0xFFA500);
                     
                     hook.editOriginalEmbeds(errorEmbed.build())
-                            .setActionRow(Button.primary("voltar-inicio", "🏠 " + messageSource.getMessage("txt_voltar_inicio", null, formState.getLocale()) ))
+                            .setActionRow(Button.secondary("voltar-inicio", "🏠 " + messageSource.getMessage("txt_voltar_inicio", null, formState.getLocale()) ))
                             .queue();
                 } finally {
                     DiscordUserContext.clear();
@@ -443,7 +443,7 @@ public class LoginModalHandler extends ListenerAdapter {
                 hook.editOriginalEmbeds(errorEmbed.build())
                         .setActionRow(
                                 Button.success("btn-autenticar", "🔐 " + messageSource.getMessage("txt_tente_novamente", null, formState.getLocale()) ),
-                                Button.primary("voltar-inicio", "🏠 " + messageSource.getMessage("txt_voltar_inicio", null, formState.getLocale()) )
+                                Button.secondary("voltar-inicio", "🏠 " + messageSource.getMessage("txt_voltar_inicio", null, formState.getLocale()) )
                         )
                         .queue();
             }

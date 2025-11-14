@@ -77,7 +77,7 @@ public class SquadSelectionHandler extends AbstractInteractionHandler {
                 .setDescription(messageSource.getMessage("txt_faca_a_autenticacao_atraves_do_comando", null, formState.getLocale()))
                 .setColor(0xFFA500);
             event.editMessageEmbeds(embed.build())
-                .setActionRow(Button.primary("voltar-inicio", "🏠 " + messageSource.getMessage("txt_voltar_inicio", null, formState.getLocale())))
+                .setActionRow(Button.secondary("voltar-inicio", "🏠 " + messageSource.getMessage("txt_voltar_inicio", null, formState.getLocale())))
                 .queue(message -> pendingAuthMessageService.storePendingAuthMessage(userId, event.getMessage()));
             return;
         }
@@ -138,7 +138,7 @@ public class SquadSelectionHandler extends AbstractInteractionHandler {
                     .setDescription(messageSource.getMessage("txt_nao_ha_squads_disponiveis_no_momento", null, formState.getLocale()) + ".")
                     .setColor(0xFF0000);
                 event.getHook().editOriginalEmbeds(errorEmbed.build())
-                    .setActionRow(Button.primary("voltar-inicio", "🏠 " + messageSource.getMessage("", null, formState.getLocale())))
+                    .setActionRow(Button.secondary("voltar-inicio", "🏠 " + messageSource.getMessage("", null, formState.getLocale())))
                     .queue();
                 return;
             }
@@ -167,7 +167,7 @@ public class SquadSelectionHandler extends AbstractInteractionHandler {
                         messageSource.getMessage("txt_tente_novamente", null, formState.getLocale()) + ".")
                 .setColor(0xFF0000);
             event.getHook().editOriginalEmbeds(errorEmbed.build())
-                .setActionRow(Button.primary("voltar-inicio", "🏠 " + messageSource.getMessage("", null, formState.getLocale())))
+                .setActionRow(Button.secondary("voltar-inicio", "🏠 " + messageSource.getMessage("", null, formState.getLocale())))
                 .queue();
         }
     }
@@ -249,7 +249,7 @@ public class SquadSelectionHandler extends AbstractInteractionHandler {
             .setDescription(message)
             .setColor(0xFF0000);
         event.getHook().editOriginalEmbeds(errorEmbed.build())
-            .setActionRow(Button.primary("voltar-inicio", "🏠 "+ messageSource.getMessage("txt_voltar_inicio", null, formState.getLocale())) )
+            .setActionRow(Button.secondary("voltar-inicio", "🏠 "+ messageSource.getMessage("txt_voltar_inicio", null, formState.getLocale())) )
             .queue();
     }
     @Override

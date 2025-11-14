@@ -147,7 +147,7 @@ public class CategorySelectionHandler extends AbstractInteractionHandler {
                 .setDescription(messageSource.getMessage("txt_erro_carregar_categorias_mensagem", null, state.getLocale() ) + ".")
                 .setColor(0xFF0000);
             event.getHook().editOriginalEmbeds(errorEmbed.build())
-                .setActionRow(Button.primary("voltar-inicio", "🏠 " + messageSource.getMessage("txt_voltar_inicio", null, state.getLocale() )))
+                .setActionRow(Button.secondary("voltar-inicio", "🏠 " + messageSource.getMessage("txt_voltar_inicio", null, state.getLocale() )))
                 .queue();
         }
     }

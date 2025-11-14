@@ -267,7 +267,7 @@ public class GoogleOAuthCallbackController {
         
         logger.warn("⚠️ Enviando mensagem de erro pública no canal (contexto de erro)");
         channel.sendMessageEmbeds(errorEmbed.build())
-                .setActionRow(Button.primary("voltar-inicio", "🏠 Voltar ao Início"))
+                .setActionRow(Button.secondary("voltar-inicio", "🏠 Voltar ao Início"))
                 .queue(
                     success -> logger.info("✅ Mensagem de erro enviada ao usuário"),
                     error -> logger.error("❌ Falha ao enviar mensagem de erro: {}", error.getMessage())

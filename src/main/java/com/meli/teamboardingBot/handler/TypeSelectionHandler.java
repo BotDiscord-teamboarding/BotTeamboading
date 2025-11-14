@@ -135,7 +135,7 @@ public class TypeSelectionHandler extends AbstractInteractionHandler {
                 .setDescription(messageSource.getMessage("txt_erro_carregar_tipos", null, formState.getLocale()) + ". " +messageSource.getMessage("txt_tente_novamente", null, formState.getLocale())+".")
                 .setColor(0xFF0000);
             event.getHook().editOriginalEmbeds(errorEmbed.build())
-                .setActionRow(Button.primary("voltar-inicio", "🏠 "+ messageSource.getMessage("txt_voltar_inicio", null, formState.getLocale())))
+                .setActionRow(Button.secondary("voltar-inicio", "🏠 "+ messageSource.getMessage("txt_voltar_inicio", null, formState.getLocale())))
                 .queue();
         }
     }
@@ -178,7 +178,7 @@ public class TypeSelectionHandler extends AbstractInteractionHandler {
                 .setDescription(messageSource.getMessage("txt_erro_carregar_categorias", null, formState.getLocale()) + ". " + messageSource.getMessage("txt_tente_novamente", null, formState.getLocale()) + "." )
                 .setColor(0xFF0000);
             event.getHook().editOriginalEmbeds(errorEmbed.build())
-                .setActionRow(Button.primary("voltar-inicio", "🏠 " + messageSource.getMessage("txt_voltar_inicio", null, formState.getLocale())))
+                .setActionRow(Button.secondary("voltar-inicio", "🏠 " + messageSource.getMessage("txt_voltar_inicio", null, formState.getLocale())))
                 .queue();
         }
     }
@@ -194,7 +194,7 @@ public class TypeSelectionHandler extends AbstractInteractionHandler {
             .setDescription(message)
             .setColor(0xFF0000);
         event.getHook().editOriginalEmbeds(errorEmbed.build())
-            .setActionRow(Button.primary("voltar-inicio", "🏠 " + messageSource.getMessage("txt_voltar_inicio", null, formState.getLocale())))
+            .setActionRow(Button.secondary("voltar-inicio", "🏠 " + messageSource.getMessage("txt_voltar_inicio", null, formState.getLocale())))
             .queue();
     }
     @Override

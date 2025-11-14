@@ -68,8 +68,8 @@ public class StatusCommand implements SlashCommandHandler{
         event.replyEmbeds(embed.build())
                 .setEphemeral(true)
                 .addActionRow(
-                        Button.secondary("status-close", messageSource.getMessage("status.button.close", null, locale)),
-                        Button.danger("status-logout", messageSource.getMessage("status.button.logout", null, locale))
+                        Button.secondary("status-close", "🚪 " + messageSource.getMessage("status.button.close", null, locale)),
+                        Button.danger("status-logout", "🔓 " + messageSource.getMessage("status.button.logout", null, locale))
                 )
                 .queue();
     }
@@ -83,8 +83,8 @@ public class StatusCommand implements SlashCommandHandler{
         event.replyEmbeds(embed.build())
                 .setEphemeral(true)
                 .addActionRow(
-                        Button.primary("start-auth", messageSource.getMessage("status.button.login", null, locale)),
-                        Button.secondary("status-close", messageSource.getMessage("status.button.close", null, locale))
+                        Button.primary("start-auth", "🔐 " + messageSource.getMessage("status.button.login", null, locale)),
+                        Button.secondary("status-close", "🚪 " + messageSource.getMessage("status.button.close", null, locale))
                 )
                 .queue();
     }

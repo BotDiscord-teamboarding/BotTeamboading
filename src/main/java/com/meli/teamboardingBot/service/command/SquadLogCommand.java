@@ -58,8 +58,8 @@ public class SquadLogCommand implements SlashCommandHandler {
                 hook.editOriginalEmbeds(
                         Ui.info("Escolha uma opção").build()
                 ).setActionRow(
-                        Button.success("criar", "Criar"),
-                        Button.secondary("atualizar", "Atualizar")
+                        Button.primary("criar", "✅ Criar"),
+                        Button.secondary("atualizar", "📝 Atualizar")
                 ).queue()
         );
     }
