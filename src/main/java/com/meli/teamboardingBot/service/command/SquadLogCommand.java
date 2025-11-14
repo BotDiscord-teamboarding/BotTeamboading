@@ -44,10 +44,15 @@ public class SquadLogCommand implements SlashCommandHandler {
         if (!authService.isUserAuthenticated(userId)) {
             EmbedBuilder embed = new EmbedBuilder()
                 .setTitle("🔒 " + messageSource.getMessage("txt_autenticacao_necessaria", null, formState.getLocale()))
-                .setDescription(messageSource.getMessage("txt_faca_login_para_usar_os_comandos", null, formState.getLocale()))
+                .setDescription(messageSource.getMessage("txt_faca_login_para_usar_os_comandos", null, formState.getLocale()) + 
+                    "\n\n💡 " + messageSource.getMessage("txt_use_comando_start_ou_clique_botao", null, formState.getLocale()))
                 .setColor(0xFFA500);
             event.replyEmbeds(embed.build())
                 .setEphemeral(true)
+                .addActionRow(
+                    Button.primary("btn-autenticar", "🔐 " + messageSource.getMessage("txt_fazer_login", null, formState.getLocale())),
+                    Button.secondary("status-close", "🚪 " + messageSource.getMessage("txt_fechar", null, formState.getLocale()))
+                )
                 .queue(hook -> hook.retrieveOriginal().queue(
                     message -> pendingAuthMessageService.storePendingAuthMessage(userId, message)
                 ));

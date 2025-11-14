@@ -317,10 +317,14 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
             log.warn("Usuário {} não autenticado tentando atualizar squad-log", userId);
             EmbedBuilder embed = new EmbedBuilder()
                 .setTitle("🔒 " + messageSource.getMessage("txt_autenticacao_necessaria", null, formState.getLocale()) )
-                .setDescription(messageSource.getMessage("txt_faca_a_autenticacao_atraves_do_comando", null, formState.getLocale()) )
+                .setDescription(messageSource.getMessage("txt_faca_a_autenticacao_atraves_do_comando", null, formState.getLocale()) + 
+                    "\n\n💡 " + messageSource.getMessage("txt_use_comando_start_ou_clique_botao", null, formState.getLocale()))
                 .setColor(0xFFA500);
             event.editMessageEmbeds(embed.build())
-                .setActionRow(primary("voltar-inicio", "🏠 " + messageSource.getMessage("txt_voltar_inicio", null, formState.getLocale()) ))
+                .setActionRow(
+                    primary("btn-autenticar", "🔐 " + messageSource.getMessage("txt_fazer_login", null, formState.getLocale())),
+                    secondary("status-close", "🚪 " + messageSource.getMessage("txt_fechar", null, formState.getLocale()))
+                )
                 .queue(message -> pendingAuthMessageService.storePendingAuthMessage(userId, event.getMessage()));
             return;
         }
