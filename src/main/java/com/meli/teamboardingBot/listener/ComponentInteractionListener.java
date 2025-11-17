@@ -39,12 +39,15 @@ public class ComponentInteractionListener extends ListenerAdapter {
         
         if (isBatchButton(buttonId)) {
             try {
+                com.meli.teamboardingBot.context.DiscordUserContext.setCurrentUserId(String.valueOf(userId));
                 batchCreationHandler.handleBatchNavigation(event);
                 return;
             } catch (Exception e) {
                 logger.error("Error handling batch button {}: {}", buttonId, e.getMessage());
                 event.reply("❌ Erro interno. Tente novamente.").setEphemeral(true).queue();
                 return;
+            } finally {
+                com.meli.teamboardingBot.context.DiscordUserContext.clear();
             }
         }
         
@@ -108,6 +111,7 @@ public class ComponentInteractionListener extends ListenerAdapter {
         
         if (isBatchModal(modalId)) {
             try {
+                com.meli.teamboardingBot.context.DiscordUserContext.setCurrentUserId(String.valueOf(userId));
                 if (modalId.equals("batch-creation-modal")) {
                     batchCreationHandler.handleBatchCreationModal(event);
                 } else if (modalId.equals("batch-edit-modal")) {
@@ -122,6 +126,8 @@ public class ComponentInteractionListener extends ListenerAdapter {
                 logger.error("Error handling batch modal {}: {}", modalId, e.getMessage());
                 event.reply("❌ Erro interno. Tente novamente.").setEphemeral(true).queue();
                 return;
+            } finally {
+                com.meli.teamboardingBot.context.DiscordUserContext.clear();
             }
         }
         
@@ -166,6 +172,7 @@ public class ComponentInteractionListener extends ListenerAdapter {
                 "auth-google".equals(buttonId) ||
                 "start-auth".equals(buttonId) ||
                 "cancel-auth".equals(buttonId) ||
+                "voltar-inicio".equals(buttonId) ||
                 "status-close".equals(buttonId) ||
                 "status-logout".equals(buttonId) ||
                 "help-close".equals(buttonId);

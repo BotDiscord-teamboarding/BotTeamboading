@@ -98,6 +98,11 @@ public class LoginModalHandler extends ListenerAdapter {
                 handleCancelAuth(event);
                 return;
             }
+
+            if ("voltar-inicio".equals(buttonId)) {
+                handleCancelAuth(event);
+                return;
+            }
         } catch (IllegalStateException e) {
             logger.warn("Interação já foi processada ou expirou para usuário {}: {}", 
                 event.getUser().getId(), e.getMessage());
