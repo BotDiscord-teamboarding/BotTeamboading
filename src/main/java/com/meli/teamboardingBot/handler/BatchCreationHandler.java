@@ -8,6 +8,7 @@ import com.meli.teamboardingBot.service.SquadLogService;
 import com.meli.teamboardingBot.service.batch.BatchValidator;
 import com.meli.teamboardingBot.service.batch.PreviewNavigator;
 import com.meli.teamboardingBot.service.batch.TextParser;
+import com.meli.teamboardingBot.service.batch.impl.EmbedPreviewNavigationService;
 import com.meli.teamboardingBot.config.MessageConfig;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -20,6 +21,7 @@ import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.text.TextInput;
 import net.dv8tion.jda.api.interactions.components.text.TextInputStyle;
 import net.dv8tion.jda.api.interactions.modals.Modal;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
@@ -165,15 +167,12 @@ public class BatchCreationHandler extends AbstractInteractionHandler {
             return;
         }
         
-        if (buttonId.equals("batch-edit-bulk") || buttonId.equals("batch-exit") || 
+        if (buttonId.equals("batch-exit") || 
             buttonId.equals("batch-back-to-menu") || buttonId.equals("batch-conclude")) {
             
             event.deferEdit().queue();
             
             switch (buttonId) {
-                case "batch-edit-bulk":
-                    showBulkEditNotReady(event);
-                    return;
                 case "batch-exit":
                     showExitMessage(event);
                     return;
@@ -202,16 +201,16 @@ public class BatchCreationHandler extends AbstractInteractionHandler {
             
             switch (buttonId) {
                 case "batch-edit-squad":
-                    showSquadEditModal(event, entries, currentIndex);
+                    showSquadSelectionMenu(event, entries, currentIndex);
                     return;
                 case "batch-edit-person":
-                    showPersonEditModal(event, entries, currentIndex);
+                    showPersonSelectionMenu(event, entries, currentIndex);
                     return;
                 case "batch-edit-type":
-                    showTypeEditModal(event, entries, currentIndex);
+                    showTypeSelectionMenu(event, entries, currentIndex);
                     return;
                 case "batch-edit-categories":
-                    showCategoriesEditModal(event, entries, currentIndex);
+                    showCategoriesSelectionMenu(event, entries, currentIndex);
                     return;
                 case "batch-edit-description":
                     showDescriptionEditModal(event, entries, currentIndex);
@@ -337,7 +336,7 @@ public class BatchCreationHandler extends AbstractInteractionHandler {
         
         MessageEmbed previewEmbed = previewNavigator.createPreviewEmbed(firstEntry, 0, entries.size());
         
-        List<Button> buttons = createNavigationButtons(0, entries.size());
+        List<ActionRow> actionRows = createNavigationActionRows(0, entries.size());
         
         EmbedBuilder summaryEmbed = new EmbedBuilder()
                 .setTitle("✅ " + messageSource.getMessage("txt_logs_processados_com_sucesso", null, formState.getLocale()))
@@ -351,7 +350,7 @@ public class BatchCreationHandler extends AbstractInteractionHandler {
         }
 
         event.getHook().editOriginalEmbeds(summaryEmbed.build(), previewEmbed)
-             .setComponents(ActionRow.of(buttons))
+             .setComponents(actionRows)
              .queue();
     }
 
@@ -363,29 +362,41 @@ public class BatchCreationHandler extends AbstractInteractionHandler {
         
         MessageEmbed previewEmbed = previewNavigator.createPreviewEmbed(entry, currentIndex, entries.size());
         
-        List<Button> buttons = createNavigationButtons(currentIndex, entries.size());
+        List<ActionRow> actionRows = createNavigationActionRows(currentIndex, entries.size());
         
         event.getHook().editOriginalEmbeds(previewEmbed)
-             .setComponents(ActionRow.of(buttons))
+             .setComponents(actionRows)
              .queue();
     }
 
-    private List<Button> createNavigationButtons(int currentIndex, int totalCount) {
-        List<Button> buttons = new ArrayList<>();
+    private List<ActionRow> createNavigationActionRows(int currentIndex, int totalCount) {
+        List<ActionRow> actionRows = new ArrayList<>();
         
+        // Linha 1: Navegação
         Button previousButton = Button.secondary("batch-previous", "⬅️ " + messageSource.getMessage("txt_anterior", null, formState.getLocale()))
                 .withDisabled(!previewNavigator.hasPrevious(currentIndex));
-        buttons.add(previousButton);
-        
-        Button nextButton = Button.secondary("batch-next",  messageSource.getMessage("txt_proximo", null, formState.getLocale()) +" ➡️")
+        Button nextButton = Button.secondary("batch-next", messageSource.getMessage("txt_proximo", null, formState.getLocale()) + " ➡️")
                 .withDisabled(!previewNavigator.hasNext(currentIndex, totalCount));
-        buttons.add(nextButton);
+        actionRows.add(ActionRow.of(previousButton, nextButton));
         
-        buttons.add(Button.primary("batch-edit-entry", "✏️ "+ messageSource.getMessage("txt_editar", null, formState.getLocale())) );
-        buttons.add(Button.success("batch-create-all", "✅ " + messageSource.getMessage("txt_criar_todos", null, formState.getLocale())));
-        buttons.add(Button.danger("batch-cancel", "❌ " + messageSource.getMessage("txt_cancelar", null, formState.getLocale())));
+        // Linha 2: Primeiros campos de edição (3 botões)
+        Button squadButton = Button.secondary("batch-edit-squad", "🏢 " + messageSource.getMessage("txt_squad", null, formState.getLocale()));
+        Button personButton = Button.secondary("batch-edit-person", "👤 " + messageSource.getMessage("txt_pessoa", null, formState.getLocale()));
+        Button typeButton = Button.secondary("batch-edit-type", "📝 " + messageSource.getMessage("txt_tipo", null, formState.getLocale()));
+        actionRows.add(ActionRow.of(squadButton, personButton, typeButton));
         
-        return buttons;
+        // Linha 3: Últimos campos de edição (3 botões)
+        Button categoriesButton = Button.secondary("batch-edit-categories", "🏷️ " + messageSource.getMessage("txt_categorias", null, formState.getLocale()));
+        Button descriptionButton = Button.secondary("batch-edit-description", "📄 " + messageSource.getMessage("txt_descricao", null, formState.getLocale()));
+        Button datesButton = Button.secondary("batch-edit-dates", "📅 " + messageSource.getMessage("txt_datas", null, formState.getLocale()));
+        actionRows.add(ActionRow.of(categoriesButton, descriptionButton, datesButton));
+        
+        // Linha 4: Ações principais
+        Button createAllButton = Button.success("batch-create-all", "✅ " + messageSource.getMessage("txt_criar_todos", null, formState.getLocale()));
+        Button cancelButton = Button.danger("batch-cancel", "❌ " + messageSource.getMessage("txt_cancelar", null, formState.getLocale()));
+        actionRows.add(ActionRow.of(createAllButton, cancelButton));
+        
+        return actionRows;
     }
 
     private void createAllLogs(ButtonInteractionEvent event, List<BatchLogEntry> entries) {
@@ -480,25 +491,21 @@ public class BatchCreationHandler extends AbstractInteractionHandler {
         event.getHook().editOriginalEmbeds(cancelingEmbed.build())
              .setComponents()
              .queue();
-             
-        event.getHook().editOriginalEmbeds(createPostCancelMenu().build())
-             .setComponents(createPostCancelButtons())
-             .queueAfter(2, TimeUnit.SECONDS);
-    }
-    
-    private EmbedBuilder createPostCancelMenu() {
-        return new EmbedBuilder()
-                .setTitle("🤖 " + messageSource.getMessage("txt_o_que_voce_deseja_fazer", null, formState.getLocale()) + "?")
-                .setDescription(messageSource.getMessage("txt_escolha_uma_das_opcoes_abaixo", null, formState.getLocale()) + ":")
-                .setColor(Color.BLUE);
-    }
-    
-    private ActionRow createPostCancelButtons() {
-        Button createBatchButton = Button.primary("batch-create-more", "📝 " + messageSource.getMessage("txt_criar_logs_em_lote", null, formState.getLocale()));
-        Button editBulkButton = Button.secondary("batch-edit-bulk", "✏️ " + messageSource.getMessage("txt_editar_logs_em_lote", null, formState.getLocale()));
-        Button exitButton = Button.danger("batch-exit", "🚪 " + messageSource.getMessage("txt_sair", null, formState.getLocale()));
         
-        return ActionRow.of(createBatchButton, editBulkButton, exitButton);
+        EmbedBuilder exitEmbed = new EmbedBuilder()
+                .setTitle("👋 " + messageSource.getMessage("txt_obrigado_por_usar_o_squad_log_bot", null, formState.getLocale()) + "!")
+                .setDescription(messageSource.getMessage("txt_ate_a_proxima", null, formState.getLocale()) + "! 🚀\n\n" +
+                        "**" + messageSource.getMessage("txt_comandos_disponiveis", null, formState.getLocale()) + ":**\n" +
+                        "`/squad-log` - " + messageSource.getMessage("txt_criar_ou_atualizar_squad_log", null, formState.getLocale()) + "\n" +
+                        "`/squad-log-lote` - " + messageSource.getMessage("txt_criar_multiplos_logs_de_uma_vez", null, formState.getLocale()))
+                .setColor(Color.BLUE)
+                .setFooter(messageSource.getMessage("txt_esta_mensagem_sera_excluida_automaticamente", null, formState.getLocale()));
+             
+        event.getHook().editOriginalEmbeds(exitEmbed.build())
+             .setComponents()
+             .queueAfter(2, TimeUnit.SECONDS);
+             
+        event.getHook().deleteOriginal().queueAfter(10, TimeUnit.SECONDS);
     }
 
     private void showSessionExpiredError(ButtonInteractionEvent event) {
@@ -711,7 +718,7 @@ public class BatchCreationHandler extends AbstractInteractionHandler {
         BatchLogEntry validatedEntry = validationResult.getValidEntries().get(0);
         entries.set(currentIndex, validatedEntry);
         
-        updatePreviewFromModal(event, entries, currentIndex);
+        updatePreviewFromModal(event, entries, currentIndex, null);
     }
     
     private void showEditValidationError(ModalInteractionEvent event, BatchParsingResult result) {
@@ -739,14 +746,20 @@ public class BatchCreationHandler extends AbstractInteractionHandler {
         event.getHook().editOriginalEmbeds(embed.build()).queue();
     }
 
-    private void updatePreviewFromModal(ModalInteractionEvent event, List<BatchLogEntry> entries, int currentIndex) {
+    private void updatePreviewFromModal(ModalInteractionEvent event, List<BatchLogEntry> entries, int currentIndex, String modifiedField) {
         BatchLogEntry entry = entries.get(currentIndex);
-        MessageEmbed previewEmbed = previewNavigator.createPreviewEmbed(entry, currentIndex, entries.size());
         
-        List<Button> buttons = createNavigationButtons(currentIndex, entries.size());
+        MessageEmbed previewEmbed;
+        if (modifiedField != null && previewNavigator instanceof EmbedPreviewNavigationService) {
+            previewEmbed = ((EmbedPreviewNavigationService) previewNavigator).createPreviewEmbed(entry, currentIndex, entries.size(), modifiedField);
+        } else {
+            previewEmbed = previewNavigator.createPreviewEmbed(entry, currentIndex, entries.size());
+        }
+        
+        List<ActionRow> actionRows = createNavigationActionRows(currentIndex, entries.size());
         
         event.getHook().editOriginalEmbeds(previewEmbed)
-             .setComponents(ActionRow.of(buttons))
+             .setComponents(actionRows)
              .queue();
     }
 
@@ -760,11 +773,21 @@ public class BatchCreationHandler extends AbstractInteractionHandler {
                 .setDescription("**" + messageSource.getMessage("txt_dados_atuais_do_log", null, formState.getLocale()) + ":**")
                 .setColor(Color.BLUE);
 
-        embed.addField("🏢 " + messageSource.getMessage("txt_squad", null, formState.getLocale()), entry.getSquadName(), false);
-        embed.addField("👤 " + messageSource.getMessage("txt_pessoa", null, formState.getLocale()), entry.getPersonName(), false);
-        embed.addField("📝 " + messageSource.getMessage("txt_tipo", null, formState.getLocale()), entry.getLogType(), false);
-        embed.addField("🏷️ " + messageSource.getMessage("txt_categorias", null, formState.getLocale()), String.join(", ", entry.getCategories()), false);
-        embed.addField("📄 " + messageSource.getMessage("txt_descricao", null, formState.getLocale()), entry.getDescription(), false);
+        String squadName = entry.getSquadName() != null ? entry.getSquadName() : messageSource.getMessage("txt_nao_informado", null, formState.getLocale());
+        embed.addField("🏢 " + messageSource.getMessage("txt_squad", null, formState.getLocale()), squadName, false);
+        
+        String personName = entry.getPersonName() != null ? entry.getPersonName() : messageSource.getMessage("txt_nao_informado", null, formState.getLocale());
+        embed.addField("👤 " + messageSource.getMessage("txt_pessoa", null, formState.getLocale()), personName, false);
+        
+        String logType = entry.getLogType() != null ? entry.getLogType() : messageSource.getMessage("txt_nao_informado", null, formState.getLocale());
+        embed.addField("📝 " + messageSource.getMessage("txt_tipo", null, formState.getLocale()), logType, false);
+        
+        String categories = (entry.getCategories() != null && !entry.getCategories().isEmpty()) ? 
+            String.join(", ", entry.getCategories()) : messageSource.getMessage("txt_nao_informado", null, formState.getLocale());
+        embed.addField("🏷️ " + messageSource.getMessage("txt_categorias", null, formState.getLocale()), categories, false);
+        
+        String description = entry.getDescription() != null ? entry.getDescription() : messageSource.getMessage("txt_nao_informado", null, formState.getLocale());
+        embed.addField("📄 " + messageSource.getMessage("txt_descricao", null, formState.getLocale()), description, false);
         
         String startDate = entry.getStartDate() != null ? 
             entry.getStartDate().format(BRAZILIAN_DATE_FORMAT) : messageSource.getMessage("txt_nao_informado", null, formState.getLocale());
@@ -875,23 +898,26 @@ public class BatchCreationHandler extends AbstractInteractionHandler {
     private void showDatesEditModal(ButtonInteractionEvent event, List<BatchLogEntry> entries, int currentIndex) {
         BatchLogEntry entry = entries.get(currentIndex);
         
-        String startDateValue = entry.getStartDate() != null ? 
-            entry.getStartDate().format(BRAZILIAN_DATE_FORMAT) : "";
-        String endDateValue = entry.getEndDate() != null ? 
-            entry.getEndDate().format(BRAZILIAN_DATE_FORMAT) : "";
-        
-        TextInput startDateInput = TextInput.create("edit-start-date", messageSource.getMessage("txt_data_de_inicio", null, formState.getLocale()), TextInputStyle.SHORT)
-                .setValue(startDateValue)
+        TextInput.Builder startDateBuilder = TextInput.create("edit-start-date", messageSource.getMessage("txt_data_de_inicio", null, formState.getLocale()), TextInputStyle.SHORT)
                 .setPlaceholder("DD-MM-AAAA (ex: 15-01-2025)")
-                .setRequiredRange(10, 10)
-                .build();
+                .setRequiredRange(10, 10);
+        
+        if (entry.getStartDate() != null) {
+            startDateBuilder.setValue(entry.getStartDate().format(BRAZILIAN_DATE_FORMAT));
+        }
+        
+        TextInput startDateInput = startDateBuilder.build();
 
-        TextInput endDateInput = TextInput.create("edit-end-date", messageSource.getMessage("txt_data_de_fim", null, formState.getLocale()), TextInputStyle.SHORT)
-                .setValue(endDateValue)
+        TextInput.Builder endDateBuilder = TextInput.create("edit-end-date", messageSource.getMessage("txt_data_de_fim", null, formState.getLocale()), TextInputStyle.SHORT)
                 .setPlaceholder("DD-MM-AAAA (" + messageSource.getMessage("txt_opcional", null, formState.getLocale()) +")")
                 .setRequired(false)
-                .setRequiredRange(0, 10)
-                .build();
+                .setRequiredRange(0, 10);
+        
+        if (entry.getEndDate() != null) {
+            endDateBuilder.setValue(entry.getEndDate().format(BRAZILIAN_DATE_FORMAT));
+        }
+        
+        TextInput endDateInput = endDateBuilder.build();
 
         Modal modal = Modal.create("batch-edit-dates-modal", "📅 " + messageSource.getMessage("txt_editar_datas", null, formState.getLocale()))
                 .addActionRow(startDateInput)
@@ -916,39 +942,56 @@ public class BatchCreationHandler extends AbstractInteractionHandler {
         
         BatchLogEntry entry = entries.get(currentIndex);
         boolean needsValidation = false;
+        String modifiedField = null;
         
         switch (modalId) {
             case "batch-edit-squad-modal":
                 String newSquad = event.getValue("edit-squad").getAsString().trim();
-                entry.setSquadName(newSquad);
-                needsValidation = true;
+                if (!newSquad.isEmpty()) {
+                    entry.setSquadName(newSquad);
+                    needsValidation = true;
+                    modifiedField = "squad";
+                }
                 break;
                 
             case "batch-edit-person-modal":
                 String newPerson = event.getValue("edit-person").getAsString().trim();
-                entry.setPersonName(newPerson);
-                needsValidation = true;
+                if (!newPerson.isEmpty()) {
+                    entry.setPersonName(newPerson);
+                    needsValidation = true;
+                    modifiedField = "person";
+                }
                 break;
                 
             case "batch-edit-type-modal":
                 String newType = event.getValue("edit-type").getAsString().trim();
-                entry.setLogType(newType);
-                needsValidation = true;
+                if (!newType.isEmpty()) {
+                    entry.setLogType(newType);
+                    needsValidation = true;
+                    modifiedField = "type";
+                }
                 break;
                 
             case "batch-edit-categories-modal":
                 String newCategoriesStr = event.getValue("edit-categories").getAsString().trim();
-                entry.setCategories(Arrays.asList(newCategoriesStr.split(",\\s*")));
-                needsValidation = true;
+                if (!newCategoriesStr.isEmpty()) {
+                    entry.setCategories(Arrays.asList(newCategoriesStr.split(",\\s*")));
+                    needsValidation = true;
+                    modifiedField = "categories";
+                }
                 break;
                 
             case "batch-edit-description-modal":
                 String newDescription = event.getValue("edit-description").getAsString().trim();
-                entry.setDescription(newDescription);
+                if (!newDescription.isEmpty()) {
+                    entry.setDescription(newDescription);
+                    modifiedField = "description";
+                }
                 break;
                 
             case "batch-edit-dates-modal":
                 handleDatesEdit(event, entry);
+                modifiedField = "dates";
                 break;
         }
         
@@ -964,7 +1007,7 @@ public class BatchCreationHandler extends AbstractInteractionHandler {
             entries.set(currentIndex, validatedEntry);
         }
         
-        showBatchEditSummary(event, entries.get(currentIndex), currentIndex);
+        updatePreviewFromModal(event, entries, currentIndex, modifiedField);
     }
     
     private void handleDatesEdit(ModalInteractionEvent event, BatchLogEntry entry) {
@@ -1005,11 +1048,21 @@ public class BatchCreationHandler extends AbstractInteractionHandler {
                 .setDescription("**" + messageSource.getMessage("txt_dados_atuais_do_log", null, formState.getLocale()) + ":**")
                 .setColor(Color.BLUE);
 
-        embed.addField("🏢 " + messageSource.getMessage("txt_squad", null, formState.getLocale()), entry.getSquadName(), false);
-        embed.addField("👤 " + messageSource.getMessage("txt_pessoa", null, formState.getLocale()), entry.getPersonName(), false);
-        embed.addField("📝 " + messageSource.getMessage("txt_tipo", null, formState.getLocale()), entry.getLogType(), false);
-        embed.addField("🏷️ " + messageSource.getMessage("txt_categorias", null, formState.getLocale()), String.join(", ", entry.getCategories()), false);
-        embed.addField("📄 " + messageSource.getMessage("txt_descricao", null, formState.getLocale()), entry.getDescription(), false);
+        String squadName = entry.getSquadName() != null ? entry.getSquadName() : messageSource.getMessage("txt_nao_informado", null, formState.getLocale());
+        embed.addField("🏢 " + messageSource.getMessage("txt_squad", null, formState.getLocale()), squadName, false);
+        
+        String personName = entry.getPersonName() != null ? entry.getPersonName() : messageSource.getMessage("txt_nao_informado", null, formState.getLocale());
+        embed.addField("👤 " + messageSource.getMessage("txt_pessoa", null, formState.getLocale()), personName, false);
+        
+        String logType = entry.getLogType() != null ? entry.getLogType() : messageSource.getMessage("txt_nao_informado", null, formState.getLocale());
+        embed.addField("📝 " + messageSource.getMessage("txt_tipo", null, formState.getLocale()), logType, false);
+        
+        String categories = (entry.getCategories() != null && !entry.getCategories().isEmpty()) ? 
+            String.join(", ", entry.getCategories()) : messageSource.getMessage("txt_nao_informado", null, formState.getLocale());
+        embed.addField("🏷️ " + messageSource.getMessage("txt_categorias", null, formState.getLocale()), categories, false);
+        
+        String description = entry.getDescription() != null ? entry.getDescription() : messageSource.getMessage("txt_nao_informado", null, formState.getLocale());
+        embed.addField("📄 " + messageSource.getMessage("txt_descricao", null, formState.getLocale()), description, false);
         
         String startDate = entry.getStartDate() != null ? 
             entry.getStartDate().format(BRAZILIAN_DATE_FORMAT) : messageSource.getMessage("txt_nao_informado", null, formState.getLocale());
@@ -1039,17 +1092,20 @@ public class BatchCreationHandler extends AbstractInteractionHandler {
 
     private void showPostCreationMenu(ButtonInteractionEvent event) {
         EmbedBuilder embed = new EmbedBuilder()
-                .setTitle("🎉 " + messageSource.getMessage("txt_squad_logs_criados_com_sucesso", null, formState.getLocale()) + "!")
-                .setDescription(messageSource.getMessage("txt_o_que_deseja_fazer_agora", null, formState.getLocale()) + "?")
-                .setColor(Color.GREEN);
-
-        Button createMoreButton = Button.primary("batch-create-more", "📝 " + messageSource.getMessage("txt_criar_mais_lotes", null, formState.getLocale()));
-        Button editBulkButton = Button.secondary("batch-edit-bulk", "✏️ " + messageSource.getMessage("txt_editar_em_lote", null, formState.getLocale()));
-        Button exitButton = Button.danger("batch-exit", "🚪 " + messageSource.getMessage("txt_sair", null, formState.getLocale()));
+                .setTitle("✅ " + messageSource.getMessage("txt_seus_logs_foram_criados_com_sucesso", null, formState.getLocale()) + "!")
+                .setDescription(messageSource.getMessage("txt_caso_queira_criar_ou_editar_novos_logs", null, formState.getLocale()) + ":\n\n" +
+                               "• `/squad-log-lote` - " + messageSource.getMessage("txt_criar_logs_em_lote", null, formState.getLocale()) + "\n" +
+                               "• `/squad-log` - " + messageSource.getMessage("txt_criar_ou_editar_log_individual", null, formState.getLocale()))
+                .setColor(Color.GREEN)
+                .setFooter(messageSource.getMessage("txt_esta_mensagem_sera_apagada_em_10_segundos", null, formState.getLocale()));
 
         event.getHook().editOriginalEmbeds(embed.build())
-             .setActionRow(createMoreButton, editBulkButton, exitButton)
+             .setComponents()
              .queue();
+        
+        event.getHook().deleteOriginal().queueAfter(10, TimeUnit.SECONDS);
+        
+        clearBatchState(event.getUser().getId());
     }
 
     private void showCreateMoreModal(ButtonInteractionEvent event) {
@@ -1072,23 +1128,6 @@ public class BatchCreationHandler extends AbstractInteractionHandler {
         });
     }
 
-    private void showBulkEditNotReady(ButtonInteractionEvent event) {
-        EmbedBuilder embed = new EmbedBuilder()
-                .setTitle("🚧 " + messageSource.getMessage("txt_funcionalidade_em_desenvolvimento", null, formState.getLocale()) )
-                .setDescription(messageSource.getMessage("txt_a_funcionalidade_de", null, formState.getLocale())  + "**" +
-                        messageSource.getMessage("txt_editar_em_lote", null, formState.getLocale()) + "** " +
-                        messageSource.getMessage("txt_ainda_n_disponivel", null, formState.getLocale()) + ".\n\n" +
-                        messageSource.getMessage("txt_esta_feature_permitirá_editar_multiplos_logs", null, formState.getLocale())  + ".\n" +
-                        messageSource.getMessage("txt_aguarde_futuras_atualizacoes", null, formState.getLocale())  + "!")
-                .setColor(Color.ORANGE);
-
-        Button backButton = Button.primary("batch-back-to-menu", "⬅️ " + messageSource.getMessage("txt_voltar_ao_menu", null, formState.getLocale()) );
-
-        event.getHook().editOriginalEmbeds(embed.build())
-             .setActionRow(backButton)
-             .queue();
-    }
-
     private void showExitMessage(ButtonInteractionEvent event) {
         EmbedBuilder embed = new EmbedBuilder()
                 .setTitle("👋 " + messageSource.getMessage("txt_obrigado_por_usar_o_squad_log_bot", null, formState.getLocale()) + "!" )
@@ -1103,4 +1142,21 @@ public class BatchCreationHandler extends AbstractInteractionHandler {
         
         clearBatchState(event.getUser().getId());
     }
+
+    private void showSquadSelectionMenu(ButtonInteractionEvent event, List<BatchLogEntry> entries, int currentIndex) {
+        showSquadEditModal(event, entries, currentIndex);
+    }
+
+    private void showPersonSelectionMenu(ButtonInteractionEvent event, List<BatchLogEntry> entries, int currentIndex) {
+        showPersonEditModal(event, entries, currentIndex);
+    }
+
+    private void showTypeSelectionMenu(ButtonInteractionEvent event, List<BatchLogEntry> entries, int currentIndex) {
+        showTypeEditModal(event, entries, currentIndex);
+    }
+
+    private void showCategoriesSelectionMenu(ButtonInteractionEvent event, List<BatchLogEntry> entries, int currentIndex) {
+        showCategoriesEditModal(event, entries, currentIndex);
+    }
+
 }

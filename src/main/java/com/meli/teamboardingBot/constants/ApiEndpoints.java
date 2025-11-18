@@ -1,6 +1,7 @@
 package com.meli.teamboardingBot.constants;
 public final class ApiEndpoints {
     private ApiEndpoints() {}
+    public static final String SQUAD_BASE = "/clients/squads";
     public static final String SQUAD_LIST = "/clients/squads?only_active_squads=true&limit=50&offset=0";
     public static final String SQUAD_LOG = "/clients/squad_logs";
     public static final String SQUAD_LOG_TYPES = "/clients/squad_log_types/all";
