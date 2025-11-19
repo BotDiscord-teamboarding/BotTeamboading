@@ -121,22 +121,24 @@ public class LanguageSelectionHandler extends ListenerAdapter {
             languageService.saveUserLanguagePreference(userId, userLocale);
         }
         
-        logger.info("User {} continuing to authentication screen with locale: {}", userId, userLocale);
+        logger.info("User {} completed language change, showing success message", userId);
+        
+        String languageName = languageService.getLanguageName(userLocale);
+        String title = messageSource.getMessage("txt_idioma_alterado_sucesso", null, userLocale);
+        String description = MessageFormat.format(
+            messageSource.getMessage("txt_idioma_alterado_sucesso_descricao", null, userLocale),
+            languageName
+        );
         
         EmbedBuilder embed = new EmbedBuilder()
-            .setTitle("🚀 " + messageSource.getMessage("txt_bem_vindo_ao_squad_log_bot", null, userLocale) + "!")
-            .setDescription(messageSource.getMessage("txt_para_comecar_a_usar_o_bot_vc_precisa_fazer_a_autenticacao", null, userLocale) + ".\n\n" +
-                          "**" + messageSource.getMessage("txt_escolha_o_metodo_de_autenticacao", null, userLocale) + ":**\n\n" +
-                          "🔐 **" + messageSource.getMessage("txt_manual", null, userLocale) + "** - " + messageSource.getMessage("txt_digite_seu_email_e_senha", null, userLocale) + "\n" +
-                          "🌐 **Google** - " + messageSource.getMessage("txt_autentique_com_sua_conta_google", null, userLocale))
-            .setColor(0x5865F2)
-            .setFooter(messageSource.getMessage("txt_selecione_uma_opcao_abaixo", null, userLocale));
+            .setTitle("✅ " + title)
+            .setDescription(description)
+            .setColor(0x00FF00);
         
         event.editMessageEmbeds(embed.build())
-            .setActionRow(
-                Button.primary("auth-manual", "🔐 " + messageSource.getMessage("txt_manual", null, userLocale)),
-                Button.success("auth-google", "🌐 " + messageSource.getMessage("txt_google", null, userLocale))
-            )
-            .queue();
+            .setComponents()
+            .queue(success -> {
+                event.getHook().deleteOriginal().queueAfter(8, java.util.concurrent.TimeUnit.SECONDS);
+            });
     }
 }
