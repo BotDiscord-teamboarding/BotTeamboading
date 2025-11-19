@@ -20,37 +20,134 @@
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
             text-align: center;
             max-width: 500px;
+            position: relative;
         }
         .success-icon {
             font-size: 80px;
             margin-bottom: 20px;
         }
+        .language-selector {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            display: flex;
+            gap: 5px;
+        }
+        .lang-btn {
+            padding: 5px 10px;
+            border: 1px solid #ddd;
+            background: white;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+        }
+        .lang-btn:hover {
+            background: #f8f9fa;
+        }
+        .lang-btn.active {
+            background: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
     </style>
 </head>
 <body>
 <div class="success-card">
+    <div class="language-selector">
+        <button class="lang-btn active" onclick="changeLanguage('pt-br')" data-lang="pt-br">🇧🇷 PT</button>
+        <button class="lang-btn" onclick="changeLanguage('es')" data-lang="es">🇪🇸 ES</button>
+    </div>
+    
     <div class="success-icon">✅</div>
-    <h1 class="mb-3">Autenticação Concluída!</h1>
+    <h1 class="mb-3" data-translate="title">Autenticação Concluída!</h1>
     <p class="text-muted mb-4">
-        Sua conta Google foi autenticada com sucesso!<br><br>
-        <strong>Próximos passos:</strong><br>
-        1️⃣ Volte ao Discord<br>
-        2️⃣ Use os comandos disponíveis:<br>
+        <span data-translate="success-message">Sua conta Google foi autenticada com sucesso!</span><br><br>
+        <strong data-translate="next-steps">Próximos passos:</strong><br>
+        <span data-translate="step1">1️⃣ Volte ao Discord</span><br>
+        <span data-translate="step2">2️⃣ Use os comandos disponíveis:</span><br>
         <span class="d-block mt-2 text-start" style="margin-left: 20px;">
-            • <code>/squad-log</code> - Gerenciar squad logs<br>
-            • <code>/squad-log-lote</code> - Criar squad logs em lote
-            • <code>/squad-stop</code> - encerrar o fluxo a qualquer momento
+            • <code>/squad-log</code> - <span data-translate="cmd1-desc">Gerenciar squad logs</span><br>
+            • <code>/squad-log-lote</code> - <span data-translate="cmd2-desc">Criar squad logs em lote</span><br>
+            • <code>/squad-stop</code> - <span data-translate="cmd3-desc">encerrar o fluxo a qualquer momento</span>
         </span>
         <br>
-        Você já pode fechar esta janela.
+        <span data-translate="close-message">Você já pode fechar esta janela.</span>
     </p>
     <button class="btn btn-primary btn-lg" onclick="window.close()">
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-x-circle me-2" viewBox="0 0 16 16" style="vertical-align: middle;">
             <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
             <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
         </svg>
-        Fechar Janela
+        <span data-translate="close-button">Fechar Janela</span>
     </button>
 </div>
+
+<script>
+const translations = {
+    'pt-br': {
+        'title': 'Autenticação Concluída!',
+        'success-message': 'Sua conta Google foi autenticada com sucesso!',
+        'next-steps': 'Próximos passos:',
+        'step1': '1️⃣ Volte ao Discord',
+        'step2': '2️⃣ Use os comandos disponíveis:',
+        'cmd1-desc': 'Gerenciar squad logs',
+        'cmd2-desc': 'Criar squad logs em lote',
+        'cmd3-desc': 'encerrar o fluxo a qualquer momento',
+        'close-message': 'Você já pode fechar esta janela.',
+        'close-button': 'Fechar Janela'
+    },
+    'es': {
+        'title': '¡Autenticación Completada!',
+        'success-message': '¡Tu cuenta de Google ha sido autenticada con éxito!',
+        'next-steps': 'Próximos pasos:',
+        'step1': '1️⃣ Vuelve a Discord',
+        'step2': '2️⃣ Usa los comandos disponibles:',
+        'cmd1-desc': 'Gestionar squad logs',
+        'cmd2-desc': 'Crear squad logs en lote',
+        'cmd3-desc': 'finalizar el flujo en cualquier momento',
+        'close-message': 'Ya puedes cerrar esta ventana.',
+        'close-button': 'Cerrar Ventana'
+    }
+};
+
+function changeLanguage(lang) {
+    // Update active button
+    document.querySelectorAll('.lang-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.getAttribute('data-lang') === lang) {
+            btn.classList.add('active');
+        }
+    });
+    
+    // Update page language
+    document.documentElement.lang = lang === 'pt-br' ? 'pt-BR' : 'es-ES';
+    
+    // Update translations
+    const elements = document.querySelectorAll('[data-translate]');
+    elements.forEach(element => {
+        const key = element.getAttribute('data-translate');
+        if (translations[lang] && translations[lang][key]) {
+            element.textContent = translations[lang][key];
+        }
+    });
+    
+    // Update page title
+    if (lang === 'pt-br') {
+        document.title = 'Autenticação Concluída';
+    } else {
+        document.title = 'Autenticación Completada';
+    }
+    
+    // Save language preference
+    localStorage.setItem('preferred-language', lang);
+}
+
+// Load saved language preference on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const savedLang = localStorage.getItem('preferred-language') || 'pt-br';
+    changeLanguage(savedLang);
+});
+</script>
 </body>
 </html>
