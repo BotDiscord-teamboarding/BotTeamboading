@@ -152,7 +152,6 @@ const translations = {
 };
 
 function changeLanguage(lang) {
-    // Update active button
     document.querySelectorAll('.lang-btn').forEach(btn => {
         btn.classList.remove('active');
         if (btn.getAttribute('data-lang') === lang) {
@@ -160,10 +159,8 @@ function changeLanguage(lang) {
         }
     });
 
-    // Update page language
     document.documentElement.lang = lang === 'pt-br' ? 'pt-BR' : 'es-ES';
 
-    // Update translations
     const elements = document.querySelectorAll('[data-translate]');
     elements.forEach(element => {
         const key = element.getAttribute('data-translate');
@@ -172,18 +169,15 @@ function changeLanguage(lang) {
         }
     });
 
-    // Update page title
     if (lang === 'pt-br') {
         document.title = 'Autenticação Concluída';
     } else {
         document.title = 'Autenticación Completada';
     }
 
-    // Save language preference
     localStorage.setItem('preferred-language', lang);
 }
 
-// Load saved language preference on page load
 document.addEventListener('DOMContentLoaded', function() {
     const savedLang = localStorage.getItem('preferred-language') || 'pt-br';
     changeLanguage(savedLang);
