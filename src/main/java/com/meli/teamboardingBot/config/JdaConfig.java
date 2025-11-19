@@ -1,5 +1,6 @@
 package com.meli.teamboardingBot.config;
 
+import com.meli.teamboardingBot.handler.LanguageSelectionHandler;
 import com.meli.teamboardingBot.handler.LoginModalHandler;
 import com.meli.teamboardingBot.handler.StatusButtonHandler;
 import com.meli.teamboardingBot.listener.ComponentInteractionListener;
@@ -21,7 +22,8 @@ public class JdaConfig {
             SlashCommandListener slashCommandListener,
             MessageInputListener messageInputListener,
             LoginModalHandler loginModalHandler,
-            StatusButtonHandler statusButtonHandler
+            StatusButtonHandler statusButtonHandler,
+            LanguageSelectionHandler languageSelectionHandler
     ) throws Exception {
         return JDABuilder.createDefault(token)
                 .enableIntents(
@@ -34,7 +36,8 @@ public class JdaConfig {
                     slashCommandListener,
                     messageInputListener,
                     loginModalHandler,
-                    statusButtonHandler
+                    statusButtonHandler,
+                    languageSelectionHandler
                 )
                 .build()
                 .awaitReady();

@@ -61,6 +61,11 @@ public class HelpCommand implements SlashCommandHandler {
                 false
             )
             .addField(
+                "🌐 `/language`",
+                "Alterar o idioma do bot / Cambiar el idioma del bot",
+                false
+            )
+            .addField(
                 "❓ `/help`",
                 "Exibir esta mensagem de ajuda",
                 false

@@ -11,6 +11,8 @@ import org.springframework.web.client.RestTemplate;
 
 import java.net.URLDecoder;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 @Service
 public class GoogleAuthIntegrationService {
@@ -24,6 +26,10 @@ public class GoogleAuthIntegrationService {
     private String googleLoginUrl;
 
     private final RestTemplate restTemplate;
+    
+
+    private final ConcurrentHashMap<String, String> processedCodes = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Long> codeTimestamps = new ConcurrentHashMap<>();
 
     public GoogleAuthIntegrationService(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
@@ -93,6 +99,18 @@ public class GoogleAuthIntegrationService {
 
     public String exchangeCodeForToken(String code, String discordUserId) {
         try {
+            if (processedCodes.containsKey(code)) {
+                logger.warn("⚠️ Code OAuth já foi usado anteriormente. Ignorando requisição duplicada.");
+                logger.warn("Discord User ID: {}", discordUserId);
+                logger.warn("Code: {}...", code.substring(0, Math.min(20, code.length())));
+                throw new RuntimeException("Code OAuth já foi utilizado. Por favor, faça login novamente.");
+            }
+            
+            processedCodes.put(code, discordUserId);
+            codeTimestamps.put(code, System.currentTimeMillis());
+            
+            cleanupOldCodes();
+            
             logger.info("=".repeat(80));
             logger.info("TROCANDO CODE POR TOKEN");
             logger.info("=".repeat(80));
@@ -155,5 +173,16 @@ public class GoogleAuthIntegrationService {
             logger.error("❌ Erro ao trocar code por token", e);
             throw new RuntimeException("Falha ao obter token: " + e.getMessage(), e);
         }
+    }
+    
+    private void cleanupOldCodes() {
+        long tenMinutesAgo = System.currentTimeMillis() - TimeUnit.MINUTES.toMillis(10);
+        codeTimestamps.entrySet().removeIf(entry -> {
+            if (entry.getValue() < tenMinutesAgo) {
+                processedCodes.remove(entry.getKey());
+                return true;
+            }
+            return false;
+        });
     }
 }

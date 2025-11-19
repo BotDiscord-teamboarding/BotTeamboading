@@ -32,6 +32,11 @@ public class ComponentInteractionListener extends ListenerAdapter {
         long userId = event.getUser().getIdLong();
         logger.info("Button interaction: {} from user: {}", buttonId, userId);
 
+        if (isLanguageButton(buttonId)) {
+            logger.debug("Botão de idioma será processado por LanguageSelectionHandler");
+            return;
+        }
+
         if (isAuthenticationButton(buttonId)) {
             logger.debug("Botão de autenticação será processado por LoginModalHandler");
             return;
@@ -161,6 +166,12 @@ public class ComponentInteractionListener extends ListenerAdapter {
         return modalId.equals("batch-creation-modal") || modalId.equals("batch-edit-modal") ||
                modalId.equals("batch-edit-modal-page1") || modalId.equals("batch-edit-modal-page2") ||
                (modalId.startsWith("batch-edit-") && modalId.endsWith("-modal"));
+    }
+
+    private boolean isLanguageButton(String buttonId) {
+        return buttonId.startsWith("confirm-language-") ||
+                buttonId.startsWith("change-language-") ||
+                "continue-to-auth".equals(buttonId);
     }
 
     private boolean isAuthenticationButton(String buttonId) {

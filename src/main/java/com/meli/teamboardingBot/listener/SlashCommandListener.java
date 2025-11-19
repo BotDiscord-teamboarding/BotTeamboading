@@ -1,5 +1,6 @@
 package com.meli.teamboardingBot.listener;
 
+import com.meli.teamboardingBot.service.command.LanguageCommand;
 import com.meli.teamboardingBot.service.command.LoginCommand;
 import com.meli.teamboardingBot.service.command.StartCommand;
 import com.meli.teamboardingBot.service.command.StatusCommand;
@@ -34,6 +35,9 @@ public class SlashCommandListener extends ListenerAdapter {
     
     @Autowired
     private HelpCommand helpCommand;
+    
+    @Autowired
+    private LanguageCommand languageCommand;
 
     @Override
     public void onSlashCommandInteraction(SlashCommandInteractionEvent event) {
@@ -51,6 +55,8 @@ public class SlashCommandListener extends ListenerAdapter {
             statusCommand.execute(event);
         } else if (event.getName().equals(helpCommand.getName())) {
             helpCommand.execute(event);
+        } else if (event.getName().equals(languageCommand.getName())) {
+            languageCommand.execute(event);
         }
     }
 }

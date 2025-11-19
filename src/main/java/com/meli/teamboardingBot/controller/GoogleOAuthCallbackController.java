@@ -31,6 +31,7 @@ import java.nio.charset.StandardCharsets;
 public class GoogleOAuthCallbackController {
 
     private static final Logger logger = LoggerFactory.getLogger(GoogleOAuthCallbackController.class);
+    
     private final GoogleAuthIntegrationService googleAuthIntegration;
     private final DiscordUserAuthenticationService authService;
     private final FormStateService formStateService;
@@ -63,17 +64,7 @@ public class GoogleOAuthCallbackController {
             @RequestParam(value = "prompt", required = false) String prompt,
             @RequestParam(value = "error", required = false) String error) {
         
-        logger.info("=".repeat(80));
-        logger.info("CALLBACK DO GOOGLE OAUTH RECEBIDO");
-        logger.info("=".repeat(80));
-        logger.info("State (Discord User ID): {}", state);
-        logger.info("Code (encoded): {}", code);
-        logger.info("Scope: {}", scope);
-        logger.info("Auth User: {}", authuser);
-        logger.info("HD: {}", hd);
-        logger.info("Prompt: {}", prompt);
-        logger.info("Error: {}", error);
-        logger.info("-".repeat(80));
+        logger.info("Callback recebido do Google para usuário: {}", state);
 
         if (error != null) {
             logger.error("❌ Erro retornado pelo Google: {}", error);
@@ -131,6 +122,7 @@ public class GoogleOAuthCallbackController {
             return new RedirectView("/auth-error.html");
         }
     }
+    
 
     private void sendSquadMenuToUser(String discordUserId) {
         try {
