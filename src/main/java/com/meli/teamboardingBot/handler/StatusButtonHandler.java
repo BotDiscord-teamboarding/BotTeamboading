@@ -3,6 +3,7 @@ package com.meli.teamboardingBot.handler;
 
 import com.meli.teamboardingBot.model.FormState;
 import com.meli.teamboardingBot.service.DiscordUserAuthenticationService;
+import com.meli.teamboardingBot.service.UserLanguageService;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
@@ -19,13 +20,17 @@ import java.util.Locale;
 public class StatusButtonHandler extends ListenerAdapter {
     private static final Logger logger = LoggerFactory.getLogger(StatusButtonHandler.class);
     private final DiscordUserAuthenticationService authService;
+    private final UserLanguageService languageService;
     private final MessageSource messageSource;
 
     @Autowired
     private FormState formState;
 
-    public StatusButtonHandler(DiscordUserAuthenticationService authService, MessageSource messageSource) {
+    public StatusButtonHandler(DiscordUserAuthenticationService authService, 
+                              UserLanguageService languageService,
+                              MessageSource messageSource) {
         this.authService = authService;
+        this.languageService = languageService;
         this.messageSource = messageSource;
     }
 
@@ -64,6 +69,8 @@ public class StatusButtonHandler extends ListenerAdapter {
        logger.info("Usuário {} solicitou logout", userId);
 
        authService.logoutUser(userId);
+       languageService.clearUserLanguagePreference(userId);
+       logger.info("Language preference cleared for user {} on logout", userId);
 
        Locale locale = formState.getLocale();
 

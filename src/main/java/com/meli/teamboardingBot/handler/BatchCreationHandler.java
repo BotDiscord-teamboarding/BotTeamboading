@@ -372,26 +372,22 @@ public class BatchCreationHandler extends AbstractInteractionHandler {
     private List<ActionRow> createNavigationActionRows(int currentIndex, int totalCount) {
         List<ActionRow> actionRows = new ArrayList<>();
         
-        // Linha 1: Navegação
         Button previousButton = Button.secondary("batch-previous", "⬅️ " + messageSource.getMessage("txt_anterior", null, formState.getLocale()))
                 .withDisabled(!previewNavigator.hasPrevious(currentIndex));
         Button nextButton = Button.secondary("batch-next", messageSource.getMessage("txt_proximo", null, formState.getLocale()) + " ➡️")
                 .withDisabled(!previewNavigator.hasNext(currentIndex, totalCount));
         actionRows.add(ActionRow.of(previousButton, nextButton));
         
-        // Linha 2: Primeiros campos de edição (3 botões)
         Button squadButton = Button.secondary("batch-edit-squad", "🏢 " + messageSource.getMessage("txt_squad", null, formState.getLocale()));
         Button personButton = Button.secondary("batch-edit-person", "👤 " + messageSource.getMessage("txt_pessoa", null, formState.getLocale()));
         Button typeButton = Button.secondary("batch-edit-type", "📝 " + messageSource.getMessage("txt_tipo", null, formState.getLocale()));
         actionRows.add(ActionRow.of(squadButton, personButton, typeButton));
         
-        // Linha 3: Últimos campos de edição (3 botões)
         Button categoriesButton = Button.secondary("batch-edit-categories", "🏷️ " + messageSource.getMessage("txt_categorias", null, formState.getLocale()));
         Button descriptionButton = Button.secondary("batch-edit-description", "📄 " + messageSource.getMessage("txt_descricao", null, formState.getLocale()));
         Button datesButton = Button.secondary("batch-edit-dates", "📅 " + messageSource.getMessage("txt_datas", null, formState.getLocale()));
         actionRows.add(ActionRow.of(categoriesButton, descriptionButton, datesButton));
         
-        // Linha 4: Ações principais
         Button createAllButton = Button.success("batch-create-all", "✅ " + messageSource.getMessage("txt_criar_todos", null, formState.getLocale()));
         Button cancelButton = Button.danger("batch-cancel", "❌ " + messageSource.getMessage("txt_cancelar", null, formState.getLocale()));
         actionRows.add(ActionRow.of(createAllButton, cancelButton));
@@ -497,7 +493,8 @@ public class BatchCreationHandler extends AbstractInteractionHandler {
                 .setDescription(messageSource.getMessage("txt_ate_a_proxima", null, formState.getLocale()) + "! 🚀\n\n" +
                         "**" + messageSource.getMessage("txt_comandos_disponiveis", null, formState.getLocale()) + ":**\n" +
                         "`/squad-log` - " + messageSource.getMessage("txt_criar_ou_atualizar_squad_log", null, formState.getLocale()) + "\n" +
-                        "`/squad-log-lote` - " + messageSource.getMessage("txt_criar_multiplos_logs_de_uma_vez", null, formState.getLocale()))
+                        "`/squad-log-lote` - " + messageSource.getMessage("txt_criar_multiplos_logs_de_uma_vez", null, formState.getLocale()) + "\n" +
+                        "`/language` - " + messageSource.getMessage("txt_alterar_idioma", null, formState.getLocale()))
                 .setColor(Color.BLUE)
                 .setFooter(messageSource.getMessage("txt_esta_mensagem_sera_excluida_automaticamente", null, formState.getLocale()));
              
@@ -1095,7 +1092,8 @@ public class BatchCreationHandler extends AbstractInteractionHandler {
                 .setTitle("✅ " + messageSource.getMessage("txt_seus_logs_foram_criados_com_sucesso", null, formState.getLocale()) + "!")
                 .setDescription(messageSource.getMessage("txt_caso_queira_criar_ou_editar_novos_logs", null, formState.getLocale()) + ":\n\n" +
                                "• `/squad-log-lote` - " + messageSource.getMessage("txt_criar_logs_em_lote", null, formState.getLocale()) + "\n" +
-                               "• `/squad-log` - " + messageSource.getMessage("txt_criar_ou_editar_log_individual", null, formState.getLocale()))
+                               "• `/squad-log` - " + messageSource.getMessage("txt_criar_ou_editar_log_individual", null, formState.getLocale()) + "\n" +
+                               "• `/language` - " + messageSource.getMessage("txt_alterar_idioma", null, formState.getLocale()))
                 .setColor(Color.GREEN)
                 .setFooter(messageSource.getMessage("txt_esta_mensagem_sera_apagada_em_10_segundos", null, formState.getLocale()));
 

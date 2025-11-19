@@ -51,9 +51,6 @@ public class LoginModalHandler extends ListenerAdapter {
     @Autowired
     private MessageSource messageSource;
 
-    @Autowired
-    private FormState formState;
-
     @Override
     public void onButtonInteraction(@NotNull ButtonInteractionEvent event) {
         String buttonId = event.getComponentId();
@@ -111,6 +108,7 @@ public class LoginModalHandler extends ListenerAdapter {
 
     private void handleAuthenticationMethodSelection(ButtonInteractionEvent event) {
         logger.info("Botão autenticar clicado pelo usuário: {}", event.getUser().getId());
+        FormState formState = formStateService.getOrCreateState(event.getUser().getIdLong());
 
         event.deferEdit().queue(hook -> {
             EmbedBuilder embed = new EmbedBuilder()
@@ -133,6 +131,7 @@ public class LoginModalHandler extends ListenerAdapter {
 
     private void handleManualAuthButton(ButtonInteractionEvent event) {
         logger.info("Autenticação manual selecionada pelo usuário: {}", event.getUser().getId());
+        FormState formState = formStateService.getOrCreateState(event.getUser().getIdLong());
 
         TextInput username = TextInput.create("username", messageSource.getMessage("txt_email", null, formState.getLocale()) , TextInputStyle.SHORT)
                 .setPlaceholder(messageSource.getMessage("txt_digite_seu_email", null, formState.getLocale()) )
@@ -158,6 +157,7 @@ public class LoginModalHandler extends ListenerAdapter {
 
     private void handleGoogleAuthButton(ButtonInteractionEvent event) {
         logger.info("Autenticação Google selecionada pelo usuário: {}", event.getUser().getId());
+        FormState formState = formStateService.getOrCreateState(event.getUser().getIdLong());
 
         String userId = event.getUser().getId();
         String channelId = event.getChannel().getId();
@@ -208,6 +208,7 @@ public class LoginModalHandler extends ListenerAdapter {
 
     private void handleGoogleCodeSubmission(ButtonInteractionEvent event) {
         logger.info("Botão inserir código Google clicado pelo usuário: {}", event.getUser().getId());
+        FormState formState = formStateService.getOrCreateState(event.getUser().getIdLong());
 
         TextInput codeInput = TextInput.create("google-code", messageSource.getMessage("txt_codigo_de_autorizacao", null, formState.getLocale()) , TextInputStyle.PARAGRAPH)
                 .setPlaceholder(messageSource.getMessage("txt_cole_aqui_o_codigo_obtido_apos_autenticacao", null, formState.getLocale()) )
@@ -237,6 +238,7 @@ public class LoginModalHandler extends ListenerAdapter {
         String userId = event.getUser().getId();
         String username = event.getValue("username").getAsString();
         String password = event.getValue("password").getAsString();
+        FormState formState = formStateService.getOrCreateState(event.getUser().getIdLong());
 
         logger.info("Processando modal de login para usuário Discord: {}", userId);
 
@@ -253,7 +255,8 @@ public class LoginModalHandler extends ListenerAdapter {
                                 "📋 **" + messageSource.getMessage("txt_comandos_disponiveis", null, formState.getLocale()) + ":**\n" +
                                 "• `/squad-log` - " + messageSource.getMessage("txt_criar_ou_atualizar_squad_log", null, formState.getLocale()) + "\n" +
                                 "• `/squad-log-lote` - " + messageSource.getMessage("txt_criar_multiplos_logs_de_uma_vez", null, formState.getLocale()) + "\n" +
-                                "• `/status` - " + messageSource.getMessage("txt_verificar_seu_status_de_autenticacao", null, formState.getLocale()))
+                                "• `/status` - " + messageSource.getMessage("txt_verificar_seu_status_de_autenticacao", null, formState.getLocale()) + "\n" +
+                                "• `/language` - " + messageSource.getMessage("txt_alterar_idioma", null, formState.getLocale()))
                         .setColor(0x00FF00)
                         .setFooter(messageSource.getMessage("txt_esta_mensagem_sera_excluida_automaticamente", null, formState.getLocale()));
 
@@ -289,6 +292,7 @@ public class LoginModalHandler extends ListenerAdapter {
     private void handleGoogleCodeModal(ModalInteractionEvent event) {
         String userId = event.getUser().getId();
         String code = event.getValue("google-code").getAsString().trim();
+        FormState formState = formStateService.getOrCreateState(event.getUser().getIdLong());
 
         logger.info("Processando código Google para usuário Discord: {}", userId);
         logger.info("Código recebido (primeiros 20 chars): {}...", code.substring(0, Math.min(20, code.length())));
@@ -309,7 +313,8 @@ public class LoginModalHandler extends ListenerAdapter {
                                 "📋 **" + messageSource.getMessage("txt_comandos_disponiveis", null, formState.getLocale()) + ":**\n" +
                                 "• `/squad-log` - " + messageSource.getMessage("txt_criar_ou_atualizar_squad_log", null, formState.getLocale()) + "\n" +
                                 "• `/squad-log-lote` - " + messageSource.getMessage("txt_criar_multiplos_logs_de_uma_vez", null, formState.getLocale()) + "\n" +
-                                "• `/status` - " + messageSource.getMessage("txt_verificar_seu_status_de_autenticacao", null, formState.getLocale()))
+                                "• `/status` - " + messageSource.getMessage("txt_verificar_seu_status_de_autenticacao", null, formState.getLocale()) + "\n" +
+                                "• `/language` - " + messageSource.getMessage("txt_alterar_idioma", null, formState.getLocale()))
                         .setColor(0x00FF00)
                         .setFooter(messageSource.getMessage("txt_esta_mensagem_sera_excluida_automaticamente", null, formState.getLocale()));
                 
@@ -360,6 +365,7 @@ public class LoginModalHandler extends ListenerAdapter {
 
     private void handleCancelAuth(ButtonInteractionEvent event) {
         logger.info("Usuário {} cancelou a autenticação", event.getUser().getId());
+        FormState formState = formStateService.getOrCreateState(event.getUser().getIdLong());
         
         event.deferEdit().queue(hook -> {
             EmbedBuilder embed = new EmbedBuilder()
