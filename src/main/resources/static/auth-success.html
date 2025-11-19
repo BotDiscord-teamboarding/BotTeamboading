@@ -58,7 +58,7 @@
         <button class="lang-btn active" onclick="changeLanguage('pt-br')" data-lang="pt-br">🇧🇷 PT</button>
         <button class="lang-btn" onclick="changeLanguage('es')" data-lang="es">🇪🇸 ES</button>
     </div>
-    
+
     <div class="success-icon">✅</div>
     <h1 class="mb-3" data-translate="title">Autenticação Concluída!</h1>
     <p class="text-muted mb-4">
@@ -85,6 +85,12 @@
             <div class="d-block mt-1 text-start" style="margin-left: 20px;">
                 • <code>/stop</code> - <span data-translate="stop-desc">Cancelar o fluxo de criação ou edição atual</span><br>
                 • <code>/help</code> - <span data-translate="help-desc">Exibir a lista de comandos disponíveis</span>
+            </div>
+        </div>
+        <div class="mt-2">
+            <strong data-translate="language-commands">🌐 Comandos de Idioma:</strong>
+            <div class="d-block mt-1 text-start" style="margin-left: 20px;">
+                • <code>/language</code> - <span data-translate="language-desc">Alterar o idioma do bot a qualquer momento</span>
             </div>
         </div>
         <br>
@@ -117,6 +123,8 @@ const translations = {
         'control-commands': '🛠️ Comandos de Controle:',
         'stop-desc': 'Cancelar o fluxo de criação ou edição atual',
         'help-desc': 'Exibir a lista de comandos disponíveis',
+        'language-commands': '🌐 Comandos de Idioma:',
+        'language-desc': 'Alterar o idioma do bot a qualquer momento',
         'close-message': 'Você já pode fechar esta janela.',
         'close-button': 'Fechar Janela'
     },
@@ -136,24 +144,23 @@ const translations = {
         'control-commands': '🛠️ Comandos de Control:',
         'stop-desc': 'Cancelar el flujo de creación o edición actual',
         'help-desc': 'Mostrar la lista de comandos disponibles',
+        'language-commands': '🌐 Comandos de Idioma:',
+        'language-desc': 'Cambiar el idioma del bot en cualquier momento',
         'close-message': 'Ya puedes cerrar esta ventana.',
         'close-button': 'Cerrar Ventana'
     }
 };
 
 function changeLanguage(lang) {
-    // Update active button
     document.querySelectorAll('.lang-btn').forEach(btn => {
         btn.classList.remove('active');
         if (btn.getAttribute('data-lang') === lang) {
             btn.classList.add('active');
         }
     });
-    
-    // Update page language
+
     document.documentElement.lang = lang === 'pt-br' ? 'pt-BR' : 'es-ES';
-    
-    // Update translations
+
     const elements = document.querySelectorAll('[data-translate]');
     elements.forEach(element => {
         const key = element.getAttribute('data-translate');
@@ -161,19 +168,16 @@ function changeLanguage(lang) {
             element.textContent = translations[lang][key];
         }
     });
-    
-    // Update page title
+
     if (lang === 'pt-br') {
         document.title = 'Autenticação Concluída';
     } else {
         document.title = 'Autenticación Completada';
     }
-    
-    // Save language preference
+
     localStorage.setItem('preferred-language', lang);
 }
 
-// Load saved language preference on page load
 document.addEventListener('DOMContentLoaded', function() {
     const savedLang = localStorage.getItem('preferred-language') || 'pt-br';
     changeLanguage(savedLang);
