@@ -121,7 +121,8 @@ public class StartCommand implements SlashCommandHandler {
                           "• `/squad-log` - " + messageSource.getMessage("txt_squad_log_gerenciar_squad_logs", null, userLocale) + "\n" +
                           "• `/squad-log-lote` - " + messageSource.getMessage("txt_squad_logs_em_log", null, userLocale) + "\n" +
                           "• `/status` - " + messageSource.getMessage("txt_verificar_seu_status_de_autenticacao", null, userLocale) + "\n" +
-                          "• `/language` - " + messageSource.getMessage("txt_alterar_idioma", null, userLocale))
+                          "• `/language` - " + messageSource.getMessage("txt_alterar_idioma", null, userLocale)+"\n" +
+                          "• `/help` - " + messageSource.getMessage("txt_help", null, userLocale))
             .setColor(0x00FF00);
         
         event.replyEmbeds(embed.build())
