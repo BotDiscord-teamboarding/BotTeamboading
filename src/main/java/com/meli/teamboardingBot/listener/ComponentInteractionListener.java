@@ -42,6 +42,20 @@ public class ComponentInteractionListener extends ListenerAdapter {
             return;
         }
         
+        if (buttonId.equals("open-batch-modal")) {
+            try {
+                com.meli.teamboardingBot.context.DiscordUserContext.setCurrentUserId(String.valueOf(userId));
+                batchCreationHandler.handleOpenBatchModalButton(event);
+                return;
+            } catch (Exception e) {
+                logger.error("Error opening batch modal: {}", e.getMessage());
+                event.reply("❌ Erro interno. Tente novamente.").setEphemeral(true).queue();
+                return;
+            } finally {
+                com.meli.teamboardingBot.context.DiscordUserContext.clear();
+            }
+        }
+        
         if (isBatchButton(buttonId)) {
             try {
                 com.meli.teamboardingBot.context.DiscordUserContext.setCurrentUserId(String.valueOf(userId));
@@ -171,7 +185,8 @@ public class ComponentInteractionListener extends ListenerAdapter {
     private boolean isLanguageButton(String buttonId) {
         return buttonId.startsWith("confirm-language-") ||
                 buttonId.startsWith("change-language-") ||
-                "continue-to-auth".equals(buttonId);
+                "continue-to-auth".equals(buttonId) ||
+                "execute-pending-command".equals(buttonId);
     }
 
     private boolean isAuthenticationButton(String buttonId) {

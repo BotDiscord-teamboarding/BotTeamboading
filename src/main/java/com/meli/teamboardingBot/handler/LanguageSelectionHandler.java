@@ -1,7 +1,9 @@
 package com.meli.teamboardingBot.handler;
 
 import com.meli.teamboardingBot.model.FormState;
+import com.meli.teamboardingBot.service.DiscordUserAuthenticationService;
 import com.meli.teamboardingBot.service.FormStateService;
+import com.meli.teamboardingBot.service.LanguageInterceptorService;
 import com.meli.teamboardingBot.service.UserLanguageService;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
@@ -23,11 +25,19 @@ public class LanguageSelectionHandler extends ListenerAdapter {
     private final UserLanguageService languageService;
     private final MessageSource messageSource;
     private final FormStateService formStateService;
+    private final LanguageInterceptorService languageInterceptor;
+    private final DiscordUserAuthenticationService authService;
     
-    public LanguageSelectionHandler(UserLanguageService languageService, MessageSource messageSource, FormStateService formStateService) {
+    public LanguageSelectionHandler(UserLanguageService languageService, 
+                                   MessageSource messageSource, 
+                                   FormStateService formStateService,
+                                   LanguageInterceptorService languageInterceptor,
+                                   DiscordUserAuthenticationService authService) {
         this.languageService = languageService;
         this.messageSource = messageSource;
         this.formStateService = formStateService;
+        this.languageInterceptor = languageInterceptor;
+        this.authService = authService;
     }
     
     @Override
@@ -40,6 +50,8 @@ public class LanguageSelectionHandler extends ListenerAdapter {
             handleChangeLanguage(event, buttonId);
         } else if (buttonId.equals("continue-to-auth")) {
             handleContinueToAuth(event);
+        } else if (buttonId.equals("execute-pending-command")) {
+            handleExecutePendingCommand(event);
         }
     }
     
@@ -121,24 +133,310 @@ public class LanguageSelectionHandler extends ListenerAdapter {
             languageService.saveUserLanguagePreference(userId, userLocale);
         }
         
-        logger.info("User {} completed language change, showing success message", userId);
+        LanguageInterceptorService.PendingCommand pendingCommand = languageInterceptor.getPendingCommand(userId);
+        logger.info("User {} completed language selection, pending command: {}", userId, 
+            pendingCommand != null ? pendingCommand.commandName : "none");
         
+        if (pendingCommand != null) {
+            String languageName = languageService.getLanguageName(userLocale);
+            String title = messageSource.getMessage("txt_idioma_confirmado_titulo", null, userLocale);
+            
+            String description = MessageFormat.format(
+                messageSource.getMessage("txt_idioma_confirmado_descricao", null, userLocale),
+                languageName
+            );
+            
+            String continueButtonText = messageSource.getMessage("txt_continuar", null, userLocale);
+            
+            EmbedBuilder embed = new EmbedBuilder()
+                .setTitle("✅ " + title)
+                .setDescription(description)
+                .setColor(0x00FF00);
+            
+            event.editMessageEmbeds(embed.build())
+                .setComponents(
+                    net.dv8tion.jda.api.interactions.components.ActionRow.of(
+                        Button.success("execute-pending-command", "▶️ " + continueButtonText)
+                    )
+                )
+                .queue();
+        } else {
+            String languageName = languageService.getLanguageName(userLocale);
+            String title = messageSource.getMessage("txt_idioma_alterado_sucesso", null, userLocale);
+            String description = MessageFormat.format(
+                messageSource.getMessage("txt_idioma_alterado_sucesso_descricao", null, userLocale),
+                languageName
+            );
+            
+            EmbedBuilder embed = new EmbedBuilder()
+                .setTitle("✅ " + title)
+                .setDescription(description)
+                .setColor(0x00FF00);
+            
+            event.editMessageEmbeds(embed.build())
+                .setComponents()
+                .queue(success -> {
+                    event.getHook().deleteOriginal().queueAfter(10, java.util.concurrent.TimeUnit.SECONDS);
+                });
+        }
+    }
+    
+    private void handleExecutePendingCommand(ButtonInteractionEvent event) {
+        String userId = event.getUser().getId();
+        Locale userLocale = languageService.getUserLanguagePreference(userId);
+        
+        if (userLocale == null) {
+            logger.warn("User {} has no language preference during execute", userId);
+            userLocale = languageService.getSpanishLocale();
+        }
+        
+        final Locale finalUserLocale = userLocale;
+        
+        LanguageInterceptorService.PendingCommand pendingCommand = languageInterceptor.getPendingCommand(userId);
+        
+        if (pendingCommand == null) {
+            logger.warn("No pending command found for user {}", userId);
+            return;
+        }
+        
+        final LanguageInterceptorService.PendingCommand finalPendingCommand = pendingCommand;
+        
+        boolean requiresAuth = finalPendingCommand.commandName.equals("squad-log") || 
+                              finalPendingCommand.commandName.equals("squad-log-lote");
+        
+        if (requiresAuth && !authService.isUserAuthenticated(userId)) {
+            logger.warn("User {} not authenticated, showing login screen", userId);
+            languageInterceptor.clearPendingCommand(userId);
+            event.deferEdit().queue(hook -> showLoginRequiredScreen(hook, finalUserLocale));
+            return;
+        }
+        
+        languageInterceptor.clearPendingCommand(userId);
+        
+        logger.info("Executing pending command for user {}: {}", userId, pendingCommand.commandName);
+        
+        event.deferEdit().queue(hook -> {
+            if (finalPendingCommand.commandName.equals("squad-log")) {
+                executeSquadLogCommandWithHook(hook, finalUserLocale);
+            } else if (finalPendingCommand.commandName.equals("squad-log-lote")) {
+                executeSquadLogLoteCommandWithHook(hook, finalPendingCommand, finalUserLocale);
+            } else if (finalPendingCommand.commandName.equals("start")) {
+                executeStartCommandWithHook(hook, finalUserLocale);
+            } else if (finalPendingCommand.commandName.equals("stop")) {
+                executeStopCommandWithHook(hook, finalUserLocale);
+            } else if (finalPendingCommand.commandName.equals("status")) {
+                executeStatusCommandWithHook(hook, finalUserLocale);
+            } else if (finalPendingCommand.commandName.equals("help")) {
+                executeHelpCommandWithHook(hook, finalUserLocale);
+            } else if (finalPendingCommand.commandName.equals("language")) {
+                executeLanguageCommandWithHook(hook, finalUserLocale);
+            } else {
+                logger.warn("Unknown command to execute: {}", finalPendingCommand.commandName);
+            }
+        });
+    }
+    
+    private void executeSquadLogCommandWithHook(net.dv8tion.jda.api.interactions.InteractionHook hook, Locale userLocale) {
+        hook.editOriginalEmbeds(
+            new EmbedBuilder()
+                .setTitle("📋 Squad Log")
+                .setDescription(messageSource.getMessage("txt_escolha_uma_opcao", null, userLocale))
+                .setColor(0x5865F2)
+                .build()
+        ).setActionRow(
+            Button.primary("criar", "✅ " + messageSource.getMessage("txt_criar", null, userLocale)),
+            Button.secondary("atualizar", "📝 " + messageSource.getMessage("txt_atualizar", null, userLocale)),
+            Button.danger("status-close", "❌ " + messageSource.getMessage("txt_cancelar", null, userLocale))
+        ).queue();
+    }
+    
+    private void executeSquadLogLoteCommandWithHook(net.dv8tion.jda.api.interactions.InteractionHook hook, LanguageInterceptorService.PendingCommand pendingCommand, Locale userLocale) {
+        String title = userLocale.equals(languageService.getPortugueseLocale())
+            ? "Criar Squad Logs em Lote"
+            : "Crear Squad Logs en Lote";
+        String description = userLocale.equals(languageService.getPortugueseLocale())
+            ? "Crie vários logs de uma só vez através de escrita livre.\n\n" +
+              "**Formato:** Squad - Pessoa - Tipo - Categorias - Data Início a Data Fim\n" +
+              "**Exemplo:** Prueba Nati - Belen - Issue - Tecnologia - 10-12-2025 a 15-12-2025"
+            : "Cree varios logs a la vez mediante escritura libre.\n\n" +
+              "**Formato:** Squad - Persona - Tipo - Categorías - Fecha Inicio a Fecha Fin\n" +
+              "**Ejemplo:** Prueba Nati - Belen - Issue - Tecnología - 10-12-2025 a 15-12-2025";
+        String startButtonText = userLocale.equals(languageService.getPortugueseLocale())
+            ? "Iniciar Logs em Lote"
+            : "Iniciar Logs en Lote";
+        String exitButtonText = messageSource.getMessage("txt_sair", null, userLocale);
+            
+        hook.editOriginalEmbeds(
+            new EmbedBuilder()
+                .setTitle("📦 " + title)
+                .setDescription(description)
+                .setColor(0x5865F2)
+                .build()
+        ).setActionRow(
+            Button.primary("open-batch-modal", "📝 " + startButtonText),
+            Button.danger("status-close", "🚪 " + exitButtonText)
+        ).queue();
+    }
+    
+    private void executeStartCommandByEdit(ButtonInteractionEvent event, Locale userLocale) {
+        event.editMessageEmbeds(
+            new EmbedBuilder()
+                .setTitle("🚀 " + messageSource.getMessage("txt_bem_vindo_ao_squad_log_bot", null, userLocale))
+                .setDescription(messageSource.getMessage("txt_escolha_o_metodo_de_autenticacao", null, userLocale))
+                .setColor(0x5865F2)
+                .build()
+        ).setActionRow(
+            Button.primary("auth-manual", "🔐 " + messageSource.getMessage("txt_manual", null, userLocale)),
+            Button.success("auth-google", "🌐 " + messageSource.getMessage("txt_google", null, userLocale))
+        ).queue();
+    }
+    
+    private void executeStopCommandByEdit(ButtonInteractionEvent event, Locale userLocale) {
+        String title = messageSource.getMessage("txt_nenhum_fluxo_ativo", null, userLocale);
+        String description = messageSource.getMessage("txt_vc_n_esta_em_nenhum_processo_de_criacao_ou_edicao_no_momento", null, userLocale) + 
+                           ".\n\n" + messageSource.getMessage("txt_use_squad_log_para_iniciar_um_novo_fluxo", null, userLocale);
+        
+        event.editMessageEmbeds(
+            new EmbedBuilder()
+                .setTitle("ℹ️ " + title)
+                .setDescription(description)
+                .setColor(0x3498db)
+                .build()
+        ).setComponents().queue(hook -> {
+            hook.deleteOriginal().queueAfter(10, java.util.concurrent.TimeUnit.SECONDS);
+        });
+    }
+    
+    private void executeStatusCommandByEdit(ButtonInteractionEvent event, Locale userLocale) {
+        String message = userLocale.equals(languageService.getPortugueseLocale())
+            ? "Use o comando `/status` para verificar seu status de autenticação."
+            : "Use el comando `/status` para verificar su estado de autenticación.";
+            
+        event.editMessage(message).setComponents().queue();
+    }
+    
+    private void executeHelpCommandByEdit(ButtonInteractionEvent event, Locale userLocale) {
+        String message = userLocale.equals(languageService.getPortugueseLocale())
+            ? "Use o comando `/help` para ver a lista de comandos disponíveis."
+            : "Use el comando `/help` para ver la lista de comandos disponibles.";
+            
+        event.editMessage(message).setComponents().queue();
+    }
+    
+    private void executeLanguageCommandByEdit(ButtonInteractionEvent event, Locale userLocale) {
         String languageName = languageService.getLanguageName(userLocale);
-        String title = messageSource.getMessage("txt_idioma_alterado_sucesso", null, userLocale);
-        String description = MessageFormat.format(
-            messageSource.getMessage("txt_idioma_alterado_sucesso_descricao", null, userLocale),
+        Locale alternativeLocale = languageService.getAlternativeLocale(userLocale);
+        String alternativeLanguageName = languageService.getLanguageName(alternativeLocale);
+        
+        String title = messageSource.getMessage("txt_configuracao_idioma_titulo", null, userLocale);
+        String description = java.text.MessageFormat.format(
+            messageSource.getMessage("txt_configuracao_idioma_descricao", null, userLocale),
             languageName
         );
         
-        EmbedBuilder embed = new EmbedBuilder()
-            .setTitle("✅ " + title)
-            .setDescription(description)
-            .setColor(0x00FF00);
+        String changeButtonText = java.text.MessageFormat.format(
+            messageSource.getMessage("txt_mudar_para", null, userLocale),
+            alternativeLanguageName
+        );
         
-        event.editMessageEmbeds(embed.build())
-            .setComponents()
-            .queue(success -> {
-                event.getHook().deleteOriginal().queueAfter(8, java.util.concurrent.TimeUnit.SECONDS);
-            });
+        event.editMessageEmbeds(
+            new EmbedBuilder()
+                .setTitle("🌍 " + title)
+                .setDescription(description)
+                .setColor(0x5865F2)
+                .build()
+        ).setActionRow(
+            Button.primary("change-language-" + alternativeLocale.toLanguageTag(), "🔄 " + changeButtonText)
+        ).queue();
+    }
+    
+    private void executeStartCommandWithHook(net.dv8tion.jda.api.interactions.InteractionHook hook, Locale userLocale) {
+        hook.editOriginalEmbeds(
+            new EmbedBuilder()
+                .setTitle("🚀 " + messageSource.getMessage("txt_bem_vindo_ao_squad_log_bot", null, userLocale))
+                .setDescription(messageSource.getMessage("txt_escolha_o_metodo_de_autenticacao", null, userLocale))
+                .setColor(0x5865F2)
+                .build()
+        ).setActionRow(
+            Button.primary("auth-manual", "🔐 " + messageSource.getMessage("txt_manual", null, userLocale)),
+            Button.success("auth-google", "🌐 " + messageSource.getMessage("txt_google", null, userLocale))
+        ).queue();
+    }
+    
+    private void executeStopCommandWithHook(net.dv8tion.jda.api.interactions.InteractionHook hook, Locale userLocale) {
+        String title = messageSource.getMessage("txt_nenhum_fluxo_ativo", null, userLocale);
+        String description = messageSource.getMessage("txt_vc_n_esta_em_nenhum_processo_de_criacao_ou_edicao_no_momento", null, userLocale) + 
+                           ".\n\n" + messageSource.getMessage("txt_use_squad_log_para_iniciar_um_novo_fluxo", null, userLocale);
+        
+        hook.editOriginalEmbeds(
+            new EmbedBuilder()
+                .setTitle("ℹ️ " + title)
+                .setDescription(description)
+                .setColor(0x3498db)
+                .build()
+        ).setComponents().queue(success -> {
+            hook.deleteOriginal().queueAfter(10, java.util.concurrent.TimeUnit.SECONDS);
+        });
+    }
+    
+    private void executeStatusCommandWithHook(net.dv8tion.jda.api.interactions.InteractionHook hook, Locale userLocale) {
+        String message = userLocale.equals(languageService.getPortugueseLocale())
+            ? "Use o comando `/status` para verificar seu status de autenticação."
+            : "Use el comando `/status` para verificar su estado de autenticación.";
+            
+        hook.editOriginal(message).setComponents().queue();
+    }
+    
+    private void executeHelpCommandWithHook(net.dv8tion.jda.api.interactions.InteractionHook hook, Locale userLocale) {
+        String message = userLocale.equals(languageService.getPortugueseLocale())
+            ? "Use o comando `/help` para ver a lista de comandos disponíveis."
+            : "Use el comando `/help` para ver la lista de comandos disponibles.";
+            
+        hook.editOriginal(message).setComponents().queue();
+    }
+    
+    private void executeLanguageCommandWithHook(net.dv8tion.jda.api.interactions.InteractionHook hook, Locale userLocale) {
+        String languageName = languageService.getLanguageName(userLocale);
+        Locale alternativeLocale = languageService.getAlternativeLocale(userLocale);
+        String alternativeLanguageName = languageService.getLanguageName(alternativeLocale);
+        
+        String title = messageSource.getMessage("txt_configuracao_idioma_titulo", null, userLocale);
+        String description = java.text.MessageFormat.format(
+            messageSource.getMessage("txt_configuracao_idioma_descricao", null, userLocale),
+            languageName
+        );
+        
+        String changeButtonText = java.text.MessageFormat.format(
+            messageSource.getMessage("txt_mudar_para", null, userLocale),
+            alternativeLanguageName
+        );
+        
+        hook.editOriginalEmbeds(
+            new EmbedBuilder()
+                .setTitle("🌍 " + title)
+                .setDescription(description)
+                .setColor(0x5865F2)
+                .build()
+        ).setActionRow(
+            Button.primary("change-language-" + alternativeLocale.toLanguageTag(), "🔄 " + changeButtonText)
+        ).queue();
+    }
+    
+    private void showLoginRequiredScreen(net.dv8tion.jda.api.interactions.InteractionHook hook, Locale userLocale) {
+        String title = messageSource.getMessage("txt_autenticacao_necessaria", null, userLocale);
+        String description = messageSource.getMessage("txt_faca_login_para_usar_os_comandos", null, userLocale) + 
+                           "\n\n" + messageSource.getMessage("txt_escolha_o_metodo_de_autenticacao", null, userLocale);
+        
+        hook.editOriginalEmbeds(
+            new EmbedBuilder()
+                .setTitle("🔒 " + title)
+                .setDescription(description)
+                .setColor(0xFF6B6B)
+                .build()
+        ).setActionRow(
+            Button.primary("auth-manual", "🔐 " + messageSource.getMessage("txt_manual", null, userLocale)),
+            Button.success("auth-google", "🌐 " + messageSource.getMessage("txt_google", null, userLocale)),
+            Button.danger("status-close", "🚪 " + messageSource.getMessage("txt_sair", null, userLocale))
+        ).queue();
     }
 }

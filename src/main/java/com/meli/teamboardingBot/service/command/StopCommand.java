@@ -56,7 +56,7 @@ public class StopCommand implements SlashCommandHandler {
             
             event.replyEmbeds(embed.build())
                 .setEphemeral(true)
-                .queue();
+                .queue(hook -> hook.deleteOriginal().queueAfter(10, java.util.concurrent.TimeUnit.SECONDS));
             
             logger.info("ℹ️ Usuário {} não tinha fluxo ativo", userId);
             return;
