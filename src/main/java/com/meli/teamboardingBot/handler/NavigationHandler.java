@@ -50,12 +50,11 @@ public class NavigationHandler extends AbstractInteractionHandler {
     }
 
     private void handleUpdateButton(ButtonInteractionEvent event, FormState state) {
-        log.info("Iniciando fluxo de atualização");
+        log.info("Iniciando fluxo de atualização - redirecionando para CrudOperationHandler");
         state.setCreating(false);
         state.setEditing(true);
         state.setStep(FormStep.LOG_SELECTION);
         updateFormState(event.getUser().getIdLong(), state);
-        showLogSelection(event);
     }
     private void handleEditButton(ButtonInteractionEvent event, FormState state) {
         log.info("Mostrando menu de edição");
@@ -65,10 +64,20 @@ public class NavigationHandler extends AbstractInteractionHandler {
         showEditFieldsMenu(event);
     }
     private void handleBackToLogsButton(ButtonInteractionEvent event, FormState state) {
-        log.info("Voltando para seleção de logs");
-        state.setStep(FormStep.LOG_SELECTION);
-        updateFormState(event.getUser().getIdLong(), state);
-        showLogSelection(event);
+        log.info("Voltando para menu inicial");
+        long userId = event.getUser().getIdLong();
+        formStateService.resetState(userId);
+        event.deferEdit().queue();
+        EmbedBuilder embed = new EmbedBuilder()
+            .setTitle("🏠 " + messageSource.getMessage("txt_squad_log", null, getUserLocale(userId)))
+            .setDescription(messageSource.getMessage("txt_escolha_uma_opcao", null, getUserLocale(userId)))
+            .setColor(0x0099FF);
+        event.getHook().editOriginalEmbeds(embed.build())
+            .setActionRow(
+                Button.success("criar", "🆕 " + messageSource.getMessage("txt_criar", null, getUserLocale(userId))),
+                Button.secondary("atualizar", "📝 " + messageSource.getMessage("txt_atualizar", null, getUserLocale(userId)))
+            )
+            .queue();
     }
     private void handleCreateNewButton(ButtonInteractionEvent event, FormState state) {
         log.info("Iniciando novo fluxo de criação");
@@ -107,8 +116,6 @@ public class NavigationHandler extends AbstractInteractionHandler {
             log.info("Voltando ao resumo de atualização (padrão)");
             showUpdateSummary(event, state);
         }
-    }
-    private void showLogSelection(ButtonInteractionEvent event) {
     }
     private void showEditFieldsMenu(ButtonInteractionEvent event) {
         EmbedBuilder embed = new EmbedBuilder()
