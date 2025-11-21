@@ -107,8 +107,11 @@ public class LoginModalHandler extends ListenerAdapter {
             }
 
             if ("voltar-inicio".equals(buttonId)) {
-                handleCancelAuth(event);
-                return;
+                String userId = event.getUser().getId();
+                if (!authService.isUserAuthenticated(userId)) {
+                    handleCancelAuth(event);
+                    return;
+                }
             }
 
             if ("voltar-para-escolha".equals(buttonId)) {
