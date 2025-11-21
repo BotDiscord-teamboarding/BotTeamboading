@@ -25,6 +25,7 @@ public class SquadLogCommand implements SlashCommandHandler {
     @Autowired
     private FormState formState;
 
+
     @Override
     public String getName() {
         return "squad-log";
