@@ -61,10 +61,10 @@ public class SquadLogCommand implements SlashCommandHandler {
         
         event.deferReply(true).queue(hook ->
                 hook.editOriginalEmbeds(
-                        Ui.info("Escolha uma opção").build()
+                        Ui.info(messageSource.getMessage("txt_escolha_uma_opcao", null, formState.getLocale())).build()
                 ).setActionRow(
-                        Button.primary("criar", "✅ Criar"),
-                        Button.secondary("atualizar", "📝 Atualizar")
+                        Button.primary("criar", "✅ " + messageSource.getMessage("txt_criar", null, formState.getLocale())),
+                        Button.secondary("atualizar", "📝 " + messageSource.getMessage("txt_atualizar", null, formState.getLocale()))
                 ).queue()
         );
     }

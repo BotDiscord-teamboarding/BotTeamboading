@@ -159,13 +159,13 @@ public class CategorySelectionHandler extends AbstractInteractionHandler {
             .setRequired(true)
             .build();
         TextInput startDateInput = TextInput.create("start_date", messageSource.getMessage("txt_data_inicio", null, state.getLocale() ) + " (DD-MM-AAAA)", TextInputStyle.SHORT)
-            .setPlaceholder("Ex: 20-06-1986")
+            .setPlaceholder(messageSource.getMessage("txt_exemplo_data", null, state.getLocale()))
             .setMaxLength(10)
             .setRequired(true)
             .build();
         TextInput endDateInput = TextInput.create("end_date", messageSource.getMessage("txt_data_fim", null, state.getLocale() ) + " (DD-MM-AAAA) - "
                         + messageSource.getMessage("txt_opcional", null, state.getLocale() ), TextInputStyle.SHORT)
-            .setPlaceholder("Ex: 25-06-1986 " + messageSource.getMessage("txt_deixe_vazio_se_nao_houver", null, state.getLocale() ))
+            .setPlaceholder(messageSource.getMessage("txt_exemplo_data_opcional", null, state.getLocale()))
             .setMaxLength(10)
             .setRequired(false)
             .build();

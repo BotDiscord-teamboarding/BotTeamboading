@@ -31,51 +31,53 @@ public class HelpCommand implements SlashCommandHandler {
 
     @Override
     public void execute(SlashCommandInteractionEvent event) {
+        String userId = event.getUser().getId();
+        
         EmbedBuilder embed = new EmbedBuilder()
-            .setTitle("📚 Comandos Disponíveis")
-            .setDescription("Aqui está a lista de todos os comandos disponíveis no bot:")
+            .setTitle("📚 " + messageSource.getMessage("txt_help_titulo", null, formState.getLocale()))
+            .setDescription(messageSource.getMessage("txt_help_descricao", null, formState.getLocale()))
             .setColor(0x00AE86)
             .addField(
                 "📋 `/squad-log`",
-                "Gerenciar squad logs - criar ou atualizar registros de atividades da squad",
+                messageSource.getMessage("txt_help_squad_log_descricao", null, formState.getLocale()),
                 false
             )
             .addField(
                 "📦 `/squad-log-lote`",
-                "Criar múltiplos squad logs de uma vez usando texto livre",
+                messageSource.getMessage("txt_help_squad_log_lote_descricao", null, formState.getLocale()),
                 false
             )
             .addField(
                 "🚀 `/start`",
-                "Iniciar e fazer autenticação no bot",
+                messageSource.getMessage("txt_help_start_descricao", null, formState.getLocale()),
                 false
             )
             .addField(
                 "📊 `/status`",
-                "Verificar o status da sua autenticação",
+                messageSource.getMessage("txt_help_status_descricao", null, formState.getLocale()),
                 false
             )
             .addField(
                 "🛑 `/stop`",
-                "Encerrar sua sessão e fazer logout",
+                messageSource.getMessage("txt_help_stop_descricao", null, formState.getLocale()),
                 false
             )
             .addField(
                 "🌐 `/language`",
-                "Alterar o idioma do bot / Cambiar el idioma del bot",
+                messageSource.getMessage("txt_help_language_descricao", null, formState.getLocale()),
                 false
             )
             .addField(
                 "❓ `/help`",
-                "Exibir esta mensagem de ajuda",
+                messageSource.getMessage("txt_help_help_descricao", null, formState.getLocale()),
                 false
             )
-            .setFooter("Use os comandos acima para interagir com o bot", null);
+            .setFooter(messageSource.getMessage("txt_help_footer", null, formState.getLocale()), null);
 
         event.replyEmbeds(embed.build())
             .setEphemeral(true)
             .addActionRow(
-                Button.danger("help-close", "🚪 Sair")
+                Button.danger("help-close", "🚪 " + messageSource.getMessage("txt_sair", null, formState.getLocale()))
             )
             .queue();
     }

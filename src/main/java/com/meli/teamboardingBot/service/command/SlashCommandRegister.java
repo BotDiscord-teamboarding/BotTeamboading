@@ -28,7 +28,7 @@ public class SlashCommandRegister {
                 Commands.slash("status", messageSource.getMessage("txt_status", null, formState.getLocale())),
                 Commands.slash("language", "Alterar idioma do bot / Cambiar idioma del bot"),
                 Commands.slash("stop", messageSource.getMessage("txt_stop", null, formState.getLocale())),
-                Commands.slash("help", "Exibe a lista de comandos disponíveis")
+                Commands.slash("help", messageSource.getMessage("txt_help", null, formState.getLocale()))
         ).queue();
     }
 }

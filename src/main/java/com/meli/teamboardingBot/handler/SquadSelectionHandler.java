@@ -147,7 +147,7 @@ public class SquadSelectionHandler extends AbstractInteractionHandler {
                 return;
             }
             StringSelectMenu.Builder squadMenuBuilder = StringSelectMenu.create("squad-select")
-                    .setPlaceholder("Selecione uma squad");
+                    .setPlaceholder(messageSource.getMessage("txt_selecione_uma_squad", null, formState.getLocale()));
             for (int i = 0; i < squadsArray.length(); i++) {
                 JSONObject squad = squadsArray.getJSONObject(i);
                 String squadName = squad.optString("name", "");

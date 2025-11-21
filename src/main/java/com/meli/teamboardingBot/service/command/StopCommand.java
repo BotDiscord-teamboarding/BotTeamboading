@@ -62,7 +62,9 @@ public class StopCommand implements SlashCommandHandler {
             return;
         }
         
-        String fluxoTipo = state.isCreating() ? "criação" : "edição";
+        String fluxoTipo = state.isCreating() 
+            ? messageSource.getMessage("txt_criacao", null, formState.getLocale()) 
+            : messageSource.getMessage("txt_edicao", null, formState.getLocale());
         formStateService.removeState(userId);
         
         EmbedBuilder embed = new EmbedBuilder()

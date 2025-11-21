@@ -569,7 +569,7 @@ public class FieldEditHandler extends AbstractInteractionHandler {
     private void handleEditDates(ButtonInteractionEvent event, FormState state) {
         log.info("Editando datas do log");
         TextInput.Builder startDateBuilder = TextInput.create("start_date", messageSource.getMessage("txt_data_de_inicio", null, formState.getLocale()) + " (DD-MM-AAAA)", TextInputStyle.SHORT)
-            .setPlaceholder("Ex: 20-06-1986")
+            .setPlaceholder(messageSource.getMessage("txt_exemplo_data", null, formState.getLocale()))
             .setMaxLength(10)
             .setRequired(true);
         if (state.getStartDate() != null && !state.getStartDate().trim().isEmpty()) {
@@ -579,7 +579,7 @@ public class FieldEditHandler extends AbstractInteractionHandler {
             }
         }
         TextInput.Builder endDateBuilder = TextInput.create("end_date",  messageSource.getMessage("txt_data_de_fim", null, formState.getLocale()) + " (DD-MM-AAAA)", TextInputStyle.SHORT)
-            .setPlaceholder("Ex: 25-06-1986 (" + messageSource.getMessage("txt_opcional", null, formState.getLocale()) +")")
+            .setPlaceholder(messageSource.getMessage("txt_exemplo_data_opcional", null, formState.getLocale()))
             .setMaxLength(10)
             .setRequired(false);
         if (state.getEndDate() != null && !state.getEndDate().trim().isEmpty()) {

@@ -51,6 +51,11 @@ public class SlashCommandListener extends ListenerAdapter {
     public void onSlashCommandInteraction(SlashCommandInteractionEvent event) {
         String commandName = event.getName();
         
+        if (commandName.equals("language")) {
+            executeCommand(event);
+            return;
+        }
+        
         if (languageInterceptor.shouldShowLanguageSelection(event)) {
             logger.info("User {} has no language preference, showing language selection for command: {}", 
                 event.getUser().getId(), commandName);
@@ -61,6 +66,9 @@ public class SlashCommandListener extends ListenerAdapter {
             }
             return;
         }
+        
+        logger.info("User {} has language preference, executing command directly: {}", 
+            event.getUser().getId(), commandName);
         
         executeCommand(event);
     }

@@ -91,7 +91,7 @@ public class ModalInputHandler extends AbstractInteractionHandler {
     private void handleEditDatesButton(ButtonInteractionEvent event, FormState state) {
         log.info("Editando datas");
         TextInput.Builder startDateBuilder = TextInput.create("start_date", messageSource.getMessage("txt_data_de_inicio", null, formState.getLocale()) + " (DD-MM-AAAA)", TextInputStyle.SHORT)
-            .setPlaceholder("Ex: 20-06-1986")
+            .setPlaceholder(messageSource.getMessage("txt_exemplo_data", null, formState.getLocale()))
             .setMaxLength(10)
             .setRequired(true);
         if (state.getStartDate() != null && !state.getStartDate().trim().isEmpty()) {
@@ -103,7 +103,7 @@ public class ModalInputHandler extends AbstractInteractionHandler {
         TextInput startDateInput = startDateBuilder.build();
         TextInput.Builder endDateBuilder = TextInput.create("end_date", messageSource.getMessage("txt_data_de_fim", null, formState.getLocale()) + " (DD-MM-AAAA) - "
                         + messageSource.getMessage("txt_opcional", null, formState.getLocale()), TextInputStyle.SHORT)
-            .setPlaceholder("Ex: 25-06-1986 (" + messageSource.getMessage("txt_deixe_vazio_se_nao_houver", null, formState.getLocale()) +")")
+            .setPlaceholder(messageSource.getMessage("txt_exemplo_data_opcional", null, formState.getLocale()))
             .setMaxLength(10)
             .setRequired(false);
         if (state.getEndDate() != null && !state.getEndDate().trim().isEmpty()) {
@@ -560,14 +560,14 @@ public class ModalInputHandler extends AbstractInteractionHandler {
         TextInput descriptionInput = descriptionBuilder.build();
 
         TextInput startDateInput = TextInput.create("start_date",  messageSource.getMessage("txt_data_inicio", null, formState.getLocale()) + " (DD-MM-AAAA)", TextInputStyle.SHORT)
-            .setPlaceholder("Ex: 20-06-1986")
+            .setPlaceholder(messageSource.getMessage("txt_exemplo_data", null, formState.getLocale()))
             .setMaxLength(10)
             .setRequired(true)
             .build();
 
         TextInput.Builder endDateBuilder = TextInput.create("end_date", messageSource.getMessage("txt_data_fim", null, formState.getLocale()) + " (DD-MM-AAAA) - "
                         + messageSource.getMessage("txt_opcional", null, formState.getLocale()), TextInputStyle.SHORT)
-            .setPlaceholder("Ex: 25-06-1986 ("+ messageSource.getMessage("txt_deixe_vazio_se_nao_houver", null, formState.getLocale()) +")")
+            .setPlaceholder(messageSource.getMessage("txt_exemplo_data_opcional", null, formState.getLocale()))
             .setMaxLength(10)
             .setRequired(false);
         if (state.getEndDate() != null && !state.getEndDate().trim().isEmpty()) {
@@ -588,7 +588,7 @@ public class ModalInputHandler extends AbstractInteractionHandler {
         log.info("Reabrindo modal de edição de datas após erro");
         
         TextInput.Builder startDateBuilder = TextInput.create("start_date", messageSource.getMessage("txt_data_de_inicio", null, formState.getLocale()) + " (DD-MM-AAAA)", TextInputStyle.SHORT)
-            .setPlaceholder("Ex: 20-06-1986")
+            .setPlaceholder(messageSource.getMessage("txt_exemplo_data", null, formState.getLocale()))
             .setMaxLength(10)
             .setRequired(true);
         if (state.getStartDate() != null && !state.getStartDate().trim().isEmpty()) {
@@ -600,7 +600,7 @@ public class ModalInputHandler extends AbstractInteractionHandler {
 
         TextInput.Builder endDateBuilder = TextInput.create("end_date", messageSource.getMessage("txt_data_de_fim ", null, formState.getLocale()) + " (DD-MM-AAAA) - "
                         + messageSource.getMessage("txt_opcional", null, formState.getLocale()), TextInputStyle.SHORT)
-            .setPlaceholder("Ex: 25-06-1986 (" + messageSource.getMessage("txt_deixe_vazio_se_nao_houver", null, formState.getLocale()) +")")
+            .setPlaceholder(messageSource.getMessage("txt_exemplo_data_opcional", null, formState.getLocale()))
             .setMaxLength(10)
             .setRequired(false);
         if (state.getEndDate() != null && !state.getEndDate().trim().isEmpty()) {
@@ -622,7 +622,7 @@ public class ModalInputHandler extends AbstractInteractionHandler {
         log.info("Reabrindo modal de edição de datas de campo após erro");
         
         TextInput.Builder startDateBuilder = TextInput.create("start_date", messageSource.getMessage("txt_data_de_inicio", null, formState.getLocale()) + " (DD-MM-AAAA)", TextInputStyle.SHORT)
-            .setPlaceholder("Ex: 20-06-1986")
+            .setPlaceholder(messageSource.getMessage("txt_exemplo_data", null, formState.getLocale()))
             .setMaxLength(10)
             .setRequired(true);
         if (state.getStartDate() != null && !state.getStartDate().trim().isEmpty()) {
@@ -633,7 +633,7 @@ public class ModalInputHandler extends AbstractInteractionHandler {
         }
 
         TextInput.Builder endDateBuilder = TextInput.create("end_date", messageSource.getMessage("txt_data_de_fim ", null, formState.getLocale()) + " (DD-MM-AAAA)", TextInputStyle.SHORT)
-            .setPlaceholder("Ex: 25-06-1986 (" + messageSource.getMessage("txt_opcional", null, formState.getLocale()) +")")
+            .setPlaceholder(messageSource.getMessage("txt_exemplo_data_opcional", null, formState.getLocale()))
             .setMaxLength(10)
             .setRequired(false);
         if (state.getEndDate() != null && !state.getEndDate().trim().isEmpty()) {
