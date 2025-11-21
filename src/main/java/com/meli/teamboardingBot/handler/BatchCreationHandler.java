@@ -99,6 +99,21 @@ public class BatchCreationHandler extends AbstractInteractionHandler {
 
         event.replyModal(modal).queue();
     }
+    
+    public void handleOpenBatchModalButton(ButtonInteractionEvent event) {
+        log.info("Abrindo modal de criação em lote via botão para usuário: {}", event.getUser().getId());
+        
+        TextInput textInput = TextInput.create("batch-text", messageSource.getMessage("txt_digite_os_squad_logs", null, formState.getLocale()), TextInputStyle.PARAGRAPH)
+                .setPlaceholder(messageSource.getMessage("txt_squad_pessoa_categoria_data_ex", null, formState.getLocale()))
+                .setRequiredRange(10, 4000)
+                .build();
+
+        Modal modal = Modal.create("batch-creation-modal", "📋 " + messageSource.getMessage("txt_criar_squad_logs_em_lote", null, formState.getLocale()))
+                .addActionRow(textInput)
+                .build();
+
+        event.replyModal(modal).queue();
+    }
 
     public void handleBatchCreationModal(ModalInteractionEvent event) {
         log.info("Processando modal de criação em lote");
@@ -135,6 +150,9 @@ public class BatchCreationHandler extends AbstractInteractionHandler {
             log.error("Erro durante validação com API: {}", e.getMessage());
             if (e.getMessage().contains("Timeout") || e.getMessage().contains("timeout")) {
                 showApiTimeoutError(event);
+            } else if (e.getMessage().contains("Credenciais") || e.getMessage().contains("autenticação") || 
+                       e.getMessage().contains("autenticacao") || e.getMessage().contains("Unauthorized")) {
+                showAuthenticationRequired(event);
             } else {
                 showApiConnectionError(event, e.getMessage());
             }
@@ -313,6 +331,25 @@ public class BatchCreationHandler extends AbstractInteractionHandler {
                 .setFooter(messageSource.getMessage("txt_timeout_configurado", null, formState.getLocale()));
 
         event.getHook().editOriginalEmbeds(embed.build()).queue();
+    }
+    
+    private void showAuthenticationRequired(ModalInteractionEvent event) {
+        String title = messageSource.getMessage("txt_autenticacao_necessaria", null, formState.getLocale());
+        String description = messageSource.getMessage("txt_faca_login_para_usar_os_comandos", null, formState.getLocale()) + 
+                           "\n\n" + messageSource.getMessage("txt_escolha_o_metodo_de_autenticacao", null, formState.getLocale());
+        
+        EmbedBuilder embed = new EmbedBuilder()
+                .setTitle("🔒 " + title)
+                .setDescription(description)
+                .setColor(0xFF6B6B);
+
+        event.getHook().editOriginalEmbeds(embed.build())
+                .setActionRow(
+                    Button.primary("auth-manual", "🔐 " + messageSource.getMessage("txt_manual", null, formState.getLocale())),
+                    Button.success("auth-google", "🌐 " + messageSource.getMessage("txt_google", null, formState.getLocale())),
+                    Button.danger("status-close", "🚪 " + messageSource.getMessage("txt_sair", null, formState.getLocale()))
+                )
+                .queue();
     }
     
     private void showApiConnectionError(ModalInteractionEvent event, String errorMessage) {
