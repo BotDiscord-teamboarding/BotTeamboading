@@ -43,8 +43,9 @@ public class SquadSelectionHandler extends AbstractInteractionHandler {
     @Autowired
     private MessageSource messageSource;
 
-    @Autowired
-    private FormState formState;
+    private java.util.Locale getUserLocale(long userId) {
+        return formStateService.getOrCreateState(userId).getLocale();
+    }
 
     @Override
     public boolean canHandle(String componentId) {
@@ -73,14 +74,14 @@ public class SquadSelectionHandler extends AbstractInteractionHandler {
         if (!discordAuthService.isUserAuthenticated(userId)) {
             log.warn("Usuário {} não autenticado tentando criar squad-log", userId);
             EmbedBuilder embed = new EmbedBuilder()
-                .setTitle("🔒 " + messageSource.getMessage("txt_autenticacao_necessaria", null, formState.getLocale()))
-                .setDescription(messageSource.getMessage("txt_faca_a_autenticacao_atraves_do_comando", null, formState.getLocale()) + 
-                    "\n\n💡 " + messageSource.getMessage("txt_use_comando_start_ou_clique_botao", null, formState.getLocale()))
+                .setTitle("🔒 " + messageSource.getMessage("txt_autenticacao_necessaria", null, getUserLocale(event.getUser().getIdLong())))
+                .setDescription(messageSource.getMessage("txt_faca_a_autenticacao_atraves_do_comando", null, getUserLocale(event.getUser().getIdLong())) + 
+                    "\n\n💡 " + messageSource.getMessage("txt_use_comando_start_ou_clique_botao", null, getUserLocale(event.getUser().getIdLong())))
                 .setColor(0xFFA500);
             event.editMessageEmbeds(embed.build())
                 .setActionRow(
-                    Button.primary("btn-autenticar", "🔐 " + messageSource.getMessage("txt_fazer_login", null, formState.getLocale())),
-                    Button.secondary("status-close", "🚪 " + messageSource.getMessage("txt_fechar", null, formState.getLocale()))
+                    Button.primary("btn-autenticar", "🔐 " + messageSource.getMessage("txt_fazer_login", null, getUserLocale(event.getUser().getIdLong()))),
+                    Button.secondary("status-close", "🚪 " + messageSource.getMessage("txt_fechar", null, getUserLocale(event.getUser().getIdLong())))
                 )
                 .queue(message -> pendingAuthMessageService.storePendingAuthMessage(userId, event.getMessage()));
             return;
@@ -127,7 +128,7 @@ public class SquadSelectionHandler extends AbstractInteractionHandler {
             }
         } catch (Exception e) {
             log.error("Erro na seleção de squad: {}", e.getMessage());
-            showError(event, messageSource.getMessage("txt_erro_processar_selecao_das_squads", null, formState.getLocale()) + ".");
+            showError(event, messageSource.getMessage("txt_erro_processar_selecao_das_squads", null, getUserLocale(event.getUser().getIdLong())) + ".");
         }
     }
     private void showSquadSelection(ButtonInteractionEvent event) {
@@ -138,16 +139,16 @@ public class SquadSelectionHandler extends AbstractInteractionHandler {
             event.deferEdit().queue();
             if (squadsArray == null || squadsArray.length() == 0) {
                 EmbedBuilder errorEmbed = new EmbedBuilder()
-                    .setTitle("❌ " + messageSource.getMessage("txt_nenhuma_squad_encontrada", null, formState.getLocale()))
-                    .setDescription(messageSource.getMessage("txt_nao_ha_squads_disponiveis_no_momento", null, formState.getLocale()) + ".")
+                    .setTitle("❌ " + messageSource.getMessage("txt_nenhuma_squad_encontrada", null, getUserLocale(event.getUser().getIdLong())))
+                    .setDescription(messageSource.getMessage("txt_nao_ha_squads_disponiveis_no_momento", null, getUserLocale(event.getUser().getIdLong())) + ".")
                     .setColor(0xFF0000);
                 event.getHook().editOriginalEmbeds(errorEmbed.build())
-                    .setActionRow(Button.secondary("voltar-inicio", "🏠 " + messageSource.getMessage("", null, formState.getLocale())))
+                    .setActionRow(Button.secondary("voltar-inicio", "🏠 " + messageSource.getMessage("", null, getUserLocale(event.getUser().getIdLong()))))
                     .queue();
                 return;
             }
             StringSelectMenu.Builder squadMenuBuilder = StringSelectMenu.create("squad-select")
-                    .setPlaceholder(messageSource.getMessage("txt_selecione_uma_squad", null, formState.getLocale()));
+                    .setPlaceholder(messageSource.getMessage("txt_selecione_uma_squad", null, getUserLocale(event.getUser().getIdLong())));
             for (int i = 0; i < squadsArray.length(); i++) {
                 JSONObject squad = squadsArray.getJSONObject(i);
                 String squadName = squad.optString("name", "");
@@ -157,8 +158,8 @@ public class SquadSelectionHandler extends AbstractInteractionHandler {
                 }
             }
             EmbedBuilder embed = new EmbedBuilder()
-                .setTitle("🏢 " + messageSource.getMessage("txt_selecione_uma_squad", null, formState.getLocale()))
-                .setDescription(messageSource.getMessage("txt_escolha_a_squad_para_o_seu_log", null, formState.getLocale()) + ":")
+                .setTitle("🏢 " + messageSource.getMessage("txt_selecione_uma_squad", null, getUserLocale(event.getUser().getIdLong())))
+                .setDescription(messageSource.getMessage("txt_escolha_a_squad_para_o_seu_log", null, getUserLocale(event.getUser().getIdLong())) + ":")
                 .setColor(0x0099FF);
             event.getHook().editOriginalEmbeds(embed.build())
                 .setActionRow(squadMenuBuilder.build())
@@ -166,12 +167,12 @@ public class SquadSelectionHandler extends AbstractInteractionHandler {
         } catch (Exception e) {
             log.error("Erro ao carregar squads: {}", e.getMessage());
             EmbedBuilder errorEmbed = new EmbedBuilder()
-                .setTitle("❌ " +messageSource.getMessage("txt_erro_carregar_squads", null, formState.getLocale()))
-                .setDescription(messageSource.getMessage("txt_ocorreu_um_erro_ao_carregar_as_squads", null, formState.getLocale()) + ". " +
-                        messageSource.getMessage("txt_tente_novamente", null, formState.getLocale()) + ".")
+                .setTitle("❌ " +messageSource.getMessage("txt_erro_carregar_squads", null, getUserLocale(event.getUser().getIdLong())))
+                .setDescription(messageSource.getMessage("txt_ocorreu_um_erro_ao_carregar_as_squads", null, getUserLocale(event.getUser().getIdLong())) + ". " +
+                        messageSource.getMessage("txt_tente_novamente", null, getUserLocale(event.getUser().getIdLong())) + ".")
                 .setColor(0xFF0000);
             event.getHook().editOriginalEmbeds(errorEmbed.build())
-                .setActionRow(Button.secondary("voltar-inicio", "🏠 " + messageSource.getMessage("", null, formState.getLocale())))
+                .setActionRow(Button.secondary("voltar-inicio", "🏠 " + messageSource.getMessage("", null, getUserLocale(event.getUser().getIdLong()))))
                 .queue();
         }
     }
@@ -182,7 +183,7 @@ public class SquadSelectionHandler extends AbstractInteractionHandler {
             JSONObject obj = new JSONObject(squadsJson);
             JSONArray squadsArray = obj.optJSONArray("items");
             if (squadsArray == null || squadsArray.length() == 0) {
-                showError(event, messageSource.getMessage("txt_nenhuma_squad_encontrada_na_resposta_da_api", null, formState.getLocale()) + ".");
+                showError(event, messageSource.getMessage("txt_nenhuma_squad_encontrada_na_resposta_da_api", null, getUserLocale(event.getUser().getIdLong())) + ".");
                 return;
             }
             JSONObject selectedSquad = null;
@@ -194,20 +195,20 @@ public class SquadSelectionHandler extends AbstractInteractionHandler {
                 }
             }
             if (selectedSquad == null) {
-                showError(event, messageSource.getMessage("txt_squad_selecionada_nao_encontrada", null, formState.getLocale()) + ".");
+                showError(event, messageSource.getMessage("txt_squad_selecionada_nao_encontrada", null, getUserLocale(event.getUser().getIdLong())) + ".");
                 return;
             }
             JSONArray userSquads = selectedSquad.optJSONArray("user_squads");
             if (userSquads == null || userSquads.length() == 0) {
-                showError(event, messageSource.getMessage("txt_nenhum_usuario_encontrado_na_squad_selecionada", null, formState.getLocale()) + ".");
+                showError(event, messageSource.getMessage("txt_nenhum_usuario_encontrado_na_squad_selecionada", null, getUserLocale(event.getUser().getIdLong())) + ".");
                 return;
             }
             EmbedBuilder embed = new EmbedBuilder()
-                .setTitle("👤 " + messageSource.getMessage("txt_selecao_de_usuario", null, formState.getLocale()))
-                .setDescription(messageSource.getMessage("txt_selecione_o_usuario_que_ira_responder_ao_questionario", null, formState.getLocale()) + ":")
+                .setTitle("👤 " + messageSource.getMessage("txt_selecao_de_usuario", null, getUserLocale(event.getUser().getIdLong())))
+                .setDescription(messageSource.getMessage("txt_selecione_o_usuario_que_ira_responder_ao_questionario", null, getUserLocale(event.getUser().getIdLong())) + ":")
                 .setColor(0x0099FF);
             StringSelectMenu.Builder menuBuilder = StringSelectMenu.create("user-select")
-                .setPlaceholder(messageSource.getMessage("txt_escolha_um_usuario", null, formState.getLocale()) + "...");
+                .setPlaceholder(messageSource.getMessage("txt_escolha_um_usuario", null, getUserLocale(event.getUser().getIdLong())) + "...");
             
             menuBuilder.addOption("All team", squadId);
             
@@ -236,7 +237,7 @@ public class SquadSelectionHandler extends AbstractInteractionHandler {
                 .queue();
         } catch (Exception e) {
             log.error("Erro ao exibir seleção de usuário: {}", e.getMessage());
-            showError(event, messageSource.getMessage("txt_erro_carregar_selecao_de_usuario", null, formState.getLocale()) + ".");
+            showError(event, messageSource.getMessage("txt_erro_carregar_selecao_de_usuario", null, getUserLocale(event.getUser().getIdLong())) + ".");
         } finally {
             DiscordUserContext.clear();
         }
@@ -249,11 +250,11 @@ public class SquadSelectionHandler extends AbstractInteractionHandler {
     }
     private void showError(StringSelectInteractionEvent event, String message) {
         EmbedBuilder errorEmbed = new EmbedBuilder()
-            .setTitle("❌ " + messageSource.getMessage("txt_erro", null, formState.getLocale()))
+            .setTitle("❌ " + messageSource.getMessage("txt_erro", null, getUserLocale(event.getUser().getIdLong())))
             .setDescription(message)
             .setColor(0xFF0000);
         event.getHook().editOriginalEmbeds(errorEmbed.build())
-            .setActionRow(Button.secondary("voltar-inicio", "🏠 "+ messageSource.getMessage("txt_voltar_inicio", null, formState.getLocale())) )
+            .setActionRow(Button.secondary("voltar-inicio", "🏠 "+ messageSource.getMessage("txt_voltar_inicio", null, getUserLocale(event.getUser().getIdLong()))) )
             .queue();
     }
     @Override

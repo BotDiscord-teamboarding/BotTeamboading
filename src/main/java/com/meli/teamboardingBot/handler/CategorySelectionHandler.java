@@ -36,8 +36,9 @@ public class CategorySelectionHandler extends AbstractInteractionHandler {
     @Autowired
     private MessageSource messageSource;
 
-    @Autowired
-    private FormState formState;
+    private java.util.Locale getUserLocale(long userId) {
+        return formStateService.getOrCreateState(userId).getLocale();
+    }
 
     public CategorySelectionHandler(FormStateService formStateService, SquadLogService squadLogService) {
         super(formStateService);
@@ -179,7 +180,7 @@ public class CategorySelectionHandler extends AbstractInteractionHandler {
             log.info("Modal aberto com sucesso!");
         } catch (Exception modalError) {
             log.error("Erro ao abrir modal: {}", modalError.getMessage());
-            showError(event, messageSource.getMessage("txt_erro_ao_processar_selecao_das_categorias", null, formState.getLocale()) + ".");
+            showError(event, messageSource.getMessage("txt_erro_ao_processar_selecao_das_categorias", null, getUserLocale(event.getUser().getIdLong())) + ".");
         }
     }
     private void showSummary(StringSelectInteractionEvent event) {
@@ -190,7 +191,7 @@ public class CategorySelectionHandler extends AbstractInteractionHandler {
     }
     private void showError(StringSelectInteractionEvent event, String message) {
         EmbedBuilder errorEmbed = new EmbedBuilder()
-            .setTitle("❌ " + messageSource.getMessage("txt_erro", null, formState.getLocale()))
+            .setTitle("❌ " + messageSource.getMessage("txt_erro", null, getUserLocale(event.getUser().getIdLong())))
             .setDescription(message)
             .setColor(0xFF0000);
         if (event.getHook() != null) {
