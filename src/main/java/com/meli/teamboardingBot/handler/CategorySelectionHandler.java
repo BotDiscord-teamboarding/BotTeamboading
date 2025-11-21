@@ -36,8 +36,9 @@ public class CategorySelectionHandler extends AbstractInteractionHandler {
     @Autowired
     private MessageSource messageSource;
 
-    @Autowired
-    private FormState formState;
+    private java.util.Locale getUserLocale(long userId) {
+        return formStateService.getOrCreateState(userId).getLocale();
+    }
 
     public CategorySelectionHandler(FormStateService formStateService, SquadLogService squadLogService) {
         super(formStateService);
@@ -159,13 +160,13 @@ public class CategorySelectionHandler extends AbstractInteractionHandler {
             .setRequired(true)
             .build();
         TextInput startDateInput = TextInput.create("start_date", messageSource.getMessage("txt_data_inicio", null, state.getLocale() ) + " (DD-MM-AAAA)", TextInputStyle.SHORT)
-            .setPlaceholder("Ex: 20-06-1986")
+            .setPlaceholder(messageSource.getMessage("txt_exemplo_data", null, state.getLocale()))
             .setMaxLength(10)
             .setRequired(true)
             .build();
         TextInput endDateInput = TextInput.create("end_date", messageSource.getMessage("txt_data_fim", null, state.getLocale() ) + " (DD-MM-AAAA) - "
                         + messageSource.getMessage("txt_opcional", null, state.getLocale() ), TextInputStyle.SHORT)
-            .setPlaceholder("Ex: 25-06-1986 " + messageSource.getMessage("txt_deixe_vazio_se_nao_houver", null, state.getLocale() ))
+            .setPlaceholder(messageSource.getMessage("txt_exemplo_data_opcional", null, state.getLocale()))
             .setMaxLength(10)
             .setRequired(false)
             .build();
@@ -179,7 +180,7 @@ public class CategorySelectionHandler extends AbstractInteractionHandler {
             log.info("Modal aberto com sucesso!");
         } catch (Exception modalError) {
             log.error("Erro ao abrir modal: {}", modalError.getMessage());
-            showError(event, messageSource.getMessage("txt_erro_ao_processar_selecao_das_categorias", null, formState.getLocale()) + ".");
+            showError(event, messageSource.getMessage("txt_erro_ao_processar_selecao_das_categorias", null, getUserLocale(event.getUser().getIdLong())) + ".");
         }
     }
     private void showSummary(StringSelectInteractionEvent event) {
@@ -190,7 +191,7 @@ public class CategorySelectionHandler extends AbstractInteractionHandler {
     }
     private void showError(StringSelectInteractionEvent event, String message) {
         EmbedBuilder errorEmbed = new EmbedBuilder()
-            .setTitle("❌ " + messageSource.getMessage("txt_erro", null, formState.getLocale()))
+            .setTitle("❌ " + messageSource.getMessage("txt_erro", null, getUserLocale(event.getUser().getIdLong())))
             .setDescription(message)
             .setColor(0xFF0000);
         if (event.getHook() != null) {

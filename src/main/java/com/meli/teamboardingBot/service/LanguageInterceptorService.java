@@ -52,6 +52,8 @@ public class LanguageInterceptorService {
         logger.info("Storing pending command for user {}: {}", userId, commandName);
         
         Locale detectedLocale = languageService.detectUserLocale(event.getUserLocale().getLocale());
+        languageService.saveUserLanguagePreference(userId, detectedLocale);
+        
         String languageName = languageService.getLanguageName(detectedLocale);
         Locale alternativeLocale = languageService.getAlternativeLocale(detectedLocale);
         String alternativeLanguageName = languageService.getLanguageName(alternativeLocale);
@@ -67,19 +69,42 @@ public class LanguageInterceptorService {
             .setDescription(description)
             .setColor(0x5865F2);
         
-        String continueButtonText = MessageFormat.format(
-            messageSource.getMessage("txt_continuar_em", null, detectedLocale),
-            languageName
-        );
-        String changeButtonText = MessageFormat.format(
-            messageSource.getMessage("txt_mudar_para", null, detectedLocale),
-            alternativeLanguageName
-        );
+        String continueButtonText = messageSource.getMessage("txt_continuar", null, detectedLocale);
         
         event.replyEmbeds(embed.build())
             .setActionRow(
-                Button.success("confirm-language-" + detectedLocale.toLanguageTag(), "✅ " + continueButtonText),
-                Button.primary("change-language-" + alternativeLocale.toLanguageTag(), "🔄 " + changeButtonText)
+                Button.success("confirm-language-" + detectedLocale.toLanguageTag(), "✅ " + continueButtonText)
+            )
+            .setEphemeral(true)
+            .queue();
+    }
+    
+    public void showLanguageConfirmation(SlashCommandInteractionEvent event, SlashCommandHandler handler) {
+        String userId = event.getUser().getId();
+        String commandName = event.getName();
+        
+        pendingCommands.put(userId, new PendingCommand(commandName, handler, event));
+        logger.info("Storing pending command for user {}: {}", userId, commandName);
+        
+        Locale userLocale = languageService.getUserLanguagePreference(userId);
+        String languageName = languageService.getLanguageName(userLocale);
+        
+        String title = messageSource.getMessage("txt_idioma_confirmado_titulo", null, userLocale);
+        String description = MessageFormat.format(
+            messageSource.getMessage("txt_idioma_salvo_descricao", null, userLocale),
+            languageName
+        );
+        
+        EmbedBuilder embed = new EmbedBuilder()
+            .setTitle("✅ " + title)
+            .setDescription(description)
+            .setColor(0x00FF00);
+        
+        String continueButtonText = messageSource.getMessage("txt_continuar", null, userLocale);
+        
+        event.replyEmbeds(embed.build())
+            .setActionRow(
+                Button.primary("execute-pending-command", "▶️ " + continueButtonText)
             )
             .setEphemeral(true)
             .queue();

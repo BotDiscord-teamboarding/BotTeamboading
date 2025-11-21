@@ -52,6 +52,10 @@ public class LanguageSelectionHandler extends ListenerAdapter {
             handleContinueToAuth(event);
         } else if (buttonId.equals("execute-pending-command")) {
             handleExecutePendingCommand(event);
+        } else if (buttonId.startsWith("set-default-language-")) {
+            handleSetDefaultLanguage(event, buttonId);
+        } else if (buttonId.equals("skip-default-language")) {
+            handleSkipDefaultLanguage(event);
         }
     }
     
@@ -68,25 +72,7 @@ public class LanguageSelectionHandler extends ListenerAdapter {
         formState.setLocale(selectedLocale);
         logger.info("FormState locale updated to: {}", selectedLocale);
         
-        String languageName = languageService.getLanguageName(selectedLocale);
-        String title = messageSource.getMessage("txt_idioma_confirmado_titulo", null, selectedLocale);
-        String description = MessageFormat.format(
-            messageSource.getMessage("txt_idioma_confirmado_descricao", null, selectedLocale),
-            languageName
-        );
-        
-        EmbedBuilder embed = new EmbedBuilder()
-            .setTitle("✅ " + title)
-            .setDescription(description)
-            .setColor(0x00FF00);
-        
-        String continueButtonText = messageSource.getMessage("txt_continuar", null, selectedLocale);
-        
-        event.editMessageEmbeds(embed.build())
-            .setActionRow(
-                Button.primary("continue-to-auth", "▶️ " + continueButtonText)
-            )
-            .queue();
+        handleExecutePendingCommand(event);
     }
     
     private void handleChangeLanguage(ButtonInteractionEvent event, String buttonId) {
@@ -102,10 +88,98 @@ public class LanguageSelectionHandler extends ListenerAdapter {
         formState.setLocale(newLocale);
         logger.info("FormState locale updated to: {}", newLocale);
         
+        LanguageInterceptorService.PendingCommand pendingCommand = languageInterceptor.getPendingCommand(userId);
+        
+        if (pendingCommand == null || !pendingCommand.commandName.equals("language")) {
+            String languageName = languageService.getLanguageName(newLocale);
+            String title = messageSource.getMessage("txt_idioma_alterado_titulo", null, newLocale);
+            String description = MessageFormat.format(
+                messageSource.getMessage("txt_idioma_alterado_descricao", null, newLocale),
+                languageName
+            );
+            
+            EmbedBuilder embed = new EmbedBuilder()
+                .setTitle("🔄 " + title)
+                .setDescription(description)
+                .setColor(0x5865F2);
+            
+            String continueButtonText = messageSource.getMessage("txt_continuar", null, newLocale);
+            
+            event.editMessageEmbeds(embed.build())
+                .setActionRow(
+                    Button.primary("continue-to-auth", "▶️ " + continueButtonText)
+                )
+                .queue();
+        } else {
+            showDefaultLanguageConfirmation(event, newLocale);
+        }
+    }
+    
+    private void showDefaultLanguageConfirmation(ButtonInteractionEvent event, Locale newLocale) {
         String languageName = languageService.getLanguageName(newLocale);
         String title = messageSource.getMessage("txt_idioma_alterado_titulo", null, newLocale);
+        String yesText = newLocale.equals(languageService.getPortugueseLocale()) ? "Sim, tornar padrão" : "Sí, hacer predeterminado";
+        String noText = newLocale.equals(languageService.getPortugueseLocale()) ? "Não, apenas esta sessão" : "No, solo esta sesión";
+        
         String description = MessageFormat.format(
             messageSource.getMessage("txt_idioma_alterado_descricao", null, newLocale),
+            languageName
+        ) + "\n\n" + (newLocale.equals(languageService.getPortugueseLocale()) 
+            ? "Deseja tornar este idioma como padrão permanente?" 
+            : "¿Deseas establecer este idioma como predeterminado permanente?");
+        
+        EmbedBuilder embed = new EmbedBuilder()
+            .setTitle("🔄 " + title)
+            .setDescription(description)
+            .setColor(0x5865F2);
+        
+        event.editMessageEmbeds(embed.build())
+            .setActionRow(
+                Button.success("set-default-language-" + newLocale.toLanguageTag(), "✅ " + yesText),
+                Button.secondary("skip-default-language", "⏭️ " + noText)
+            )
+            .queue();
+    }
+    
+    private void handleSetDefaultLanguage(ButtonInteractionEvent event, String buttonId) {
+        String userId = event.getUser().getId();
+        String localeTag = buttonId.replace("set-default-language-", "");
+        Locale locale = Locale.forLanguageTag(localeTag);
+        
+        logger.info("User {} set default language to: {}", userId, locale);
+        languageService.saveUserLanguagePreference(userId, locale);
+        
+        String languageName = languageService.getLanguageName(locale);
+        String title = locale.equals(languageService.getPortugueseLocale()) 
+            ? "Idioma Padrão Configurado" 
+            : "Idioma Predeterminado Configurado";
+        String description = MessageFormat.format(
+            locale.equals(languageService.getPortugueseLocale())
+                ? "O idioma **{0}** foi configurado como padrão!\n\nEste será seu idioma em todas as sessões."
+                : "El idioma **{0}** fue configurado como predeterminado!\n\nEste será tu idioma en todas las sesiones.",
+            languageName
+        );
+        
+        EmbedBuilder embed = new EmbedBuilder()
+            .setTitle("✅ " + title)
+            .setDescription(description)
+            .setColor(0x00FF00);
+        
+        event.editMessageEmbeds(embed.build())
+            .setComponents()
+            .queue();
+    }
+    
+    private void handleSkipDefaultLanguage(ButtonInteractionEvent event) {
+        String userId = event.getUser().getId();
+        Locale userLocale = languageService.getUserLanguagePreference(userId);
+        
+        logger.info("User {} skipped setting default language", userId);
+        
+        String languageName = languageService.getLanguageName(userLocale);
+        String title = messageSource.getMessage("txt_idioma_alterado_titulo", null, userLocale);
+        String description = MessageFormat.format(
+            messageSource.getMessage("txt_idioma_alterado_descricao", null, userLocale),
             languageName
         );
         
@@ -114,12 +188,8 @@ public class LanguageSelectionHandler extends ListenerAdapter {
             .setDescription(description)
             .setColor(0x5865F2);
         
-        String continueButtonText = messageSource.getMessage("txt_continuar", null, newLocale);
-        
         event.editMessageEmbeds(embed.build())
-            .setActionRow(
-                Button.primary("continue-to-auth", "▶️ " + continueButtonText)
-            )
+            .setComponents()
             .queue();
     }
     

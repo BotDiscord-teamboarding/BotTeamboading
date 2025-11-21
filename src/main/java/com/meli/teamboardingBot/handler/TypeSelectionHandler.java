@@ -29,8 +29,9 @@ public class TypeSelectionHandler extends AbstractInteractionHandler {
     @Autowired
     private MessageSource messageSource;
 
-    @Autowired
-    private FormState formState;
+    private java.util.Locale getUserLocale(long userId) {
+        return formStateService.getOrCreateState(userId).getLocale();
+    }
     
     public TypeSelectionHandler(FormStateService formStateService, SquadLogService squadLogService) {
         super(formStateService);
@@ -94,7 +95,7 @@ public class TypeSelectionHandler extends AbstractInteractionHandler {
             }
         } catch (Exception e) {
             log.error("Erro na seleção de tipo: {}", e.getMessage());
-            showError(event, messageSource.getMessage("txt_erro_processar_selecao_do_tipo", null, formState.getLocale()) + ".");
+            showError(event, messageSource.getMessage("txt_erro_processar_selecao_do_tipo", null, getUserLocale(event.getUser().getIdLong())) + ".");
         }
     }
     private void showTypeSelection(ButtonInteractionEvent event) {
@@ -103,7 +104,7 @@ public class TypeSelectionHandler extends AbstractInteractionHandler {
             String logTypesJson = withUserContext(event.getUser().getId(), () -> squadLogService.getSquadLogTypes());
             JSONArray logTypesArray = new JSONArray(logTypesJson);
             StringSelectMenu.Builder typeMenuBuilder = StringSelectMenu.create("type-select")
-                    .setPlaceholder(messageSource.getMessage("txt_selecione_o_tipo", null, formState.getLocale()));
+                    .setPlaceholder(messageSource.getMessage("txt_selecione_o_tipo", null, getUserLocale(event.getUser().getIdLong())));
             boolean hasTypes = false;
             for (int i = 0; i < logTypesArray.length(); i++) {
                 JSONObject type = logTypesArray.getJSONObject(i);
@@ -115,15 +116,15 @@ public class TypeSelectionHandler extends AbstractInteractionHandler {
                 }
             }
             EmbedBuilder embed = new EmbedBuilder()
-                .setTitle("📝 " + messageSource.getMessage("txt_selecione_um_tipo", null, formState.getLocale()))
-                .setDescription( messageSource.getMessage("txt_escolha_o_tipo_do_log", null, formState.getLocale()) + ":")
+                .setTitle("📝 " + messageSource.getMessage("txt_selecione_um_tipo", null, getUserLocale(event.getUser().getIdLong())))
+                .setDescription( messageSource.getMessage("txt_escolha_o_tipo_do_log", null, getUserLocale(event.getUser().getIdLong())) + ":")
                 .setColor(0x0099FF);
             if (hasTypes) {
                 event.getHook().editOriginalEmbeds(embed.build())
                     .setActionRow(typeMenuBuilder.build())
                     .queue();
             } else {
-                embed.setDescription("❌ "+ messageSource.getMessage("txt_nenhum_tipo_disponivel_no_momento", null, formState.getLocale()) + ".");
+                embed.setDescription("❌ "+ messageSource.getMessage("txt_nenhum_tipo_disponivel_no_momento", null, getUserLocale(event.getUser().getIdLong())) + ".");
                 event.getHook().editOriginalEmbeds(embed.build())
                     .setComponents()
                     .queue();
@@ -131,11 +132,11 @@ public class TypeSelectionHandler extends AbstractInteractionHandler {
         } catch (Exception e) {
             log.error("Erro ao carregar tipos: {}", e.getMessage());
             EmbedBuilder errorEmbed = new EmbedBuilder()
-                .setTitle("❌ "+ messageSource.getMessage("txt_erro_carregar_tipos", null, formState.getLocale()))
-                .setDescription(messageSource.getMessage("txt_erro_carregar_tipos", null, formState.getLocale()) + ". " +messageSource.getMessage("txt_tente_novamente", null, formState.getLocale())+".")
+                .setTitle("❌ "+ messageSource.getMessage("txt_erro_carregar_tipos", null, getUserLocale(event.getUser().getIdLong())))
+                .setDescription(messageSource.getMessage("txt_erro_carregar_tipos", null, getUserLocale(event.getUser().getIdLong())) + ". " +messageSource.getMessage("txt_tente_novamente", null, getUserLocale(event.getUser().getIdLong()))+".")
                 .setColor(0xFF0000);
             event.getHook().editOriginalEmbeds(errorEmbed.build())
-                .setActionRow(Button.secondary("voltar-inicio", "🏠 "+ messageSource.getMessage("txt_voltar_inicio", null, formState.getLocale())))
+                .setActionRow(Button.secondary("voltar-inicio", "🏠 "+ messageSource.getMessage("txt_voltar_inicio", null, getUserLocale(event.getUser().getIdLong()))))
                 .queue();
         }
     }
@@ -144,7 +145,7 @@ public class TypeSelectionHandler extends AbstractInteractionHandler {
             String categoriesJson = withUserContext(event.getUser().getId(), () -> squadLogService.getSquadCategories());
             JSONArray categoriesArray = new JSONArray(categoriesJson);
             StringSelectMenu.Builder categoryMenuBuilder = StringSelectMenu.create("category-select")
-                    .setPlaceholder(messageSource.getMessage("txt_selecione_as_categorias", null, formState.getLocale()))
+                    .setPlaceholder(messageSource.getMessage("txt_selecione_as_categorias", null, getUserLocale(event.getUser().getIdLong())))
                     .setMinValues(1)
                     .setMaxValues(Math.min(categoriesArray.length(), 25)); 
             boolean hasCategories = false;
@@ -158,15 +159,15 @@ public class TypeSelectionHandler extends AbstractInteractionHandler {
                 }
             }
             EmbedBuilder embed = new EmbedBuilder()
-                .setTitle("🏷️ " + messageSource.getMessage("txt_selecione_as_categorias", null, formState.getLocale()))
-                .setDescription(messageSource.getMessage("txt_escolha_uma_ou_mais_categorias", null, formState.getLocale()) + ":")
+                .setTitle("🏷️ " + messageSource.getMessage("txt_selecione_as_categorias", null, getUserLocale(event.getUser().getIdLong())))
+                .setDescription(messageSource.getMessage("txt_escolha_uma_ou_mais_categorias", null, getUserLocale(event.getUser().getIdLong())) + ":")
                 .setColor(0x0099FF);
             if (hasCategories) {
                 event.getHook().editOriginalEmbeds(embed.build())
                     .setActionRow(categoryMenuBuilder.build())
                     .queue();
             } else {
-                embed.setDescription("❌ "+ messageSource.getMessage("txt_nenhuma_categoria_disponivel", null, formState.getLocale()) + ".");
+                embed.setDescription("❌ "+ messageSource.getMessage("txt_nenhuma_categoria_disponivel", null, getUserLocale(event.getUser().getIdLong())) + ".");
                 event.getHook().editOriginalEmbeds(embed.build())
                     .setComponents()
                     .queue();
@@ -174,11 +175,11 @@ public class TypeSelectionHandler extends AbstractInteractionHandler {
         } catch (Exception e) {
             log.error("Erro ao carregar categorias: {}", e.getMessage());
             EmbedBuilder errorEmbed = new EmbedBuilder()
-                .setTitle("❌ "+ messageSource.getMessage("txt_erro_carregar_categorias", null, formState.getLocale()))
-                .setDescription(messageSource.getMessage("txt_erro_carregar_categorias", null, formState.getLocale()) + ". " + messageSource.getMessage("txt_tente_novamente", null, formState.getLocale()) + "." )
+                .setTitle("❌ "+ messageSource.getMessage("txt_erro_carregar_categorias", null, getUserLocale(event.getUser().getIdLong())))
+                .setDescription(messageSource.getMessage("txt_erro_carregar_categorias", null, getUserLocale(event.getUser().getIdLong())) + ". " + messageSource.getMessage("txt_tente_novamente", null, getUserLocale(event.getUser().getIdLong())) + "." )
                 .setColor(0xFF0000);
             event.getHook().editOriginalEmbeds(errorEmbed.build())
-                .setActionRow(Button.secondary("voltar-inicio", "🏠 " + messageSource.getMessage("txt_voltar_inicio", null, formState.getLocale())))
+                .setActionRow(Button.secondary("voltar-inicio", "🏠 " + messageSource.getMessage("txt_voltar_inicio", null, getUserLocale(event.getUser().getIdLong()))))
                 .queue();
         }
     }
@@ -190,11 +191,11 @@ public class TypeSelectionHandler extends AbstractInteractionHandler {
     }
     private void showError(StringSelectInteractionEvent event, String message) {
         EmbedBuilder errorEmbed = new EmbedBuilder()
-            .setTitle("❌ " + messageSource.getMessage("txt_erro", null, formState.getLocale()))
+            .setTitle("❌ " + messageSource.getMessage("txt_erro", null, getUserLocale(event.getUser().getIdLong())))
             .setDescription(message)
             .setColor(0xFF0000);
         event.getHook().editOriginalEmbeds(errorEmbed.build())
-            .setActionRow(Button.secondary("voltar-inicio", "🏠 " + messageSource.getMessage("txt_voltar_inicio", null, formState.getLocale())))
+            .setActionRow(Button.secondary("voltar-inicio", "🏠 " + messageSource.getMessage("txt_voltar_inicio", null, getUserLocale(event.getUser().getIdLong()))))
             .queue();
     }
     @Override

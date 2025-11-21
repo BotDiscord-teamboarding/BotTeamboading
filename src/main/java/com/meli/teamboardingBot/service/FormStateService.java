@@ -4,14 +4,28 @@ import com.meli.teamboardingBot.model.batch.BatchLogEntry;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 @Service
 public class FormStateService {
     private final Map<Long, FormState> userStates = new ConcurrentHashMap<>();
+    private final UserLanguageService userLanguageService;
     private static final int EXPIRATION_HOURS = 2;
+    
+    public FormStateService(UserLanguageService userLanguageService) {
+        this.userLanguageService = userLanguageService;
+    }
+    
     public FormState getOrCreateState(Long userId) {
-        return userStates.computeIfAbsent(userId, k -> new FormState());
+        return userStates.computeIfAbsent(userId, k -> {
+            FormState newState = new FormState();
+            Locale userLocale = userLanguageService.getUserLanguagePreference(String.valueOf(userId));
+            if (userLocale != null) {
+                newState.setLocale(userLocale);
+            }
+            return newState;
+        });
     }
     public FormState getState(Long userId) {
         FormState state = userStates.get(userId);

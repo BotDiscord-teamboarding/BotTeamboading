@@ -1,6 +1,8 @@
 package com.meli.teamboardingBot.service.command;
 
 import com.meli.teamboardingBot.model.FormState;
+import com.meli.teamboardingBot.service.FormStateService;
+import java.util.Locale;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
@@ -13,11 +15,13 @@ import org.springframework.stereotype.Component;
 @Component
 public class HelpCommand implements SlashCommandHandler {
 
-    @Autowired
-    private MessageSource messageSource;
+    private final MessageSource messageSource;
+    private final FormStateService formStateService;
 
-    @Autowired
-    private FormState formState;
+    public HelpCommand(MessageSource messageSource, FormStateService formStateService) {
+        this.messageSource = messageSource;
+        this.formStateService = formStateService;
+    }
 
     @Override
     public String getName() {
@@ -31,51 +35,55 @@ public class HelpCommand implements SlashCommandHandler {
 
     @Override
     public void execute(SlashCommandInteractionEvent event) {
+        long userIdLong = event.getUser().getIdLong();
+        FormState userFormState = formStateService.getOrCreateState(userIdLong);
+        Locale locale = userFormState.getLocale();
+        
         EmbedBuilder embed = new EmbedBuilder()
-            .setTitle("📚 Comandos Disponíveis")
-            .setDescription("Aqui está a lista de todos os comandos disponíveis no bot:")
+            .setTitle("📚 " + messageSource.getMessage("txt_help_titulo", null, locale))
+            .setDescription(messageSource.getMessage("txt_help_descricao", null, locale))
             .setColor(0x00AE86)
             .addField(
                 "📋 `/squad-log`",
-                "Gerenciar squad logs - criar ou atualizar registros de atividades da squad",
+                messageSource.getMessage("txt_help_squad_log_descricao", null, locale),
                 false
             )
             .addField(
                 "📦 `/squad-log-lote`",
-                "Criar múltiplos squad logs de uma vez usando texto livre",
+                messageSource.getMessage("txt_help_squad_log_lote_descricao", null, locale),
                 false
             )
             .addField(
                 "🚀 `/start`",
-                "Iniciar e fazer autenticação no bot",
+                messageSource.getMessage("txt_help_start_descricao", null, locale),
                 false
             )
             .addField(
                 "📊 `/status`",
-                "Verificar o status da sua autenticação",
+                messageSource.getMessage("txt_help_status_descricao", null, locale),
                 false
             )
             .addField(
                 "🛑 `/stop`",
-                "Encerrar sua sessão e fazer logout",
+                messageSource.getMessage("txt_help_stop_descricao", null, locale),
                 false
             )
             .addField(
                 "🌐 `/language`",
-                "Alterar o idioma do bot / Cambiar el idioma del bot",
+                messageSource.getMessage("txt_help_language_descricao", null, locale),
                 false
             )
             .addField(
                 "❓ `/help`",
-                "Exibir esta mensagem de ajuda",
+                messageSource.getMessage("txt_help_help_descricao", null, locale),
                 false
             )
-            .setFooter("Use os comandos acima para interagir com o bot", null);
+            .setFooter(messageSource.getMessage("txt_help_footer", null, locale), null);
 
         event.replyEmbeds(embed.build())
             .setEphemeral(true)
             .addActionRow(
-                Button.danger("help-close", "🚪 Sair")
+                Button.danger("help-close", "🚪 " + messageSource.getMessage("txt_sair", null, locale))
             )
             .queue();
     }

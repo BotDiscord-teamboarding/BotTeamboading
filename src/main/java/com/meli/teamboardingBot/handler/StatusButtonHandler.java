@@ -1,9 +1,9 @@
 package com.meli.teamboardingBot.handler;
 
 
-import com.meli.teamboardingBot.model.FormState;
 import com.meli.teamboardingBot.service.DiscordUserAuthenticationService;
 import com.meli.teamboardingBot.service.UserLanguageService;
+import com.meli.teamboardingBot.service.FormStateService;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
@@ -22,16 +22,20 @@ public class StatusButtonHandler extends ListenerAdapter {
     private final DiscordUserAuthenticationService authService;
     private final UserLanguageService languageService;
     private final MessageSource messageSource;
+    private final FormStateService formStateService;
 
-    @Autowired
-    private FormState formState;
+    private java.util.Locale getUserLocale(long userId) {
+        return formStateService.getOrCreateState(userId).getLocale();
+    }
 
     public StatusButtonHandler(DiscordUserAuthenticationService authService, 
                               UserLanguageService languageService,
-                              MessageSource messageSource) {
+                              MessageSource messageSource,
+                              FormStateService formStateService) {
         this.authService = authService;
         this.languageService = languageService;
         this.messageSource = messageSource;
+        this.formStateService = formStateService;
     }
 
     @Override
@@ -72,7 +76,7 @@ public class StatusButtonHandler extends ListenerAdapter {
        languageService.clearUserLanguagePreference(userId);
        logger.info("Language preference cleared for user {} on logout", userId);
 
-       Locale locale = formState.getLocale();
+       Locale locale = getUserLocale(event.getUser().getIdLong());
 
        EmbedBuilder embed = new EmbedBuilder()
                 .setTitle(messageSource.getMessage("status.logout.title", null, locale))
