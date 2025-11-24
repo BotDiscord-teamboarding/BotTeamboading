@@ -143,7 +143,8 @@ public class StartCommand implements SlashCommandHandler {
         event.replyEmbeds(embed.build())
             .setActionRow(
                 Button.primary("auth-manual", "🔐 " + messageSource.getMessage("txt_manual", null, userLocale)),
-                Button.success("auth-google", "🌐 " + messageSource.getMessage("txt_google", null, userLocale))
+                Button.success("auth-google", "🌐 " + messageSource.getMessage("txt_google", null, userLocale)),
+                Button.danger("status-close", "🚪 " + messageSource.getMessage("txt_sair", null, userLocale))
             )
             .setEphemeral(true)
             .queue();

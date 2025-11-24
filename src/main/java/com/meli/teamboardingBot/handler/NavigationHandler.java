@@ -92,8 +92,8 @@ public class NavigationHandler extends AbstractInteractionHandler {
     }
     private void handleExitButton(ButtonInteractionEvent event, FormState state) {
         log.info("Usuário saindo do bot");
-        event.deferReply(true).queue();
-        exitBot(event.getHook(), event.getUser().getIdLong());
+        event.deferEdit().queue();
+        exitBotWithTimer(event.getHook(), event.getUser().getIdLong());
     }
     private void handleBackToSummaryButton(ButtonInteractionEvent event, FormState state) {
         log.info("Voltando ao resumo - isEditing={}, isCreating={}", state.isEditing(), state.isCreating());
@@ -145,6 +145,25 @@ public class NavigationHandler extends AbstractInteractionHandler {
         hook.editOriginalEmbeds(embed.build())
             .setComponents()
             .queue();
+    }
+
+    private void exitBotWithTimer(net.dv8tion.jda.api.interactions.InteractionHook hook, Long userId) {
+        formStateService.removeState(userId);
+        java.util.Locale locale = getUserLocale(userId);
+        EmbedBuilder embed = new EmbedBuilder()
+            .setTitle("👋 " + messageSource.getMessage("txt_ate_logo", null, locale))
+            .setDescription(messageSource.getMessage("txt_obrigado_por_usar_o_squad_log_bot", null, locale))
+            .setColor(0x0099FF);
+        
+        hook.editOriginalEmbeds(embed.build())
+            .setComponents()
+            .queue(success -> {
+                // Agenda a remoção da mensagem após 8 segundos
+                hook.deleteOriginal().queueAfter(8, java.util.concurrent.TimeUnit.SECONDS, 
+                    deleteSuccess -> log.info("Mensagem de saída removida após 8 segundos"),
+                    deleteError -> log.warn("Erro ao remover mensagem de saída: {}", deleteError.getMessage())
+                );
+            });
     }
     private void showCreateSummary(ButtonInteractionEvent event, FormState state) {
         log.info("Mostrando resumo de criação");
