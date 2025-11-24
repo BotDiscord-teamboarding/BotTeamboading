@@ -70,7 +70,8 @@ public class SquadLogCommand implements SlashCommandHandler {
                         Ui.info(messageSource.getMessage("txt_escolha_uma_opcao", null, locale)).build()
                 ).setActionRow(
                         Button.primary("criar", "✅ " + messageSource.getMessage("txt_criar", null, locale)),
-                        Button.secondary("atualizar", "📝 " + messageSource.getMessage("txt_atualizar", null, locale))
+                        Button.secondary("atualizar", "📝 " + messageSource.getMessage("txt_atualizar", null, locale)),
+                        Button.danger("sair", "🚪 " + messageSource.getMessage("txt_sair", null, locale))
                 ).queue()
         );
     }
