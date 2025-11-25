@@ -1,0 +1,19 @@
+package com.meli.teamboardingBot.core.domain.enums;
+public enum FormStep {
+    INITIAL,
+    SQUAD_SELECTION,
+    USER_SELECTION,
+    TYPE_SELECTION,
+    CATEGORY_SELECTION,
+    DESCRIPTION_INPUT,
+    DATE_INPUT,
+    SUMMARY,
+    EDIT_MENU,
+    LOG_SELECTION,
+    SQUAD_MODIFY,
+    USER_MODIFY,
+    TYPE_MODIFY,
+    CATEGORY_MODIFY,
+    DESCRIPTION_MODIFY,
+    DATE_MODIFY
+}
