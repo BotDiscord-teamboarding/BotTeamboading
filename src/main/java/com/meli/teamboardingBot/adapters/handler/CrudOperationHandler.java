@@ -67,40 +67,48 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
         log.info("Button clicked: {}", buttonId);
         
         try {
-            if ("criar-novo-log".equals(buttonId)) {
-                handleCreateNewLog(event);
-                return;
-            } else if ("atualizar-log-existente".equals(buttonId) || "atualizar".equals(buttonId)) {
-                handleUpdateExistingLog(event);
-                return;
-            } else if ("sair-bot".equals(buttonId)) {
-                handleExitBot(event);
-                return;
-            } else if ("voltar-inicio".equals(buttonId)) {
-                handleVoltarInicio(event);
-                return;
-            }
-            
-            if ("criar-log".equals(buttonId) || "confirmar-criacao".equals(buttonId)) {
-                if (state.isCreating()) {
-                    handleCreateSquadLog(event, state);
-                } else {
-                    handleUpdateSquadLog(event, state);
-                }
-            } else if ("confirmar-atualizacao".equals(buttonId)) {
-                handleUpdateSquadLog(event, state);
-            } else if ("voltar".equals(buttonId)) {
-                handleVoltarPage(event);
-            } else if ("avancar".equals(buttonId)) {
-                handleAvancarPage(event);
-            }
+            if (handleSpecialButtons(event, buttonId)) return;
+            handleCrudButtons(event, state, buttonId);
         } catch (Exception e) {
             log.error("Error handling button click: {}", e.getMessage(), e);
             showErrorMessage(event, "❌ " + messageSource.getMessage("txt_ocorreu_um_erro_ao_processar_sua_solicitacao", null, getUserLocale(event.getUser().getIdLong())) + ". " +
                     messageSource.getMessage("", null, getUserLocale(event.getUser().getIdLong()))+ ", " + messageSource.getMessage("txt_tente_novamente", null, getUserLocale(event.getUser().getIdLong())) + "." );
         }
     }
-    
+
+    private void handleCrudButtons(ButtonInteractionEvent event, FormState state, String buttonId) {
+        if ("criar-log".equals(buttonId) || "confirmar-criacao".equals(buttonId)) {
+            if (state.isCreating()) {
+                handleCreateSquadLog(event, state);
+            } else {
+                handleUpdateSquadLog(event, state);
+            }
+        } else if ("confirmar-atualizacao".equals(buttonId)) {
+            handleUpdateSquadLog(event, state);
+        } else if ("voltar".equals(buttonId)) {
+            handleVoltarPage(event);
+        } else if ("avancar".equals(buttonId)) {
+            handleAvancarPage(event);
+        }
+    }
+
+    private boolean handleSpecialButtons(ButtonInteractionEvent event, String buttonId) {
+        if ("criar-novo-log".equals(buttonId)) {
+            handleCreateNewLog(event);
+            return true;
+        } else if ("atualizar-log-existente".equals(buttonId) || "atualizar".equals(buttonId)) {
+            handleUpdateExistingLog(event);
+            return true;
+        } else if ("sair-bot".equals(buttonId)) {
+            handleExitBot(event);
+            return true;
+        } else if ("voltar-inicio".equals(buttonId)) {
+            handleVoltarInicio(event);
+            return true;
+        }
+        return false;
+    }
+
     @Override
     protected void handleStringSelectInternal(StringSelectInteractionEvent event, FormState state) {
         log.warn("String select handling not implemented for: {}", event.getComponentId());
@@ -372,15 +380,11 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
 
             Button voltarBtn = secondary("voltar", "⬅️ " + messageSource.getMessage("txt_anterior", null, getUserLocale(event.getUser().getIdLong())) );
             Button avancarBtn = secondary("avancar", "➡️ " + messageSource.getMessage("txt_proxima", null, getUserLocale(event.getUser().getIdLong())) );
-            
 
-            if (state.getCurrentPage() <= 1) {
-                voltarBtn = voltarBtn.asDisabled();
-            }
-            if (state.getCurrentPage() >= state.getTotalPages()) {
-                avancarBtn = avancarBtn.asDisabled();
-            }
-            
+
+            voltarBtn = getButton(state, voltarBtn);
+            avancarBtn = getVoltarBtn(state.getCurrentPage() >= state.getTotalPages(), avancarBtn);
+
             event.getHook().editOriginalEmbeds(embed.build())
                     .setComponents(
                             ActionRow.of(logMenuBuilder.build()),
@@ -400,6 +404,7 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
                 .queue();
         }
     }
+
     private void buildLogSelectMenu(JSONArray squadLogsArray, StringSelectMenu.Builder logMenuBuilder) {
         for (int i = 0; i < squadLogsArray.length(); i++) {
             org.json.JSONObject log = squadLogsArray.getJSONObject(i);
@@ -504,6 +509,10 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
     private void handleVoltarPage(ButtonInteractionEvent event) {
         FormState state = formStateService.getOrCreateState(event.getUser().getIdLong());
         log.info("Navegando para página anterior (atual: {})", state.getCurrentPage());
+        PageNavigation(event, state);
+    }
+
+    private void PageNavigation(ButtonInteractionEvent event, FormState state) {
         if (state.getCurrentPage() > 1) {
             state.setCurrentPage(state.getCurrentPage() - 1);
             formStateService.updateState(event.getUser().getIdLong(), state);
@@ -513,7 +522,7 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
             event.reply("❌ " + messageSource.getMessage("txt_voce_ja_esta_na_primeira_pagina", null, getUserLocale(event.getUser().getIdLong())) + "!" ).setEphemeral(true).queue();
         }
     }
-    
+
     private void handleAvancarPage(ButtonInteractionEvent event) {
         FormState state = formStateService.getOrCreateState(event.getUser().getIdLong());
         log.info("Navegando para próxima página (atual: {})", state.getCurrentPage());
@@ -562,14 +571,10 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
 
             Button voltarBtn = secondary("voltar", "⬅️ " + messageSource.getMessage("txt_anterior", null, getUserLocale(event.getUser().getIdLong())) );
             Button avancarBtn = secondary("avancar", "➡️ " + messageSource.getMessage("txt_proxima", null, getUserLocale(event.getUser().getIdLong())) );
-            
-            if (state.getCurrentPage() <= 1) {
-                voltarBtn = voltarBtn.asDisabled();
-            }
-            if (state.getCurrentPage() >= state.getTotalPages()) {
-                avancarBtn = avancarBtn.asDisabled();
-            }
-            
+
+            voltarBtn = getVoltarBtn(state.getCurrentPage() <= 1, voltarBtn);
+            avancarBtn = getVoltarBtn(state.getCurrentPage() >= state.getTotalPages(), avancarBtn);
+
             event.getHook().editOriginalEmbeds(embed.build())
                     .setComponents(
                             ActionRow.of(logMenuBuilder.build()),
@@ -580,7 +585,7 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
                             )
                     )
                     .queue();
-            
+
         } catch (Exception e) {
             log.error("Erro ao atualizar lista de Squad Logs: {}", e.getMessage(), e);
             event.getHook().editOriginal("❌ "+ messageSource.getMessage("txt_erro_carregar_squad_logs", null, getUserLocale(event.getUser().getIdLong())) + ": " + e.getMessage())
@@ -589,6 +594,18 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
                 .queue();
         }
     }
+
+    private static Button getButton(FormState state, Button voltarBtn) {
+        voltarBtn = getVoltarBtn(state.getCurrentPage() <= 1, voltarBtn);
+        return voltarBtn;
+    }
+    private static Button getVoltarBtn(boolean state, Button voltarBtn) {
+        if (state) {
+            voltarBtn = voltarBtn.asDisabled();
+        }
+        return voltarBtn;
+    }
+
     @Override
     public int getPriority() {
         return 6;

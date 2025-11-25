@@ -6,8 +6,10 @@ import com.meli.teamboardingBot.service.FormStateService;
 import com.meli.teamboardingBot.service.SquadLogService;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
+import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
 import net.dv8tion.jda.api.interactions.components.text.TextInput;
 import net.dv8tion.jda.api.interactions.components.text.TextInputStyle;
 import net.dv8tion.jda.api.interactions.modals.Modal;
@@ -111,12 +113,7 @@ public class FieldEditHandler extends AbstractInteractionHandler {
         String selectedUserId = event.getValues().get(0);
         log.info("Usuário selecionado para edição: {}", selectedUserId);
         try {
-            if (selectedUserId.equals(state.getSquadId())) {
-                state.setUserId(selectedUserId);
-                state.setUserName("All team");
-            } else {
-                loadUserFromSquad(state, selectedUserId);
-            }
+            handleUserSelection(state, selectedUserId);
             updateFormState(event.getUser().getIdLong(), state);
             event.deferEdit().queue();
             showEditSummary(event.getHook(), state, event.getUser().getIdLong());
@@ -130,10 +127,24 @@ public class FieldEditHandler extends AbstractInteractionHandler {
             showEditSummary(event.getHook(), state, event.getUser().getIdLong());
         }
     }
+
+    private void handleUserSelection(FormState state, String selectedUserId) throws Exception {
+        if (selectedUserId.equals(state.getSquadId())) {
+            state.setUserId(selectedUserId);
+            state.setUserName("All team");
+        } else {
+            loadUserFromSquad(state, selectedUserId);
+        }
+    }
+
     private void loadUserFromSquad(FormState state, String selectedUserId) throws Exception {
         String squadsJson = squadLogService.getSquads();
         JSONObject obj = new JSONObject(squadsJson);
         JSONArray squadsArray = obj.optJSONArray("items");
+        userSquadFullName(state, selectedUserId, squadsArray);
+    }
+
+    private static void userSquadFullName(FormState state, String selectedUserId, JSONArray squadsArray) {
         if (squadsArray != null) {
             for (int i = 0; i < squadsArray.length(); i++) {
                 JSONObject squad = squadsArray.getJSONObject(i);
@@ -155,6 +166,7 @@ public class FieldEditHandler extends AbstractInteractionHandler {
             }
         }
     }
+
     private void handleTypeSelection(net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent event, FormState state) {
         String selectedTypeId = event.getValues().get(0);
         String selectedTypeName = event.getSelectedOptions().get(0).getLabel();
@@ -169,16 +181,21 @@ public class FieldEditHandler extends AbstractInteractionHandler {
         log.info("Categorias selecionadas para edição: {}", event.getValues());
         state.getCategoryIds().clear();
         state.getCategoryNames().clear();
+        handleCategoriesSelectionEdition(event, state);
+        updateFormState(event.getUser().getIdLong(), state);
+        event.deferEdit().queue();
+        showEditSummary(event.getHook(), state, event.getUser().getIdLong());
+    }
+
+    private static void handleCategoriesSelectionEdition(StringSelectInteractionEvent event, FormState state) {
         for (int i = 0; i < event.getValues().size(); i++) {
             String categoryId = event.getValues().get(i);
             String categoryName = event.getSelectedOptions().get(i).getLabel();
             state.getCategoryIds().add(categoryId);
             state.getCategoryNames().add(categoryName);
         }
-        updateFormState(event.getUser().getIdLong(), state);
-        event.deferEdit().queue();
-        showEditSummary(event.getHook(), state, event.getUser().getIdLong());
     }
+
     private void showEditSummary(net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent event, FormState state) {
         log.info("Atualizando mensagem com resumo dos dados após seleção...");
         EmbedBuilder embed = new EmbedBuilder()
@@ -342,17 +359,7 @@ public class FieldEditHandler extends AbstractInteractionHandler {
                 net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu.create("edit-squad-select")
                     .setPlaceholder(messageSource.getMessage("txt_selecione_uma_nova_squad", null, getUserLocale(event.getUser().getIdLong())));
             boolean hasSquads = false;
-            for (int i = 0; i < squadsArray.length(); i++) {
-                JSONObject squad = squadsArray.getJSONObject(i);
-                String squadId = String.valueOf(squad.get("id"));
-                String squadName = squad.optString("name", "");
-                if (squadName != null && !squadName.trim().isEmpty()) {
-                    squadMenuBuilder.addOption(squadName, squadId);
-                    hasSquads = true;
-                } else {
-                    log.warn("Squad com ID {} tem nome vazio, pulando...", squadId);
-                }
-            }
+            hasSquads = isHasSquads(squadsArray, squadMenuBuilder, hasSquads, "Squad com ID {} tem nome vazio, pulando...");
             if (!hasSquads) {
                 event.getHook().editOriginal("❌ " + messageSource.getMessage("txt_nenhuma_squad_encontrada", null, getUserLocale(event.getUser().getIdLong())) +".").queue();
                 return;
@@ -369,6 +376,22 @@ public class FieldEditHandler extends AbstractInteractionHandler {
             event.getHook().editOriginal("❌ " + messageSource.getMessage("txt_erro_carregar_squads", null, getUserLocale(event.getUser().getIdLong()))  +".").queue();
         }
     }
+
+    private static boolean isHasSquads(JSONArray squadsArray, StringSelectMenu.Builder squadMenuBuilder, boolean hasSquads, String format) {
+        for (int i = 0; i < squadsArray.length(); i++) {
+            JSONObject squad = squadsArray.getJSONObject(i);
+            String squadId = String.valueOf(squad.get("id"));
+            String squadName = squad.optString("name", "");
+            if (squadName != null && !squadName.trim().isEmpty()) {
+                squadMenuBuilder.addOption(squadName, squadId);
+                hasSquads = true;
+            } else {
+                log.warn(format, squadId);
+            }
+        }
+        return hasSquads;
+    }
+
     private void handleEditUser(ButtonInteractionEvent event, FormState state) {
         log.info("Editando usuário do log - Squad ID atual: {}", state.getSquadId());
         try {
@@ -470,17 +493,7 @@ public class FieldEditHandler extends AbstractInteractionHandler {
                 net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu.create("edit-type-select")
                     .setPlaceholder(messageSource.getMessage("txt_selecione_um_novo_tipo", null, getUserLocale(event.getUser().getIdLong())));
             boolean hasTypes = false;
-            for (int i = 0; i < typesArray.length(); i++) {
-                JSONObject type = typesArray.getJSONObject(i);
-                String typeId = String.valueOf(type.get("id"));
-                String typeName = type.optString("name", "");
-                if (typeName != null && !typeName.trim().isEmpty()) {
-                    typeMenuBuilder.addOption(typeName, typeId);
-                    hasTypes = true;
-                } else {
-                    log.warn("Tipo com ID {} tem nome vazio, pulando...", typeId);
-                }
-            }
+            hasTypes = isHasSquads(typesArray, typeMenuBuilder, hasTypes, "Tipo com ID {} tem nome vazio, pulando...");
             if (!hasTypes) {
                 event.getHook().editOriginal("❌ " + messageSource.getMessage("txt_nenhum_tipo_valido_encontrado", null, getUserLocale(event.getUser().getIdLong())) +".").queue();
                 return;
@@ -524,17 +537,7 @@ public class FieldEditHandler extends AbstractInteractionHandler {
                 net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu.create("edit-categories-select")
                     .setPlaceholder(messageSource.getMessage("txt_selecione_as_novas_categorias", null, getUserLocale(event.getUser().getIdLong())));
             int validCategoryCount = 0;
-            for (int i = 0; i < categoriesArray.length(); i++) {
-                JSONObject category = categoriesArray.getJSONObject(i);
-                String categoryId = String.valueOf(category.get("id"));
-                String categoryName = category.optString("name", "");
-                if (categoryName == null || categoryName.trim().isEmpty()) {
-                    log.warn("Categoria com ID {} tem nome vazio, pulando...", categoryId);
-                    continue;
-                }
-                categoryMenuBuilder.addOption(categoryName, categoryId);
-                validCategoryCount++;
-            }
+            validCategoryCount = getValidCategoryCount(categoriesArray, categoryMenuBuilder, validCategoryCount);
             if (validCategoryCount == 0) {
                 event.getHook().editOriginal("❌ " + messageSource.getMessage("txt_nenhuma_categoria_valida_encontrada", null, getUserLocale(event.getUser().getIdLong())) +".").queue();
                 return;
@@ -552,6 +555,27 @@ public class FieldEditHandler extends AbstractInteractionHandler {
             event.getHook().editOriginal("❌ " + messageSource.getMessage("txt_erro_carregar_categorias", null, getUserLocale(event.getUser().getIdLong())) +".").queue();
         }
     }
+
+    private static int getValidCategoryCount(JSONArray categoriesArray, StringSelectMenu.Builder categoryMenuBuilder, int validCategoryCount) {
+        validCategoryCount = getCategoryCount(categoriesArray, categoryMenuBuilder, validCategoryCount);
+        return validCategoryCount;
+    }
+
+    private static int getCategoryCount(JSONArray categoriesArray, StringSelectMenu.Builder categoryMenuBuilder, int validCategoryCount) {
+        for (int i = 0; i < categoriesArray.length(); i++) {
+            JSONObject category = categoriesArray.getJSONObject(i);
+            String categoryId = String.valueOf(category.get("id"));
+            String categoryName = category.optString("name", "");
+            if (categoryName == null || categoryName.trim().isEmpty()) {
+                log.warn("Categoria com ID {} tem nome vazio, pulando...", categoryId);
+                continue;
+            }
+            categoryMenuBuilder.addOption(categoryName, categoryId);
+            validCategoryCount++;
+        }
+        return validCategoryCount;
+    }
+
     private void handleEditDescription(ButtonInteractionEvent event, FormState state) {
         log.info("Editando descrição do log");
         TextInput.Builder descriptionBuilder = TextInput.create("description", messageSource.getMessage("txt_descricao", null, getUserLocale(event.getUser().getIdLong())), TextInputStyle.PARAGRAPH)
@@ -573,28 +597,28 @@ public class FieldEditHandler extends AbstractInteractionHandler {
             .setPlaceholder(messageSource.getMessage("txt_exemplo_data", null, getUserLocale(event.getUser().getIdLong())))
             .setMaxLength(10)
             .setRequired(true);
-        if (state.getStartDate() != null && !state.getStartDate().trim().isEmpty()) {
-            String convertedStartDate = convertApiDateToBrazilian(state.getStartDate());
-            if (!convertedStartDate.trim().isEmpty()) {
-                startDateBuilder.setValue(convertedStartDate);
-            }
-        }
+        setStartDateValue(state.getStartDate(), startDateBuilder);
         TextInput.Builder endDateBuilder = TextInput.create("end_date",  messageSource.getMessage("txt_data_de_fim", null, getUserLocale(event.getUser().getIdLong())) + " (DD-MM-AAAA)", TextInputStyle.SHORT)
             .setPlaceholder(messageSource.getMessage("txt_exemplo_data_opcional", null, getUserLocale(event.getUser().getIdLong())))
             .setMaxLength(10)
             .setRequired(false);
-        if (state.getEndDate() != null && !state.getEndDate().trim().isEmpty()) {
-            String convertedEndDate = convertApiDateToBrazilian(state.getEndDate());
-            if (!convertedEndDate.trim().isEmpty()) {
-                endDateBuilder.setValue(convertedEndDate);
-            }
-        }
+        setStartDateValue(state.getEndDate(), endDateBuilder);
         Modal modal = Modal.create("edit-dates-modal", "📅 " + messageSource.getMessage("txt_editar_datas", null, getUserLocale(event.getUser().getIdLong())))
             .addActionRow(startDateBuilder.build())
             .addActionRow(endDateBuilder.build())
             .build();
         event.replyModal(modal).queue();
     }
+
+    private void setStartDateValue(String state, TextInput.Builder startDateBuilder) {
+        if (state != null && !state.trim().isEmpty()) {
+            String convertedStartDate = convertApiDateToBrazilian(state);
+            if (!convertedStartDate.trim().isEmpty()) {
+                startDateBuilder.setValue(convertedStartDate);
+            }
+        }
+    }
+
     private String convertApiDateToBrazilian(String apiDate) {
         if (apiDate == null || apiDate.isEmpty()) {
             return "";

@@ -82,27 +82,36 @@ public class CategorySelectionHandler extends AbstractInteractionHandler {
             JSONArray categoriesArray = new JSONArray(categoriesJson);
             state.getCategoryIds().clear();
             state.getCategoryNames().clear();
-            for (String categoryId : selectedCategoryIds) {
-                for (int i = 0; i < categoriesArray.length(); i++) {
-                    JSONObject category = categoriesArray.getJSONObject(i);
-                    if (String.valueOf(category.get("id")).equals(categoryId)) {
-                        state.getCategoryIds().add(categoryId);
-                        state.getCategoryNames().add(category.optString("name", ""));
-                        break;
-                    }
-                }
-            }
+            updateCategories(state, selectedCategoryIds, categoriesArray);
             updateFormState(event.getUser().getIdLong(), state);
-            if (state.getStep() == FormStep.CATEGORY_MODIFY) {
-                showSummary(event);
-            } else {
-                openDescriptionModal(event, state);
-            }
+            showSummaryOrOpenDescriptionModal(event, state);
         } catch (Exception e) {
             log.error("Erro na seleção de categorias: {}", e.getMessage());
             showError(event, messageSource.getMessage("txt_erro_processar_selecao_das_categorias", null, state.getLocale() ));
         }
     }
+
+    private void showSummaryOrOpenDescriptionModal(StringSelectInteractionEvent event, FormState state) {
+        if (state.getStep() == FormStep.CATEGORY_MODIFY) {
+            showSummary(event);
+        } else {
+            openDescriptionModal(event, state);
+        }
+    }
+
+    private static void updateCategories(FormState state, List<String> selectedCategoryIds, JSONArray categoriesArray) {
+        for (String categoryId : selectedCategoryIds) {
+            for (int i = 0; i < categoriesArray.length(); i++) {
+                JSONObject category = categoriesArray.getJSONObject(i);
+                if (String.valueOf(category.get("id")).equals(categoryId)) {
+                    state.getCategoryIds().add(categoryId);
+                    state.getCategoryNames().add(category.optString("name", ""));
+                    break;
+                }
+            }
+        }
+    }
+
     private void showCategorySelection(ButtonInteractionEvent event) {
         try {
             event.deferEdit().queue();
@@ -114,29 +123,13 @@ public class CategorySelectionHandler extends AbstractInteractionHandler {
                     .setMinValues(1)
                     .setMaxValues(Math.min(categoriesArray.length(), 25)); 
             boolean hasCategories = false;
-            for (int i = 0; i < categoriesArray.length(); i++) {
-                JSONObject category = categoriesArray.getJSONObject(i);
-                String categoryName = category.optString("name", "");
-                String categoryId = String.valueOf(category.get("id"));
-                if (!categoryName.isEmpty()) {
-                    categoryMenuBuilder.addOption(categoryName, categoryId);
-                    hasCategories = true;
-                }
-            }
+
+            hasCategories = isHasCategories(categoriesArray, categoryMenuBuilder, hasCategories);
             EmbedBuilder embed = new EmbedBuilder()
                 .setTitle("🏷️ " + messageSource.getMessage("txt_selecione_as_categorias", null, state.getLocale() ))
                 .setDescription(messageSource.getMessage("txt_escolha_uma_ou_mais_categorias", null, state.getLocale() ) + ":")
                 .setColor(0x0099FF);
-            if (hasCategories) {
-                event.getHook().editOriginalEmbeds(embed.build())
-                    .setActionRow(categoryMenuBuilder.build())
-                    .queue();
-            } else {
-                embed.setDescription("❌ " + messageSource.getMessage("txt_nenhuma_categoria_disponivel", null, state.getLocale() ) + ".");
-                event.getHook().editOriginalEmbeds(embed.build())
-                    .setComponents()
-                    .queue();
-            }
+            showCategorySelectionEmbed(event, hasCategories, embed, categoryMenuBuilder, state);
         } catch (Exception e) {
             log.error("Erro ao carregar categorias: {}", e.getMessage());
             FormState state = getFormState(event.getUser().getIdLong());
@@ -149,6 +142,33 @@ public class CategorySelectionHandler extends AbstractInteractionHandler {
                 .queue();
         }
     }
+
+    private void showCategorySelectionEmbed(ButtonInteractionEvent event, boolean hasCategories, EmbedBuilder embed, StringSelectMenu.Builder categoryMenuBuilder, FormState state) {
+        if (hasCategories) {
+            event.getHook().editOriginalEmbeds(embed.build())
+                .setActionRow(categoryMenuBuilder.build())
+                .queue();
+        } else {
+            embed.setDescription("❌ " + messageSource.getMessage("txt_nenhuma_categoria_disponivel", null, state.getLocale() ) + ".");
+            event.getHook().editOriginalEmbeds(embed.build())
+                .setComponents()
+                .queue();
+        }
+    }
+
+    private static boolean isHasCategories(JSONArray categoriesArray, StringSelectMenu.Builder categoryMenuBuilder, boolean hasCategories) {
+        for (int i = 0; i < categoriesArray.length(); i++) {
+            JSONObject category = categoriesArray.getJSONObject(i);
+            String categoryName = category.optString("name", "");
+            String categoryId = String.valueOf(category.get("id"));
+            if (!categoryName.isEmpty()) {
+                categoryMenuBuilder.addOption(categoryName, categoryId);
+                hasCategories = true;
+            }
+        }
+        return hasCategories;
+    }
+
     private void openDescriptionModal(StringSelectInteractionEvent event, FormState state) {
         log.info("Abrindo modal de descrição e datas");
         TextInput descriptionInput = TextInput.create("description", messageSource.getMessage("txt_descricao", null, state.getLocale() ), TextInputStyle.PARAGRAPH)

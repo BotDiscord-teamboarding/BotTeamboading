@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -14,6 +15,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public class DiscordUserAuthenticationService {
     private static final Logger logger = LoggerFactory.getLogger(DiscordUserAuthenticationService.class);
     private static final long TOKEN_EXPIRATION_TIME = 24 * 3600 * 1000L;
+
+    private final Map<String, AuthService.AuthState> authStates = new HashMap<>();
 
     private final ClientAuthBoarding authClient;
     private final Map<String, UserAuthData> userTokens = new ConcurrentHashMap<>();
@@ -72,8 +75,29 @@ public class DiscordUserAuthenticationService {
 
         }
     }
+    public boolean isAuthenticated(String userId) {
+        return authStates.getOrDefault(userId, AuthService.AuthState.NOT_AUTHENTICATED) == AuthService.AuthState.AUTHENTICATED;
+    }
 
+    public enum AuthState {
+        NOT_AUTHENTICATED,
+        AWAITING_USERNAME,
+        AWAITING_PASSWORD,
+        AUTHENTICATED
+    }
+    public boolean isUserAuthenticated(String discordUserId) {
+        UserAuthData authData = userTokens.get(discordUserId);
+        if (authData == null) {
+            return false;
+        }
 
+        if (System.currentTimeMillis() >= authData.expirationTime) {
+            userTokens.remove(discordUserId);
+            logger.info("Token expirado para usuário Discord: {}", discordUserId);
+            return false;
+        }
+        return true;
+    }
     public static class AuthResponse {
         private final boolean success;
         private final String message;
@@ -89,6 +113,31 @@ public class DiscordUserAuthenticationService {
 
         public String getMessage() {
             return message;
+        }
+    }
+
+    public AuthResponse authenticateUser(String discordUserId, String username, String password) {
+        try {
+            logger.info("Tentando autenticar usuário Discord: {}", discordUserId);
+            AuthTokenResponseDTO token = authClient.getToken(username, password);
+            if (token != null && token.getAccessToken() != null) {
+                UserAuthData authData = new UserAuthData(
+                        token,
+                        System.currentTimeMillis() + TOKEN_EXPIRATION_TIME,
+                        "manual"
+                );
+                userTokens.put(discordUserId, authData);
+
+                logger.info("Autenticação bem-sucedida para usuário Discord: {}", discordUserId);
+                return new AuthResponse(true, "✅ Login realizado com sucesso! Agora você pode usar o comando /squad-log.");
+            } else {
+                logger.warn("Token não recebido para usuário Discord: {}", discordUserId);
+                return new AuthResponse(false, "❌ Falha na autenticação. Token não recebido.");
+            }
+
+        } catch (Exception e) {
+            logger.error("Falha na autenticação para usuário Discord {}: {}", discordUserId, e.getMessage());
+            return new AuthResponse(false, "❌ Falha na autenticação. Verifique suas credenciais e tente novamente.");
         }
     }
 }

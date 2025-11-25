@@ -799,10 +799,6 @@ public class BatchCreationHandler extends AbstractInteractionHandler {
              .queue();
     }
 
-    private void showEditInstructions(ButtonInteractionEvent event, BatchLogEntry entry, int currentIndex) {
-        showBatchEditSummary(event, entry, currentIndex);
-    }
-
     private void showBatchEditSummary(ButtonInteractionEvent event, BatchLogEntry entry, int currentIndex) {
         EmbedBuilder embed = new EmbedBuilder()
                 .setTitle("✏️ " + messageSource.getMessage("txt_editar_squad_log", null, getUserLocale(event.getUser().getIdLong())))
@@ -1076,54 +1072,6 @@ public class BatchCreationHandler extends AbstractInteractionHandler {
                 .setColor(Color.RED);
 
         event.getHook().editOriginalEmbeds(embed.build()).queue();
-    }
-    
-    private void showBatchEditSummary(ModalInteractionEvent event, BatchLogEntry entry, int currentIndex) {
-        EmbedBuilder embed = new EmbedBuilder()
-                .setTitle("✏️ " + messageSource.getMessage("txt_editar_squad_log", null, getUserLocale(event.getUser().getIdLong())))
-                .setDescription("**" + messageSource.getMessage("txt_dados_atuais_do_log", null, getUserLocale(event.getUser().getIdLong())) + ":**")
-                .setColor(Color.BLUE);
-
-        String squadName = entry.getSquadName() != null ? entry.getSquadName() : messageSource.getMessage("txt_nao_informado", null, getUserLocale(event.getUser().getIdLong()));
-        embed.addField("🏢 " + messageSource.getMessage("txt_squad", null, getUserLocale(event.getUser().getIdLong())), squadName, false);
-        
-        String personName = entry.getPersonName() != null ? entry.getPersonName() : messageSource.getMessage("txt_nao_informado", null, getUserLocale(event.getUser().getIdLong()));
-        embed.addField("👤 " + messageSource.getMessage("txt_pessoa", null, getUserLocale(event.getUser().getIdLong())), personName, false);
-        
-        String logType = entry.getLogType() != null ? entry.getLogType() : messageSource.getMessage("txt_nao_informado", null, getUserLocale(event.getUser().getIdLong()));
-        embed.addField("📝 " + messageSource.getMessage("txt_tipo", null, getUserLocale(event.getUser().getIdLong())), logType, false);
-        
-        String categories = (entry.getCategories() != null && !entry.getCategories().isEmpty()) ? 
-            String.join(", ", entry.getCategories()) : messageSource.getMessage("txt_nao_informado", null, getUserLocale(event.getUser().getIdLong()));
-        embed.addField("🏷️ " + messageSource.getMessage("txt_categorias", null, getUserLocale(event.getUser().getIdLong())), categories, false);
-        
-        String description = entry.getDescription() != null ? entry.getDescription() : messageSource.getMessage("txt_nao_informado", null, getUserLocale(event.getUser().getIdLong()));
-        embed.addField("📄 " + messageSource.getMessage("txt_descricao", null, getUserLocale(event.getUser().getIdLong())), description, false);
-        
-        String startDate = entry.getStartDate() != null ? 
-            entry.getStartDate().format(BRAZILIAN_DATE_FORMAT) : messageSource.getMessage("txt_nao_informado", null, getUserLocale(event.getUser().getIdLong()));
-        embed.addField("📅 " + messageSource.getMessage("txt_data_de_inicio", null, getUserLocale(event.getUser().getIdLong())), startDate, false);
-        
-        String endDate = entry.getEndDate() != null ? 
-            entry.getEndDate().format(BRAZILIAN_DATE_FORMAT) : messageSource.getMessage("txt_nao_informado", null, getUserLocale(event.getUser().getIdLong()));
-        embed.addField("📅 " +messageSource.getMessage("txt_data_de_fim", null, getUserLocale(event.getUser().getIdLong())), endDate, false);
-
-        embed.setFooter(messageSource.getMessage("txt_selecione_o_campo_que_deseja_editar", null, getUserLocale(event.getUser().getIdLong())));
-
-        List<Button> editButtons = new ArrayList<>();
-        editButtons.add(Button.secondary("batch-edit-squad", "🏢 " + messageSource.getMessage("txt_squad", null, getUserLocale(event.getUser().getIdLong()))));
-        editButtons.add(Button.secondary("batch-edit-person", "👤 " + messageSource.getMessage("txt_pessoa", null, getUserLocale(event.getUser().getIdLong()))));
-        editButtons.add(Button.secondary("batch-edit-type", "📝 " + messageSource.getMessage("txt_tipo", null, getUserLocale(event.getUser().getIdLong()))));
-        editButtons.add(Button.secondary("batch-edit-categories", "🏷️ " + messageSource.getMessage("txt_categorias", null, getUserLocale(event.getUser().getIdLong()))));
-        editButtons.add(Button.secondary("batch-edit-description", "📄 " + messageSource.getMessage("txt_descricao", null, getUserLocale(event.getUser().getIdLong()))));
-
-        List<Button> dateButtons = new ArrayList<>();
-        dateButtons.add(Button.secondary("batch-edit-dates", "📅 " + messageSource.getMessage("txt_datas", null, getUserLocale(event.getUser().getIdLong()))));
-        dateButtons.add(Button.primary("batch-back-to-preview", "⬅️ " + messageSource.getMessage("txt_voltar", null, getUserLocale(event.getUser().getIdLong()))));
-
-        event.getHook().editOriginalEmbeds(embed.build())
-             .setComponents(ActionRow.of(editButtons), ActionRow.of(dateButtons))
-             .queue();
     }
 
     private void showPostCreationMenu(ButtonInteractionEvent event) {

@@ -89,7 +89,11 @@ public class LanguageSelectionHandler extends ListenerAdapter {
         logger.info("FormState locale updated to: {}", newLocale);
         
         LanguageInterceptorService.PendingCommand pendingCommand = languageInterceptor.getPendingCommand(userId);
-        
+
+        feedBackLanguage(event, pendingCommand, newLocale);
+    }
+
+    private void feedBackLanguage(ButtonInteractionEvent event, LanguageInterceptorService.PendingCommand pendingCommand, Locale newLocale) {
         if (pendingCommand == null || !pendingCommand.commandName.equals("language")) {
             String languageName = languageService.getLanguageName(newLocale);
             String title = messageSource.getMessage("txt_idioma_alterado_titulo", null, newLocale);
@@ -114,7 +118,7 @@ public class LanguageSelectionHandler extends ListenerAdapter {
             showDefaultLanguageConfirmation(event, newLocale);
         }
     }
-    
+
     private void showDefaultLanguageConfirmation(ButtonInteractionEvent event, Locale newLocale) {
         String languageName = languageService.getLanguageName(newLocale);
         String title = messageSource.getMessage("txt_idioma_alterado_titulo", null, newLocale);
@@ -273,7 +277,7 @@ public class LanguageSelectionHandler extends ListenerAdapter {
         
         boolean requiresAuth = finalPendingCommand.commandName.equals("squad-log") || 
                               finalPendingCommand.commandName.equals("squad-log-lote");
-        
+
         if (requiresAuth && !authService.isUserAuthenticated(userId)) {
             logger.warn("User {} not authenticated, showing login screen", userId);
             languageInterceptor.clearPendingCommand(userId);
@@ -345,79 +349,6 @@ public class LanguageSelectionHandler extends ListenerAdapter {
         ).setActionRow(
             Button.primary("open-batch-modal", "📝 " + startButtonText),
             Button.danger("status-close", "🚪 " + exitButtonText)
-        ).queue();
-    }
-    
-    private void executeStartCommandByEdit(ButtonInteractionEvent event, Locale userLocale) {
-        event.editMessageEmbeds(
-            new EmbedBuilder()
-                .setTitle("🚀 " + messageSource.getMessage("txt_bem_vindo_ao_squad_log_bot", null, userLocale))
-                .setDescription(messageSource.getMessage("txt_escolha_o_metodo_de_autenticacao", null, userLocale))
-                .setColor(0x5865F2)
-                .build()
-        ).setActionRow(
-            Button.primary("auth-manual", "🔐 " + messageSource.getMessage("txt_manual", null, userLocale)),
-            Button.success("auth-google", "🌐 " + messageSource.getMessage("txt_google", null, userLocale)),
-            Button.danger("status-close", "🚪 " + messageSource.getMessage("txt_sair", null, userLocale))
-        ).queue();
-    }
-    
-    private void executeStopCommandByEdit(ButtonInteractionEvent event, Locale userLocale) {
-        String title = messageSource.getMessage("txt_nenhum_fluxo_ativo", null, userLocale);
-        String description = messageSource.getMessage("txt_vc_n_esta_em_nenhum_processo_de_criacao_ou_edicao_no_momento", null, userLocale) + 
-                           ".\n\n" + messageSource.getMessage("txt_use_squad_log_para_iniciar_um_novo_fluxo", null, userLocale);
-        
-        event.editMessageEmbeds(
-            new EmbedBuilder()
-                .setTitle("ℹ️ " + title)
-                .setDescription(description)
-                .setColor(0x3498db)
-                .build()
-        ).setComponents().queue(hook -> {
-            hook.deleteOriginal().queueAfter(10, java.util.concurrent.TimeUnit.SECONDS);
-        });
-    }
-    
-    private void executeStatusCommandByEdit(ButtonInteractionEvent event, Locale userLocale) {
-        String message = userLocale.equals(languageService.getPortugueseLocale())
-            ? "Use o comando `/status` para verificar seu status de autenticação."
-            : "Use el comando `/status` para verificar su estado de autenticación.";
-            
-        event.editMessage(message).setComponents().queue();
-    }
-    
-    private void executeHelpCommandByEdit(ButtonInteractionEvent event, Locale userLocale) {
-        String message = userLocale.equals(languageService.getPortugueseLocale())
-            ? "Use o comando `/help` para ver a lista de comandos disponíveis."
-            : "Use el comando `/help` para ver la lista de comandos disponibles.";
-            
-        event.editMessage(message).setComponents().queue();
-    }
-    
-    private void executeLanguageCommandByEdit(ButtonInteractionEvent event, Locale userLocale) {
-        String languageName = languageService.getLanguageName(userLocale);
-        Locale alternativeLocale = languageService.getAlternativeLocale(userLocale);
-        String alternativeLanguageName = languageService.getLanguageName(alternativeLocale);
-        
-        String title = messageSource.getMessage("txt_configuracao_idioma_titulo", null, userLocale);
-        String description = java.text.MessageFormat.format(
-            messageSource.getMessage("txt_configuracao_idioma_descricao", null, userLocale),
-            languageName
-        );
-        
-        String changeButtonText = java.text.MessageFormat.format(
-            messageSource.getMessage("txt_mudar_para", null, userLocale),
-            alternativeLanguageName
-        );
-        
-        event.editMessageEmbeds(
-            new EmbedBuilder()
-                .setTitle("🌍 " + title)
-                .setDescription(description)
-                .setColor(0x5865F2)
-                .build()
-        ).setActionRow(
-            Button.primary("change-language-" + alternativeLocale.toLanguageTag(), "🔄 " + changeButtonText)
         ).queue();
     }
     
