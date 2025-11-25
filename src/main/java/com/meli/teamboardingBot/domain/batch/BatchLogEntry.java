@@ -1,4 +1,4 @@
-package com.meli.teamboardingBot.model.batch;
+package com.meli.teamboardingBot.domain.batch;
 
 import java.time.LocalDate;
 import java.util.List;

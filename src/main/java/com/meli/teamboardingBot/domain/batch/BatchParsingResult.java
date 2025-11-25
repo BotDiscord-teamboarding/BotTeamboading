@@ -1,4 +1,4 @@
-package com.meli.teamboardingBot.model.batch;
+package com.meli.teamboardingBot.domain.batch;
 
 import java.util.List;
 

@@ -1,5 +1,5 @@
 package com.meli.teamboardingBot.handler;
-import com.meli.teamboardingBot.model.FormState;
+import com.meli.teamboardingBot.domain.FormState;
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;

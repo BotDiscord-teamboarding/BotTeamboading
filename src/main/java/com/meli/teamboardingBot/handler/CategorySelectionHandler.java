@@ -1,9 +1,8 @@
 package com.meli.teamboardingBot.handler;
 import com.meli.teamboardingBot.enums.FormStep;
-import com.meli.teamboardingBot.model.FormState;
+import com.meli.teamboardingBot.domain.FormState;
 import com.meli.teamboardingBot.service.FormStateService;
 import com.meli.teamboardingBot.service.SquadLogService;
-import com.meli.teamboardingBot.config.MessageConfig;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
@@ -20,8 +19,6 @@ import org.springframework.context.MessageSource;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Component

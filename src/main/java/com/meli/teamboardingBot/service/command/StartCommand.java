@@ -1,10 +1,9 @@
 package com.meli.teamboardingBot.service.command;
 
-import com.meli.teamboardingBot.model.FormState;
+import com.meli.teamboardingBot.domain.FormState;
 import com.meli.teamboardingBot.service.DiscordUserAuthenticationService;
 import com.meli.teamboardingBot.service.PendingAuthMessageService;
 import com.meli.teamboardingBot.service.UserLanguageService;
-import com.meli.teamboardingBot.config.MessageConfig;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;

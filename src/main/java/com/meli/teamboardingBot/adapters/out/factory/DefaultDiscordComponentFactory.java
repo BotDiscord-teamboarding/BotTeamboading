@@ -1,13 +1,12 @@
-package com.meli.teamboardingBot.factory;
+package com.meli.teamboardingBot.adapters.out.factory;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
-import net.dv8tion.jda.api.interactions.components.selections.SelectOption;
 import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
 import net.dv8tion.jda.api.interactions.components.text.TextInput;
 import net.dv8tion.jda.api.interactions.components.text.TextInputStyle;
 import net.dv8tion.jda.api.interactions.modals.Modal;
 import org.springframework.stereotype.Component;
-import java.awt.*;
+
 import java.util.List;
 import java.util.Map;
 @Component

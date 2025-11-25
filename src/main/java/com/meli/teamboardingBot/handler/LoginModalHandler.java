@@ -1,26 +1,19 @@
 package com.meli.teamboardingBot.handler;
 
-import com.meli.teamboardingBot.context.DiscordUserContext;
-import com.meli.teamboardingBot.enums.FormStep;
-import com.meli.teamboardingBot.model.FormState;
-import com.meli.teamboardingBot.config.MessageConfig;
+import com.meli.teamboardingBot.domain.FormState;
 import com.meli.teamboardingBot.service.DiscordUserAuthenticationService;
 import com.meli.teamboardingBot.service.FormStateService;
 import com.meli.teamboardingBot.service.GoogleAuthIntegrationService;
 import com.meli.teamboardingBot.service.SquadLogService;
-import com.meli.teamboardingBot.config.MessageConfig;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
-import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
 import net.dv8tion.jda.api.interactions.components.text.TextInput;
 import net.dv8tion.jda.api.interactions.components.text.TextInputStyle;
 import net.dv8tion.jda.api.interactions.modals.Modal;
 import org.jetbrains.annotations.NotNull;
-import org.json.JSONArray;
-import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;

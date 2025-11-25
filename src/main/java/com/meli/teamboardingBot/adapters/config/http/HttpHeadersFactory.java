@@ -1,4 +1,4 @@
-package com.meli.teamboardingBot.factory;
+package com.meli.teamboardingBot.adapters.config.http;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import java.util.List;

@@ -1,4 +1,4 @@
-package com.meli.teamboardingBot.model;
+package com.meli.teamboardingBot.domain;
 
 import lombok.Getter;
 import lombok.Setter;

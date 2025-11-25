@@ -1,6 +1,6 @@
 package com.meli.teamboardingBot.service.batch.impl;
 
-import com.meli.teamboardingBot.model.batch.BatchLogEntry;
+import com.meli.teamboardingBot.domain.batch.BatchLogEntry;
 import com.meli.teamboardingBot.service.batch.PreviewNavigator;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.MessageEmbed;
@@ -8,7 +8,6 @@ import org.springframework.stereotype.Service;
 
 import java.awt.Color;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
 
 @Service
 public class EmbedPreviewNavigationService implements PreviewNavigator {

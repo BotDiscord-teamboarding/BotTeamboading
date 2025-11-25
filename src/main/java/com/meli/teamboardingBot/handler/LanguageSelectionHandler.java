@@ -1,6 +1,6 @@
 package com.meli.teamboardingBot.handler;
 
-import com.meli.teamboardingBot.model.FormState;
+import com.meli.teamboardingBot.domain.FormState;
 import com.meli.teamboardingBot.service.DiscordUserAuthenticationService;
 import com.meli.teamboardingBot.service.FormStateService;
 import com.meli.teamboardingBot.service.LanguageInterceptorService;

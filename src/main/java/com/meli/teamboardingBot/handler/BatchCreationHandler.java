@@ -1,15 +1,13 @@
 package com.meli.teamboardingBot.handler;
 
-import com.meli.teamboardingBot.model.FormState;
-import com.meli.teamboardingBot.model.batch.BatchLogEntry;
-import com.meli.teamboardingBot.model.batch.BatchParsingResult;
+import com.meli.teamboardingBot.domain.batch.BatchLogEntry;
+import com.meli.teamboardingBot.domain.batch.BatchParsingResult;
 import com.meli.teamboardingBot.service.FormStateService;
 import com.meli.teamboardingBot.service.SquadLogService;
 import com.meli.teamboardingBot.service.batch.BatchValidator;
 import com.meli.teamboardingBot.service.batch.PreviewNavigator;
 import com.meli.teamboardingBot.service.batch.TextParser;
 import com.meli.teamboardingBot.service.batch.impl.EmbedPreviewNavigationService;
-import com.meli.teamboardingBot.config.MessageConfig;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.MessageEmbed;
@@ -21,7 +19,6 @@ import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.text.TextInput;
 import net.dv8tion.jda.api.interactions.components.text.TextInputStyle;
 import net.dv8tion.jda.api.interactions.modals.Modal;
-import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;

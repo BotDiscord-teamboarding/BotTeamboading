@@ -1,5 +1,5 @@
 package com.meli.teamboardingBot.service.command;
-import com.meli.teamboardingBot.model.FormState;
+import com.meli.teamboardingBot.domain.FormState;
 import jakarta.annotation.PostConstruct;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;

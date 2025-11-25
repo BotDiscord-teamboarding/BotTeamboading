@@ -1,4 +1,4 @@
-package com.meli.teamboardingBot.service.impl;
+package com.meli.teamboardingBot.client;
 import com.meli.teamboardingBot.client.ClientAuthBoarding;
 import com.meli.teamboardingBot.dto.AuthTokenResponseDTO;
 import com.meli.teamboardingBot.service.AuthenticationService;

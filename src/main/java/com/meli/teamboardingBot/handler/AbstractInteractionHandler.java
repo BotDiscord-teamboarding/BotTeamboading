@@ -1,9 +1,9 @@
 package com.meli.teamboardingBot.handler;
 
-import com.meli.teamboardingBot.context.DiscordUserContext;
+import com.meli.teamboardingBot.shared.context.DiscordUserContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import com.meli.teamboardingBot.model.FormState;
+import com.meli.teamboardingBot.domain.FormState;
 import com.meli.teamboardingBot.service.FormStateService;
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;

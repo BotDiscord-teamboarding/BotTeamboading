@@ -1,4 +1,4 @@
-package com.meli.teamboardingBot.context;
+package com.meli.teamboardingBot.shared.context;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;

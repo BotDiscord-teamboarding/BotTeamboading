@@ -1,4 +1,4 @@
-package com.meli.teamboardingBot.factory;
+package com.meli.teamboardingBot.adapters.config.http;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
@@ -12,6 +12,7 @@ public class DefaultHttpHeadersFactory implements HttpHeadersFactory {
         headers.setAccept(List.of(MediaType.APPLICATION_JSON));
         return headers;
     }
+
     @Override
     public HttpHeaders createJsonHeaders(String token) {
         HttpHeaders headers = new HttpHeaders();

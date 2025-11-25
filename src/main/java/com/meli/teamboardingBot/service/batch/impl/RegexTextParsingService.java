@@ -1,6 +1,6 @@
 package com.meli.teamboardingBot.service.batch.impl;
 
-import com.meli.teamboardingBot.model.batch.BatchLogEntry;
+import com.meli.teamboardingBot.domain.batch.BatchLogEntry;
 import com.meli.teamboardingBot.service.batch.TextParser;
 import org.springframework.stereotype.Service;
 
@@ -8,7 +8,6 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;

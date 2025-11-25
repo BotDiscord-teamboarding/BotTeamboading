@@ -1,4 +1,4 @@
-package com.meli.teamboardingBot.factory;
+package com.meli.teamboardingBot.adapters.out.factory;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;

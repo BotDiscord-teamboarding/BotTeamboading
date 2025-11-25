@@ -1,6 +1,6 @@
 package com.meli.teamboardingBot.filter;
 
-import com.meli.teamboardingBot.context.DiscordUserContext;
+import com.meli.teamboardingBot.shared.context.DiscordUserContext;
 import net.dv8tion.jda.api.events.interaction.GenericInteractionCreateEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.jetbrains.annotations.NotNull;

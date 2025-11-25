@@ -21,29 +21,7 @@ public class DiscordUserAuthenticationService {
     public DiscordUserAuthenticationService(ClientAuthBoarding authClient) {
         this.authClient = authClient;
     }
-    
 
-    public boolean isUserAuthenticated(String discordUserId) {
-        UserAuthData authData = userTokens.get(discordUserId);
-        if (authData == null) {
-            return false;
-        }
-        
-        if (System.currentTimeMillis() >= authData.expirationTime) {
-            userTokens.remove(discordUserId);
-            logger.info("Token expirado para usuário Discord: {}", discordUserId);
-            return false;
-        }
-        return true;
-    }
-    
-
-    public AuthTokenResponseDTO getUserToken(String discordUserId) {
-        if (!isUserAuthenticated(discordUserId)) {
-            return null;
-        }
-        return userTokens.get(discordUserId).token;
-    }
 
     public AuthResponse authenticateUser(String discordUserId, String username, String password) {
         try {
@@ -105,20 +83,6 @@ public class DiscordUserAuthenticationService {
     public void logoutUser(String discordUserId) {
         userTokens.remove(discordUserId);
         logger.info("Logout realizado para usuário Discord: {}", discordUserId);
-    }
-    
-
-    private static class UserAuthData {
-        final AuthTokenResponseDTO token;
-        final long expirationTime;
-        final String authMethod;
-        
-        UserAuthData(AuthTokenResponseDTO token, long expirationTime, String authMethod) {
-            this.token = token;
-            this.expirationTime = expirationTime;
-            this.authMethod = authMethod;
-
-        }
     }
     
 

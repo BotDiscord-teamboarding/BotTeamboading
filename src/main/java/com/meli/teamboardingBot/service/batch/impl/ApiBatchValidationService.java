@@ -1,7 +1,7 @@
 package com.meli.teamboardingBot.service.batch.impl;
 
-import com.meli.teamboardingBot.model.batch.BatchLogEntry;
-import com.meli.teamboardingBot.model.batch.BatchParsingResult;
+import com.meli.teamboardingBot.domain.batch.BatchLogEntry;
+import com.meli.teamboardingBot.domain.batch.BatchParsingResult;
 import com.meli.teamboardingBot.service.SquadLogService;
 import com.meli.teamboardingBot.service.batch.BatchValidator;
 import org.json.JSONArray;
