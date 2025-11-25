@@ -1,5 +1,5 @@
 package com.meli.teamboardingBot.service;
-import com.meli.teamboardingBot.client.ClientBoarding;
+import com.meli.teamboardingBot.adapters.out.client.ClientBoarding;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;

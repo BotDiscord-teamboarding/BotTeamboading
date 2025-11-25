@@ -3,8 +3,8 @@ package com.meli.teamboardingBot.core.usecase.defaultclient;
 import com.meli.teamboardingBot.core.ports.auth.GetUserTokenPort;
 import com.meli.teamboardingBot.core.ports.auth.api.GetApiTokenPort;
 import com.meli.teamboardingBot.core.ports.logger.LoggerApiPort;
-import com.meli.teamboardingBot.shared.context.DiscordUserContext;
-import com.meli.teamboardingBot.dto.AuthTokenResponseDTO;
+import com.meli.teamboardingBot.core.context.DiscordUserContext;
+import com.meli.teamboardingBot.adapters.dto.AuthTokenResponseDTO;
 
 public class DefaultClientAbstract {
 

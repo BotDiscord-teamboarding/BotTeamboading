@@ -1,6 +1,6 @@
 package com.meli.teamboardingBot.service.batch.impl;
 
-import com.meli.teamboardingBot.domain.batch.BatchLogEntry;
+import com.meli.teamboardingBot.core.domain.batch.BatchLogEntry;
 import com.meli.teamboardingBot.service.batch.PreviewNavigator;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.MessageEmbed;

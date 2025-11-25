@@ -1,6 +1,6 @@
 package com.meli.teamboardingBot.service;
-import com.meli.teamboardingBot.domain.FormState;
-import com.meli.teamboardingBot.domain.batch.BatchLogEntry;
+import com.meli.teamboardingBot.core.domain.FormState;
+import com.meli.teamboardingBot.core.domain.batch.BatchLogEntry;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;

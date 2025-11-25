@@ -8,4 +8,6 @@ public interface LoggerApiPort  {
 
     void error (String txt, Object... arguments);
 
+    void warn (String txt, Object... arguments);
+
 }

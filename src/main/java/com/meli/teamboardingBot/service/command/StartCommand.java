@@ -1,6 +1,6 @@
 package com.meli.teamboardingBot.service.command;
 
-import com.meli.teamboardingBot.domain.FormState;
+import com.meli.teamboardingBot.core.domain.FormState;
 import com.meli.teamboardingBot.service.DiscordUserAuthenticationService;
 import com.meli.teamboardingBot.service.PendingAuthMessageService;
 import com.meli.teamboardingBot.service.UserLanguageService;

@@ -1,7 +1,7 @@
 package com.meli.teamboardingBot.service.command;
 
-import com.meli.teamboardingBot.handler.BatchCreationHandler;
-import com.meli.teamboardingBot.domain.FormState;
+import com.meli.teamboardingBot.adapters.handler.BatchCreationHandler;
+import com.meli.teamboardingBot.core.domain.FormState;
 import com.meli.teamboardingBot.service.DiscordUserAuthenticationService;
 import com.meli.teamboardingBot.service.PendingAuthMessageService;
 import com.meli.teamboardingBot.service.FormStateService;

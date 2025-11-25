@@ -1,6 +1,6 @@
 package com.meli.teamboardingBot.service.batch;
 
-import com.meli.teamboardingBot.domain.batch.BatchLogEntry;
+import com.meli.teamboardingBot.core.domain.batch.BatchLogEntry;
 import java.util.List;
 
 public interface TextParser {

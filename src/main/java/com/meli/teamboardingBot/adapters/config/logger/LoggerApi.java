@@ -20,4 +20,8 @@ public class LoggerApi implements LoggerApiPort {
     public void error(String txt, Object... arguments) {
         logger.debug(txt, arguments);
     }
+
+    public void warn(String txt, Object... arguments) {
+        logger.warn(txt, arguments);
+    }
 }

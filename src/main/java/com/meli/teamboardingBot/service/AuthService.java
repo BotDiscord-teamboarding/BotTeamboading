@@ -1,7 +1,7 @@
 package com.meli.teamboardingBot.service;
 
-import com.meli.teamboardingBot.client.ClientAuthBoarding;
-import com.meli.teamboardingBot.dto.AuthTokenResponseDTO;
+import com.meli.teamboardingBot.adapters.out.client.ClientAuthBoarding;
+import com.meli.teamboardingBot.adapters.dto.AuthTokenResponseDTO;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
