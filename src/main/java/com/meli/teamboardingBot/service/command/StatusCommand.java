@@ -1,6 +1,9 @@
 package com.meli.teamboardingBot.service.command;
 
 import com.meli.teamboardingBot.core.domain.FormState;
+import com.meli.teamboardingBot.core.ports.auth.GetIsUserAuthenticatedPort;
+import com.meli.teamboardingBot.core.ports.logger.LoggerApiPort;
+import com.meli.teamboardingBot.core.usecase.auth.UserTokenAbstract;
 import com.meli.teamboardingBot.service.DiscordUserAuthenticationService;
 import com.meli.teamboardingBot.service.FormStateService;
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -15,13 +18,14 @@ import java.util.Locale;
 
 
 @Component
-public class StatusCommand implements SlashCommandHandler{
-    private final DiscordUserAuthenticationService authService;
+public class StatusCommand extends UserTokenAbstract implements SlashCommandHandler{
+    private final GetIsUserAuthenticatedPort isUserAuthenticated;
     private final MessageSource messageSource;
     private final FormStateService formStateService;
 
-    public StatusCommand(DiscordUserAuthenticationService authService, MessageSource messageSource, FormStateService formStateService) {
-        this.authService = authService;
+    public StatusCommand(LoggerApiPort loggerApiPort, GetIsUserAuthenticatedPort isUserAuthenticated, MessageSource messageSource, FormStateService formStateService) {
+        super(loggerApiPort);
+        this.isUserAuthenticated = isUserAuthenticated;
         this.messageSource = messageSource;
         this.formStateService = formStateService;
     }
@@ -43,7 +47,7 @@ public class StatusCommand implements SlashCommandHandler{
         FormState userFormState = formStateService.getOrCreateState(userIdLong);
         Locale locale = userFormState.getLocale();
 
-        if (!authService.isUserAuthenticated(userId)) {
+        if (!isUserAuthenticated.isUserAuthenticated(userId)) {
             showUnauthenticatedStatus(event, locale);
 
         }else {
@@ -52,7 +56,7 @@ public class StatusCommand implements SlashCommandHandler{
     }
 
     private void showAuthenticatedStatus(SlashCommandInteractionEvent event, String userId, Locale locale) {
-        String authMethod = authService.getAuthMethod(userId);
+        String authMethod = getAuthMethod(userId);
         String authMethodText = "manual".equals(authMethod) ?
                 messageSource.getMessage("status.auth.method.manual", null, locale) :
                 messageSource.getMessage("status.auth.method.google", null, locale);

@@ -45,4 +45,11 @@ public class UserTokenAbstract {
             return message;
         }
     }
+    public String getAuthMethod(String discordUserId) {
+        UserAuthData authData = userTokens.get(discordUserId);
+        if (authData == null) {
+            return null;
+        }
+        return authData.authMethod;
+    }
 }

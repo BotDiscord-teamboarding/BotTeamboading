@@ -1,6 +1,9 @@
 package com.meli.teamboardingBot.adapters.handler;
 
 import com.meli.teamboardingBot.core.domain.FormState;
+import com.meli.teamboardingBot.core.ports.auth.GetUserAuthenticatePort;
+import com.meli.teamboardingBot.core.ports.auth.GetUserAuthenticateWithTokenPort;
+import com.meli.teamboardingBot.core.usecase.auth.UserTokenAbstract;
 import com.meli.teamboardingBot.service.DiscordUserAuthenticationService;
 import com.meli.teamboardingBot.service.FormStateService;
 import com.meli.teamboardingBot.service.GoogleAuthIntegrationService;
@@ -24,22 +27,26 @@ import org.springframework.stereotype.Component;
 @Component
 public class LoginModalHandler extends ListenerAdapter {
     private static final Logger logger = LoggerFactory.getLogger(LoginModalHandler.class);
-    private final DiscordUserAuthenticationService authService;
+    private final GetUserAuthenticatePort getUserAuthenticatePort;
+    private final GetUserAuthenticateWithTokenPort getUserAuthenticateWithTokenPort;
     private final FormStateService formStateService;
     private final SquadLogService squadLogService;
     private final GoogleAuthIntegrationService googleAuthIntegration;
     private final com.meli.teamboardingBot.service.UserInteractionChannelService channelService;
 
-    public LoginModalHandler(DiscordUserAuthenticationService authService,
+    @Autowired
+    public LoginModalHandler(GetUserAuthenticatePort getUserAuthenticatePort,
                              FormStateService formStateService,
                              SquadLogService squadLogService,
                              GoogleAuthIntegrationService googleAuthIntegration,
-                             com.meli.teamboardingBot.service.UserInteractionChannelService channelService) {
-        this.authService = authService;
+                             com.meli.teamboardingBot.service.UserInteractionChannelService channelService,
+                             GetUserAuthenticateWithTokenPort getUserAuthenticateWithTokenPort) {
+        this.getUserAuthenticatePort = getUserAuthenticatePort;
         this.formStateService = formStateService;
         this.squadLogService = squadLogService;
         this.googleAuthIntegration = googleAuthIntegration;
         this.channelService = channelService;
+        this.getUserAuthenticateWithTokenPort = getUserAuthenticateWithTokenPort;
     }
     @Autowired
     private MessageSource messageSource;
@@ -279,8 +286,8 @@ public class LoginModalHandler extends ListenerAdapter {
         logger.info("Processando modal de login para usuário Discord: {}", userId);
 
         event.deferEdit().queue(hook -> {
-            DiscordUserAuthenticationService.AuthResponse response =
-                    authService.authenticateUser(userId, username, password);
+            UserTokenAbstract.AuthResponse response =
+                    getUserAuthenticatePort.authenticateUser(userId, username, password);
 
             if (response.isSuccess()) {
                 logger.info("Login manual bem-sucedido para usuário: {}", userId);
@@ -340,7 +347,7 @@ public class LoginModalHandler extends ListenerAdapter {
                 logger.info("✅ Token obtido com sucesso!");
 
                 logger.info("🔐 Autenticando usuário...");
-                authService.authenticateUserWithToken(userId, accessToken);
+                getUserAuthenticateWithTokenPort.authenticateUserWithToken(userId, accessToken);
                 logger.info("✅ Usuário {} autenticado via Google com sucesso!", userId);
 
                 EmbedBuilder successEmbed = new EmbedBuilder()

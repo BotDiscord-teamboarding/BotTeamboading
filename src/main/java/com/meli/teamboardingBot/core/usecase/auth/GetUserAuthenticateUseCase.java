@@ -1,10 +1,11 @@
 package com.meli.teamboardingBot.core.usecase.auth;
 
+import com.meli.teamboardingBot.core.ports.auth.GetUserAuthenticatePort;
 import com.meli.teamboardingBot.core.ports.auth.api.GetManualApiTokenPort;
 import com.meli.teamboardingBot.core.ports.logger.LoggerApiPort;
 import com.meli.teamboardingBot.adapters.dto.AuthTokenResponseDTO;
 
-public class GetUserAuthenticateUseCase extends UserTokenAbstract{
+public class GetUserAuthenticateUseCase extends UserTokenAbstract implements GetUserAuthenticatePort {
 
     private GetManualApiTokenPort getManualApiTokenPort;
 

@@ -1,6 +1,7 @@
 package com.meli.teamboardingBot.adapters.handler;
 
 import com.meli.teamboardingBot.core.domain.FormState;
+import com.meli.teamboardingBot.core.ports.auth.GetIsUserAuthenticatedPort;
 import com.meli.teamboardingBot.service.DiscordUserAuthenticationService;
 import com.meli.teamboardingBot.service.FormStateService;
 import com.meli.teamboardingBot.service.LanguageInterceptorService;
@@ -26,18 +27,18 @@ public class LanguageSelectionHandler extends ListenerAdapter {
     private final MessageSource messageSource;
     private final FormStateService formStateService;
     private final LanguageInterceptorService languageInterceptor;
-    private final DiscordUserAuthenticationService authService;
+    private final GetIsUserAuthenticatedPort isUserAuthenticated;
     
     public LanguageSelectionHandler(UserLanguageService languageService, 
                                    MessageSource messageSource, 
                                    FormStateService formStateService,
                                    LanguageInterceptorService languageInterceptor,
-                                   DiscordUserAuthenticationService authService) {
+                                    GetIsUserAuthenticatedPort isUserAuthenticated) {
         this.languageService = languageService;
         this.messageSource = messageSource;
         this.formStateService = formStateService;
         this.languageInterceptor = languageInterceptor;
-        this.authService = authService;
+        this.isUserAuthenticated = isUserAuthenticated;
     }
     
     @Override
@@ -274,7 +275,7 @@ public class LanguageSelectionHandler extends ListenerAdapter {
         boolean requiresAuth = finalPendingCommand.commandName.equals("squad-log") || 
                               finalPendingCommand.commandName.equals("squad-log-lote");
         
-        if (requiresAuth && !authService.isUserAuthenticated(userId)) {
+        if (requiresAuth && !isUserAuthenticated.isUserAuthenticated(userId)) {
             logger.warn("User {} not authenticated, showing login screen", userId);
             languageInterceptor.clearPendingCommand(userId);
             event.deferEdit().queue(hook -> showLoginRequiredScreen(hook, finalUserLocale));

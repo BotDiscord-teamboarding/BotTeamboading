@@ -1,5 +1,6 @@
 package com.meli.teamboardingBot.service.command;
 import com.meli.teamboardingBot.core.domain.FormState;
+import com.meli.teamboardingBot.core.ports.auth.GetIsUserAuthenticatedPort;
 import com.meli.teamboardingBot.service.DiscordUserAuthenticationService;
 import com.meli.teamboardingBot.service.PendingAuthMessageService;
 import com.meli.teamboardingBot.service.FormStateService;
@@ -14,16 +15,16 @@ import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Component;
 @Component
 public class SquadLogCommand implements SlashCommandHandler {
-    private final DiscordUserAuthenticationService authService;
+    private final GetIsUserAuthenticatedPort isUserAuthenticated;
     private final PendingAuthMessageService pendingAuthMessageService;
     private final MessageSource messageSource;
     private final FormStateService formStateService;
 
-    public SquadLogCommand(DiscordUserAuthenticationService authService,
+    public SquadLogCommand(GetIsUserAuthenticatedPort isUserAuthenticated,
                           PendingAuthMessageService pendingAuthMessageService,
                           MessageSource messageSource,
                           FormStateService formStateService) {
-        this.authService = authService;
+        this.isUserAuthenticated = isUserAuthenticated;
         this.pendingAuthMessageService = pendingAuthMessageService;
         this.messageSource = messageSource;
         this.formStateService = formStateService;
@@ -46,7 +47,7 @@ public class SquadLogCommand implements SlashCommandHandler {
         FormState userFormState = formStateService.getOrCreateState(userIdLong);
         Locale locale = userFormState.getLocale();
         
-        if (!authService.isUserAuthenticated(userId)) {
+        if (!isUserAuthenticated.isUserAuthenticated(userId)) {
             EmbedBuilder embed = new EmbedBuilder()
                 .setTitle("🔒 " + messageSource.getMessage("txt_autenticacao_necessaria", null, locale))
                 .setDescription(messageSource.getMessage("txt_faca_login_para_usar_os_comandos", null, locale) + 

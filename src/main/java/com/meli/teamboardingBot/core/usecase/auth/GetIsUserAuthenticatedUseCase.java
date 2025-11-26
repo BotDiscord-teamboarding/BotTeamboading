@@ -17,7 +17,7 @@ public class GetIsUserAuthenticatedUseCase extends UserTokenAbstract implements 
 
         if (System.currentTimeMillis() >= authData.expirationTime) {
             userTokens.remove(discordUserId);
-            logger.info("Token expirado para usuário Discord: {}", discordUserId);
+            loggerApiPort.info("Token expirado para usuário Discord: {}", discordUserId);
             return false;
         }
         return true;

@@ -2,6 +2,7 @@ package com.meli.teamboardingBot.adapters.handler;
 import com.meli.teamboardingBot.core.context.DiscordUserContext;
 import com.meli.teamboardingBot.core.domain.enums.FormStep;
 import com.meli.teamboardingBot.core.domain.FormState;
+import com.meli.teamboardingBot.core.ports.auth.GetIsUserAuthenticatedPort;
 import com.meli.teamboardingBot.service.FormStateService;
 import com.meli.teamboardingBot.service.PendingAuthMessageService;
 import com.meli.teamboardingBot.service.SquadLogService;
@@ -23,18 +24,18 @@ import org.springframework.stereotype.Component;
 @Order(1)
 public class SquadSelectionHandler extends AbstractInteractionHandler {
     private final SquadLogService squadLogService;
-    private final com.meli.teamboardingBot.service.DiscordUserAuthenticationService discordAuthService;
+    private final GetIsUserAuthenticatedPort isUserAuthenticated;
     private final PendingAuthMessageService pendingAuthMessageService;
     @Autowired
     private SummaryHandler summaryHandler;
     
     public SquadSelectionHandler(FormStateService formStateService, 
-                                SquadLogService squadLogService,
-                                com.meli.teamboardingBot.service.DiscordUserAuthenticationService discordAuthService,
+                                SquadLogService squadLogService, 
+                                 GetIsUserAuthenticatedPort isUserAuthenticated,
                                 PendingAuthMessageService pendingAuthMessageService) {
         super(formStateService);
         this.squadLogService = squadLogService;
-        this.discordAuthService = discordAuthService;
+        this.isUserAuthenticated = isUserAuthenticated;
         this.pendingAuthMessageService = pendingAuthMessageService;
     }
 
@@ -69,7 +70,7 @@ public class SquadSelectionHandler extends AbstractInteractionHandler {
     private void handleCreateButton(ButtonInteractionEvent event, FormState state) {
         String userId = event.getUser().getId();
         
-        if (!discordAuthService.isUserAuthenticated(userId)) {
+        if (!isUserAuthenticated.isUserAuthenticated(userId)) {
             log.warn("Usuário {} não autenticado tentando criar squad-log", userId);
             EmbedBuilder embed = new EmbedBuilder()
                 .setTitle("🔒 " + messageSource.getMessage("txt_autenticacao_necessaria", null, getUserLocale(event.getUser().getIdLong())))
@@ -141,7 +142,7 @@ public class SquadSelectionHandler extends AbstractInteractionHandler {
                     .setDescription(messageSource.getMessage("txt_nao_ha_squads_disponiveis_no_momento", null, getUserLocale(event.getUser().getIdLong())) + ".")
                     .setColor(0xFF0000);
                 event.getHook().editOriginalEmbeds(errorEmbed.build())
-                    .setActionRow(Button.secondary("voltar-inicio", "🏠 " + messageSource.getMessage("", null, getUserLocale(event.getUser().getIdLong()))))
+                    .setActionRow(Button.secondary("voltar-inicio", "🏠 " + messageSource.getMessage("txt_voltar_inicio", null, getUserLocale(event.getUser().getIdLong()))))
                     .queue();
                 return;
             }
@@ -170,7 +171,7 @@ public class SquadSelectionHandler extends AbstractInteractionHandler {
                         messageSource.getMessage("txt_tente_novamente", null, getUserLocale(event.getUser().getIdLong())) + ".")
                 .setColor(0xFF0000);
             event.getHook().editOriginalEmbeds(errorEmbed.build())
-                .setActionRow(Button.secondary("voltar-inicio", "🏠 " + messageSource.getMessage("", null, getUserLocale(event.getUser().getIdLong()))))
+                .setActionRow(Button.secondary("voltar-inicio", "🏠 " + messageSource.getMessage("txt_voltar_inicio", null, getUserLocale(event.getUser().getIdLong()))))
                 .queue();
         }
     }

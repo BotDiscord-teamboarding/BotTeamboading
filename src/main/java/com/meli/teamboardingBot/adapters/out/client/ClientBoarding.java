@@ -1,49 +1,69 @@
 package com.meli.teamboardingBot.adapters.out.client;
 import com.meli.teamboardingBot.adapters.out.client.constants.ApiEndpoints;
-import com.meli.teamboardingBot.service.HttpClientService;
+import com.meli.teamboardingBot.core.ports.defaultclient.GetDefaultClientPort;
+import com.meli.teamboardingBot.core.ports.defaultclient.GetDefaultClientWithParamPort;
+import com.meli.teamboardingBot.core.ports.defaultclient.PostDefaultClientPort;
+import com.meli.teamboardingBot.core.ports.defaultclient.PutDefaultClientPort;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 @Component
 public class ClientBoarding {
-    private final HttpClientService httpClient;
+    private final GetDefaultClientPort getDefaultClientPort;
+    private final GetDefaultClientWithParamPort getDefaultClientWithParamPort;
+    private final PostDefaultClientPort postDefaultClientPort;
+    private final PutDefaultClientPort putDefaultClientPort;
+    
     private final Integer limit = 15;
+    
     @Autowired
-    public ClientBoarding(HttpClientService httpClient) {
-        this.httpClient = httpClient;
+    public ClientBoarding(GetDefaultClientPort getDefaultClientPort, GetDefaultClientWithParamPort getDefaultClientWithParamPort, PostDefaultClientPort postDefaultClientPort, PutDefaultClientPort putDefaultClientPort) {
+        this.getDefaultClientPort = getDefaultClientPort;
+        this.getDefaultClientWithParamPort = getDefaultClientWithParamPort;
+        this.postDefaultClientPort = postDefaultClientPort;
+        this.putDefaultClientPort = putDefaultClientPort;
     }
+    
     public String getSquads() {
-        return httpClient.get(ApiEndpoints.SQUAD_LIST);
+        return getDefaultClientPort.get(ApiEndpoints.SQUAD_LIST);
     }
+    
     public String getSquadLogTypes() {
-        return httpClient.get(ApiEndpoints.SQUAD_LOG_TYPES);
+        return getDefaultClientPort.get(ApiEndpoints.SQUAD_LOG_TYPES);
     }
+    
     public String getSquadCategories() {
-        return httpClient.get(ApiEndpoints.SQUAD_CATEGORIES);
+        return getDefaultClientPort.get(ApiEndpoints.SQUAD_CATEGORIES);
     }
+    
     public ResponseEntity<String> createSquadLog(String payload) {
-        return httpClient.post(ApiEndpoints.SQUAD_LOG, payload);
+        String result = postDefaultClientPort.post(ApiEndpoints.SQUAD_LOG, payload);
+        return new ResponseEntity<>(result, HttpStatus.OK);
     }
+    
     public ResponseEntity<String> updateSquadLog(Long squadLogId, String payload) {
         String endpoint = ApiEndpoints.SQUAD_LOG + "/" + squadLogId;
-        return httpClient.put(endpoint, payload);
+        String result = putDefaultClientPort.put(endpoint, payload);
+        return new ResponseEntity<>(result, HttpStatus.OK);
     }
+
     public String getSquadLogAll() {
-        return httpClient.get(ApiEndpoints.SQUAD_LOG_LIST_ALL);
+        return getDefaultClientPort.get(ApiEndpoints.SQUAD_LOG_LIST_ALL);
     }
     
     public String getSquadLogAll(int page, int limit) {
         int offset = (page - 1) * limit;
         String endpoint = ApiEndpoints.buildSquadLogListUrl(offset, limit);
-        return httpClient.get(endpoint);
+        return getDefaultClientPort.get(endpoint);
     }
     public String getSquadLogId(String id) {
         String endpoint = ApiEndpoints.SQUAD_LOG_BY_ID + id;
-        return httpClient.get(endpoint);
+        return getDefaultClientPort.get(endpoint);
     }
     
     public String getUsersBySquad(String squadId) {
         String endpoint = ApiEndpoints.SQUAD_BASE + "/" + squadId + "/users";
-        return httpClient.get(endpoint);
+        return getDefaultClientPort.get(endpoint);
     }
 }

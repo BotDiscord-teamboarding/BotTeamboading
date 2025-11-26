@@ -1,6 +1,7 @@
 package com.meli.teamboardingBot.adapters.handler;
 import com.meli.teamboardingBot.core.domain.enums.FormStep;
 import com.meli.teamboardingBot.core.domain.FormState;
+import com.meli.teamboardingBot.core.ports.auth.GetIsUserAuthenticatedPort;
 import com.meli.teamboardingBot.service.DiscordUserAuthenticationService;
 import com.meli.teamboardingBot.service.FormStateService;
 import com.meli.teamboardingBot.service.PendingAuthMessageService;
@@ -28,17 +29,17 @@ import static net.dv8tion.jda.api.interactions.components.buttons.Button.*;
 @Order(6)
 public class CrudOperationHandler extends AbstractInteractionHandler {
     private final SquadLogService squadLogService;
-    private final DiscordUserAuthenticationService discordAuthService;
+    private final GetIsUserAuthenticatedPort isUserAuthenticated;
     private final PendingAuthMessageService pendingAuthMessageService;
     private static final int LIMIT_PAGE = 15;
 
     public CrudOperationHandler(FormStateService formStateService, 
                                SquadLogService squadLogService,
-                               DiscordUserAuthenticationService discordAuthService,
+                                GetIsUserAuthenticatedPort isUserAuthenticated,
                                PendingAuthMessageService pendingAuthMessageService) {
         super(formStateService);
         this.squadLogService = squadLogService;
-        this.discordAuthService = discordAuthService;
+        this.isUserAuthenticated = isUserAuthenticated;
         this.pendingAuthMessageService = pendingAuthMessageService;
     }
 
@@ -97,7 +98,7 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
         } catch (Exception e) {
             log.error("Error handling button click: {}", e.getMessage(), e);
             showErrorMessage(event, "❌ " + messageSource.getMessage("txt_ocorreu_um_erro_ao_processar_sua_solicitacao", null, getUserLocale(event.getUser().getIdLong())) + ". " +
-                    messageSource.getMessage("", null, getUserLocale(event.getUser().getIdLong()))+ ", " + messageSource.getMessage("txt_tente_novamente", null, getUserLocale(event.getUser().getIdLong())) + "." );
+                    messageSource.getMessage("txt_tente_novamente", null, getUserLocale(event.getUser().getIdLong())) + "." );
         }
     }
     
@@ -316,7 +317,7 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
     private void handleUpdateExistingLog(ButtonInteractionEvent event) {
         String userId = event.getUser().getId();
         
-        if (!discordAuthService.isUserAuthenticated(userId)) {
+        if (!isUserAuthenticated.isUserAuthenticated(userId)) {
             log.warn("Usuário {} não autenticado tentando atualizar squad-log", userId);
             EmbedBuilder embed = new EmbedBuilder()
                 .setTitle("🔒 " + messageSource.getMessage("txt_autenticacao_necessaria", null, getUserLocale(event.getUser().getIdLong())) )

@@ -1,6 +1,7 @@
 package com.meli.teamboardingBot.service.command;
 
 import com.meli.teamboardingBot.core.domain.FormState;
+import com.meli.teamboardingBot.core.ports.auth.GetIsUserAuthenticatedPort;
 import com.meli.teamboardingBot.service.DiscordUserAuthenticationService;
 import com.meli.teamboardingBot.service.PendingAuthMessageService;
 import com.meli.teamboardingBot.service.UserLanguageService;
@@ -22,15 +23,15 @@ import java.util.Locale;
 public class StartCommand implements SlashCommandHandler {
     
     private static final Logger logger = LoggerFactory.getLogger(StartCommand.class);
-    
-    private final DiscordUserAuthenticationService authService;
+
+    private final GetIsUserAuthenticatedPort isUserAuthenticated;
     private final PendingAuthMessageService pendingAuthMessageService;
     private final UserLanguageService languageService;
 
-    public StartCommand(DiscordUserAuthenticationService authService,
+    public StartCommand(GetIsUserAuthenticatedPort isUserAuthenticated,
                        PendingAuthMessageService pendingAuthMessageService,
                        UserLanguageService languageService) {
-        this.authService = authService;
+        this.isUserAuthenticated = isUserAuthenticated;
         this.pendingAuthMessageService = pendingAuthMessageService;
         this.languageService = languageService;
     }
@@ -61,7 +62,7 @@ public class StartCommand implements SlashCommandHandler {
                 ? languageService.getUserLanguagePreference(userId)
                 : languageService.detectUserLocale(event.getUserLocale().getLocale());
             
-            if (authService.isUserAuthenticated(userId)) {
+            if (isUserAuthenticated.isUserAuthenticated(userId)) {
                 logger.info("User {} is already authenticated", userId);
                 showAlreadyAuthenticatedScreen(event, userLocale);
             } else if (languageService.hasLanguagePreference(userId)) {

@@ -1,6 +1,7 @@
 package com.meli.teamboardingBot.service.command;
 
 import com.meli.teamboardingBot.core.domain.FormState;
+import com.meli.teamboardingBot.core.ports.auth.GetIsUserAuthenticatedPort;
 import com.meli.teamboardingBot.service.DiscordUserAuthenticationService;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
@@ -14,10 +15,10 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class LoginCommand implements SlashCommandHandler {
-    private final DiscordUserAuthenticationService authService;
+    private final GetIsUserAuthenticatedPort isUserAuthenticated;
 
-    public LoginCommand(DiscordUserAuthenticationService authService) {
-        this.authService = authService;
+    public LoginCommand(GetIsUserAuthenticatedPort isUserAuthenticated) {
+        this.isUserAuthenticated = isUserAuthenticated;
     }
 
     @Autowired
@@ -40,7 +41,7 @@ public class LoginCommand implements SlashCommandHandler {
     public void execute(SlashCommandInteractionEvent event) {
         String userId = event.getUser().getId();
         
-        if (authService.isUserAuthenticated(userId)) {
+        if (isUserAuthenticated.isUserAuthenticated(userId)) {
             event.reply("✅ " +  messageSource.getMessage("txt_vc_ja_esta_autenticado_use_o_comando_para_comecar", null, formState.getLocale()) + ".")
                 .setEphemeral(true)
                 .queue();

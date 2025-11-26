@@ -7,10 +7,11 @@ import com.meli.teamboardingBot.adapters.dto.AuthTokenResponseDTO;
 
 public class GetUserTokenUseCase extends UserTokenAbstract implements GetUserTokenPort {
 
-    private GetIsUserAuthenticatedPort isUserAuthenticated;
+    private final GetIsUserAuthenticatedPort isUserAuthenticated;
 
-    public GetUserTokenUseCase(LoggerApiPort logger) {
+    public GetUserTokenUseCase(LoggerApiPort logger, GetIsUserAuthenticatedPort isUserAuthenticated) {
         super(logger);
+        this.isUserAuthenticated = isUserAuthenticated;
     }
 
     @Override

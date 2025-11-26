@@ -2,6 +2,7 @@ package com.meli.teamboardingBot.service.command;
 
 import com.meli.teamboardingBot.adapters.handler.BatchCreationHandler;
 import com.meli.teamboardingBot.core.domain.FormState;
+import com.meli.teamboardingBot.core.ports.auth.GetIsUserAuthenticatedPort;
 import com.meli.teamboardingBot.service.DiscordUserAuthenticationService;
 import com.meli.teamboardingBot.service.PendingAuthMessageService;
 import com.meli.teamboardingBot.service.FormStateService;
@@ -18,18 +19,18 @@ import org.springframework.stereotype.Component;
 public class SquadLogLoteCommand implements SlashCommandHandler {
     
     private final BatchCreationHandler batchCreationHandler;
-    private final DiscordUserAuthenticationService authService;
+    private final GetIsUserAuthenticatedPort isUserAuthenticated;
     private final PendingAuthMessageService pendingAuthMessageService;
     private final MessageSource messageSource;
     private final FormStateService formStateService;
 
     public SquadLogLoteCommand(BatchCreationHandler batchCreationHandler,
-                               DiscordUserAuthenticationService authService,
+                               GetIsUserAuthenticatedPort isUserAuthenticated,
                                PendingAuthMessageService pendingAuthMessageService,
                                MessageSource messageSource,
                                FormStateService formStateService) {
         this.batchCreationHandler = batchCreationHandler;
-        this.authService = authService;
+        this.isUserAuthenticated = isUserAuthenticated;
         this.pendingAuthMessageService = pendingAuthMessageService;
         this.messageSource = messageSource;
         this.formStateService = formStateService;
@@ -52,7 +53,7 @@ public class SquadLogLoteCommand implements SlashCommandHandler {
         FormState userFormState = formStateService.getOrCreateState(userIdLong);
         Locale locale = userFormState.getLocale();
         
-        if (!authService.isUserAuthenticated(userId)) {
+        if (!isUserAuthenticated.isUserAuthenticated(userId)) {
             EmbedBuilder embed = new EmbedBuilder()
                 .setTitle("🔒 " + messageSource.getMessage("txt_autenticacao_necessaria", null, locale))
                 .setDescription(messageSource.getMessage("txt_faca_login_para_usar_os_comandos", null, locale) + 

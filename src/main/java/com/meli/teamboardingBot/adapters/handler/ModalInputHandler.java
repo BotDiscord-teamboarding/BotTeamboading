@@ -169,7 +169,7 @@ public class ModalInputHandler extends AbstractInteractionHandler {
             
             event.deferEdit().queue();
             EmbedBuilder errorEmbed = new EmbedBuilder()
-                .setTitle("❌ Data de Fim Inválida" + messageSource.getMessage("", null, getUserLocale(event.getUser().getIdLong())))
+                .setTitle("❌ " + messageSource.getMessage("txt_data_de_fim_invalida", null, getUserLocale(event.getUser().getIdLong())))
                 .setDescription(messageSource.getMessage("txt_data_de_fim_nao_pode_ser_anterior_a_data_de_inicio", null, getUserLocale(event.getUser().getIdLong())) + ".\n\n**" +
                         messageSource.getMessage("txt_data_de_inicio", null, getUserLocale(event.getUser().getIdLong())) + ":** " + startDate + "\n" +
                         messageSource.getMessage("txt_data_de_fim", null, getUserLocale(event.getUser().getIdLong())) + ":** " + endDate + "\n\n**" +
