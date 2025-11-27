@@ -6,6 +6,8 @@ import com.meli.teamboardingBot.core.ports.auth.GetIsUserAuthenticatedPort;
 import com.meli.teamboardingBot.adapters.out.language.PendingAuthMessageService;
 
 import java.util.Locale;
+
+import com.meli.teamboardingBot.core.ports.formstate.GetOrCreateFormStatePort;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
@@ -21,18 +23,18 @@ public class SquadLogLoteCommand implements SlashCommandHandler {
     private final GetIsUserAuthenticatedPort isUserAuthenticated;
     private final PendingAuthMessageService pendingAuthMessageService;
     private final MessageSource messageSource;
-    private final FormStateService formStateService;
+    private final GetOrCreateFormStatePort getOrCreateFormStatePort;
 
     public SquadLogLoteCommand(BatchCreationHandler batchCreationHandler,
                                GetIsUserAuthenticatedPort isUserAuthenticated,
                                PendingAuthMessageService pendingAuthMessageService,
                                MessageSource messageSource,
-                               FormStateService formStateService) {
+                               GetOrCreateFormStatePort getOrCreateFormStatePort) {
         this.batchCreationHandler = batchCreationHandler;
         this.isUserAuthenticated = isUserAuthenticated;
         this.pendingAuthMessageService = pendingAuthMessageService;
         this.messageSource = messageSource;
-        this.formStateService = formStateService;
+        this.getOrCreateFormStatePort = getOrCreateFormStatePort;
     }
 
     @Override
@@ -49,7 +51,7 @@ public class SquadLogLoteCommand implements SlashCommandHandler {
     public void execute(SlashCommandInteractionEvent event) {
         String userId = event.getUser().getId();
         long userIdLong = event.getUser().getIdLong();
-        FormState userFormState = formStateService.getOrCreateState(userIdLong);
+        FormState userFormState = getOrCreateFormStatePort.getOrCreateState(userIdLong);
         Locale locale = userFormState.getLocale();
         
         if (!isUserAuthenticated.isUserAuthenticated(userId)) {

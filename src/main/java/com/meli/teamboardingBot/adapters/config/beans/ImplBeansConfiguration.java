@@ -80,11 +80,6 @@ public class ImplBeansConfiguration {
     }
 
     @Bean
-    FormStateManagementUseCase formStateManagementUseCase(LoggerApiPort loggerApiPort, UserLanguageService userLanguageService) {
-        return new FormStateManagementUseCase(loggerApiPort, userLanguageService);
-    }
-
-    @Bean
     GoogleAuthManagementUseCase googleAuthManagementUseCase(
             LoggerApiPort loggerApiPort,
             RestPort restPort,

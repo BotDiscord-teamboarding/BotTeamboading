@@ -2,6 +2,7 @@ package com.meli.teamboardingBot.adapters.out.command;
 
 import com.meli.teamboardingBot.core.domain.FormState;
 import com.meli.teamboardingBot.core.ports.auth.GetIsUserAuthenticatedPort;
+import com.meli.teamboardingBot.core.ports.formstate.GetOrCreateFormStatePort;
 import com.meli.teamboardingBot.core.ports.logger.LoggerApiPort;
 import com.meli.teamboardingBot.core.usecase.auth.oath.UserTokenAbstract;
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -19,13 +20,13 @@ import java.util.Locale;
 public class StatusCommand extends UserTokenAbstract implements SlashCommandHandler{
     private final GetIsUserAuthenticatedPort isUserAuthenticated;
     private final MessageSource messageSource;
-    private final FormStateService formStateService;
+    private final GetOrCreateFormStatePort getOrCreateFormStatePort;
 
-    public StatusCommand(LoggerApiPort loggerApiPort, GetIsUserAuthenticatedPort isUserAuthenticated, MessageSource messageSource, FormStateService formStateService) {
+    public StatusCommand(LoggerApiPort loggerApiPort, GetIsUserAuthenticatedPort isUserAuthenticated, MessageSource messageSource, GetOrCreateFormStatePort getOrCreateFormStatePort) {
         super(loggerApiPort);
         this.isUserAuthenticated = isUserAuthenticated;
         this.messageSource = messageSource;
-        this.formStateService = formStateService;
+        this.getOrCreateFormStatePort = getOrCreateFormStatePort;
     }
 
     @Override
@@ -42,7 +43,7 @@ public class StatusCommand extends UserTokenAbstract implements SlashCommandHand
     public void execute(SlashCommandInteractionEvent event) {
         String userId = event.getUser().getId();
         long userIdLong = event.getUser().getIdLong();
-        FormState userFormState = formStateService.getOrCreateState(userIdLong);
+        FormState userFormState = getOrCreateFormStatePort.getOrCreateState(userIdLong);
         Locale locale = userFormState.getLocale();
 
         if (!isUserAuthenticated.isUserAuthenticated(userId)) {
