@@ -2,7 +2,6 @@ package com.meli.teamboardingBot.adapters.handler;
 
 import com.meli.teamboardingBot.core.domain.FormState;
 import com.meli.teamboardingBot.core.ports.auth.GetIsUserAuthenticatedPort;
-import com.meli.teamboardingBot.service.DiscordUserAuthenticationService;
 import com.meli.teamboardingBot.service.FormStateService;
 import com.meli.teamboardingBot.service.LanguageInterceptorService;
 import com.meli.teamboardingBot.service.UserLanguageService;

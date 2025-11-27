@@ -1,7 +1,7 @@
 package com.meli.teamboardingBot.adapters.handler;
 
 
-import com.meli.teamboardingBot.service.DiscordUserAuthenticationService;
+import com.meli.teamboardingBot.core.ports.discorduserauthentication.LogoutDiscordUserPort;
 import com.meli.teamboardingBot.service.UserLanguageService;
 import com.meli.teamboardingBot.service.FormStateService;
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -18,7 +18,7 @@ import java.util.Locale;
 @Component
 public class StatusButtonHandler extends ListenerAdapter {
     private static final Logger logger = LoggerFactory.getLogger(StatusButtonHandler.class);
-    private final DiscordUserAuthenticationService authService;
+    private final LogoutDiscordUserPort authService;
     private final UserLanguageService languageService;
     private final MessageSource messageSource;
     private final FormStateService formStateService;
@@ -27,10 +27,10 @@ public class StatusButtonHandler extends ListenerAdapter {
         return formStateService.getOrCreateState(userId).getLocale();
     }
 
-    public StatusButtonHandler(DiscordUserAuthenticationService authService, 
-                              UserLanguageService languageService,
-                              MessageSource messageSource,
-                              FormStateService formStateService) {
+    public StatusButtonHandler(LogoutDiscordUserPort authService,
+                               UserLanguageService languageService,
+                               MessageSource messageSource,
+                               FormStateService formStateService) {
         this.authService = authService;
         this.languageService = languageService;
         this.messageSource = messageSource;

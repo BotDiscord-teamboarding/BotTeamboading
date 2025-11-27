@@ -5,7 +5,7 @@ import com.meli.teamboardingBot.adapters.dto.AuthTokenResponseDTO;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class UserTokenAbstract {
+public class UserTokenAbstract  {
 
     protected final LoggerApiPort loggerApiPort;
     protected static final long TOKEN_EXPIRATION_TIME = 24 * 3600 * 1000L;

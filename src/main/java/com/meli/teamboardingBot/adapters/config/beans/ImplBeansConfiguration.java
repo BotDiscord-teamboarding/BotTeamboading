@@ -2,21 +2,19 @@ package com.meli.teamboardingBot.adapters.config.beans;
 
 import com.meli.teamboardingBot.adapters.out.client.DefaultAuthenticationService;
 import com.meli.teamboardingBot.core.ports.auth.GetIsUserAuthenticatedPort;
-import com.meli.teamboardingBot.core.ports.auth.GetUserAuthenticateWithTokenPort;
 import com.meli.teamboardingBot.core.ports.auth.GetUserTokenPort;
 import com.meli.teamboardingBot.core.ports.auth.api.GetApiTokenPort;
 import com.meli.teamboardingBot.core.ports.auth.api.GetManualApiTokenPort;
 import com.meli.teamboardingBot.core.ports.defaultclient.GetDefaultClientPort;
 import com.meli.teamboardingBot.core.ports.logger.LoggerApiPort;
 import com.meli.teamboardingBot.core.ports.rest.RestPort;
-import com.meli.teamboardingBot.core.usecase.auth.GetIsUserAuthenticatedUseCase;
-import com.meli.teamboardingBot.core.usecase.auth.GetUserAuthenticateUseCase;
-import com.meli.teamboardingBot.core.usecase.auth.GetUserAuthenticateWithTokenUseCase;
-import com.meli.teamboardingBot.core.usecase.auth.GetUserTokenUseCase;
+import com.meli.teamboardingBot.core.usecase.auth.*;
 import com.meli.teamboardingBot.core.usecase.defaultclient.GetDefaultClientUseCase;
 import com.meli.teamboardingBot.core.usecase.defaultclient.GetDefaultClientWithParamUseCase;
 import com.meli.teamboardingBot.core.usecase.defaultclient.PostDefaultClientUseCase;
 import com.meli.teamboardingBot.core.usecase.defaultclient.PutDefaultClientUseCase;
+import com.meli.teamboardingBot.core.usecase.discorduserauthentication.LogoutDiscordUserUseCase;
+import com.meli.teamboardingBot.core.usecase.discorduserauthentication.DiscordUserAuthenticationUseCase;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -63,6 +61,16 @@ public class ImplBeansConfiguration {
     @Bean
     GetUserAuthenticateUseCase getUserAuthenticateUseCase(LoggerApiPort loggerApiPort, GetManualApiTokenPort getManualApiTokenPort) {
         return new GetUserAuthenticateUseCase(loggerApiPort, getManualApiTokenPort);
+    }
+
+    @Bean
+    DiscordUserAuthenticationUseCase putDiscordUserAuthenticationUseCase(LoggerApiPort loggerApiPort) {
+        return new DiscordUserAuthenticationUseCase(loggerApiPort);
+    }
+
+    @Bean
+    LogoutDiscordUserUseCase deleteDiscordUserAuthenticationUseCase(LoggerApiPort loggerApiPort) {
+        return new LogoutDiscordUserUseCase(loggerApiPort);
     }
 
 }

@@ -2,7 +2,6 @@ package com.meli.teamboardingBot.service.command;
 
 import com.meli.teamboardingBot.core.domain.FormState;
 import com.meli.teamboardingBot.core.ports.auth.GetIsUserAuthenticatedPort;
-import com.meli.teamboardingBot.service.DiscordUserAuthenticationService;
 import com.meli.teamboardingBot.service.PendingAuthMessageService;
 import com.meli.teamboardingBot.service.UserLanguageService;
 import net.dv8tion.jda.api.EmbedBuilder;

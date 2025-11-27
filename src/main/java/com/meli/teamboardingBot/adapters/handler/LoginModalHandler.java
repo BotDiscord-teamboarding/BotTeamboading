@@ -4,7 +4,6 @@ import com.meli.teamboardingBot.core.domain.FormState;
 import com.meli.teamboardingBot.core.ports.auth.GetUserAuthenticatePort;
 import com.meli.teamboardingBot.core.ports.auth.GetUserAuthenticateWithTokenPort;
 import com.meli.teamboardingBot.core.usecase.auth.UserTokenAbstract;
-import com.meli.teamboardingBot.service.DiscordUserAuthenticationService;
 import com.meli.teamboardingBot.service.FormStateService;
 import com.meli.teamboardingBot.service.GoogleAuthIntegrationService;
 import com.meli.teamboardingBot.service.SquadLogService;

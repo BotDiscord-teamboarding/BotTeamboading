@@ -26,6 +26,7 @@ public class SquadSelectionHandler extends AbstractInteractionHandler {
     private final SquadLogService squadLogService;
     private final GetIsUserAuthenticatedPort isUserAuthenticated;
     private final PendingAuthMessageService pendingAuthMessageService;
+
     @Autowired
     private SummaryHandler summaryHandler;
     
