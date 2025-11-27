@@ -1,10 +1,10 @@
 package com.meli.teamboardingBot.adapters.handler;
 
-import com.meli.teamboardingBot.core.context.DiscordUserContext;
+import com.meli.teamboardingBot.core.context.UserContext;
+import com.meli.teamboardingBot.core.ports.formstate.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import com.meli.teamboardingBot.core.domain.FormState;
-import com.meli.teamboardingBot.service.FormStateService;
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
@@ -15,16 +15,26 @@ import java.util.function.Supplier;
 @RequiredArgsConstructor
 public abstract class AbstractInteractionHandler implements InteractionHandler {
     protected static final DateTimeFormatter BRAZILIAN_DATE_FORMAT = DateTimeFormatter.ofPattern("dd-MM-yyyy");
-    protected final FormStateService formStateService;
+    protected final GetOrCreateFormStatePort getOrCreateFormStatePort;
+    protected final PutFormStatePort putFormStatePort;
+    protected final GetFormStatePort getFormStatePort;
+    protected final SetBatchEntriesPort setBatchEntriesPort;
+    protected final SetBatchCurrentIndexPort setBatchCurrentIndexPort;
+    protected final GetBatchEntriesPort getBatchEntriesPort;
+    protected final GetBatchCurrentIndexPort getBatchCurrentIndexPort;
+    protected final ClearBatchStatePort clearBatchStatePort;
+    protected final DeleteFormStatePort deleteFormStatePort;
+    protected final ResetFormStatePort resetFormStatePort;
+
     @Override
     public void handleButton(ButtonInteractionEvent event, FormState state) {
         String userId = event.getUser().getId();
         try {
-            DiscordUserContext.setCurrentUserId(userId);
+            UserContext.setCurrentUserId(userId);
             log.debug("Button interaction received: {} from user {}", event.getComponentId(), userId);
             handleButtonInternal(event, state);
         } finally {
-            DiscordUserContext.clear();
+            UserContext.clear();
         }
     }
     
@@ -35,11 +45,11 @@ public abstract class AbstractInteractionHandler implements InteractionHandler {
     public void handleStringSelect(StringSelectInteractionEvent event, FormState state) {
         String userId = event.getUser().getId();
         try {
-            DiscordUserContext.setCurrentUserId(userId);
+            UserContext.setCurrentUserId(userId);
             log.debug("String select interaction received: {} from user {}", event.getComponentId(), userId);
             handleStringSelectInternal(event, state);
         } finally {
-            DiscordUserContext.clear();
+            UserContext.clear();
         }
     }
     
@@ -50,11 +60,11 @@ public abstract class AbstractInteractionHandler implements InteractionHandler {
     public void handleModal(ModalInteractionEvent event, FormState state) {
         String userId = event.getUser().getId();
         try {
-            DiscordUserContext.setCurrentUserId(userId);
+            UserContext.setCurrentUserId(userId);
             log.debug("Modal interaction received: {} from user {}", event.getModalId(), userId);
             handleModalInternal(event, state);
         } finally {
-            DiscordUserContext.clear();
+            UserContext.clear();
         }
     }
     
@@ -80,28 +90,28 @@ public abstract class AbstractInteractionHandler implements InteractionHandler {
         return date;
     }
     protected void updateFormState(Long userId, FormState state) {
-        formStateService.updateState(userId, state);
+        putFormStatePort.updateState(userId, state);
     }
     protected FormState getFormState(Long userId) {
-        return formStateService.getState(userId);
+        return getFormStatePort.getState(userId);
     }
     
 
     protected <T> T withUserContext(String userId, Supplier<T> operation) {
         try {
-            DiscordUserContext.setCurrentUserId(userId);
+            UserContext.setCurrentUserId(userId);
             return operation.get();
         } finally {
-            DiscordUserContext.clear();
+            UserContext.clear();
         }
     }
 
     protected void withUserContext(String userId, Runnable operation) {
         try {
-            DiscordUserContext.setCurrentUserId(userId);
+            UserContext.setCurrentUserId(userId);
             operation.run();
         } finally {
-            DiscordUserContext.clear();
+            UserContext.clear();
         }
     }
 }

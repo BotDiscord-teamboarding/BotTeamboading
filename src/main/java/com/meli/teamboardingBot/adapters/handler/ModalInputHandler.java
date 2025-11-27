@@ -1,7 +1,7 @@
 package com.meli.teamboardingBot.adapters.handler;
 import com.meli.teamboardingBot.core.domain.enums.FormStep;
 import com.meli.teamboardingBot.core.domain.FormState;
-import com.meli.teamboardingBot.service.FormStateService;
+import com.meli.teamboardingBot.core.ports.formstate.*;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
@@ -21,9 +21,13 @@ import java.time.format.DateTimeParseException;
 @Component
 @Order(5)
 public class ModalInputHandler extends AbstractInteractionHandler {
-    public ModalInputHandler(FormStateService formStateService) {
-        super(formStateService);
+
+    @Autowired
+    public ModalInputHandler(GetOrCreateFormStatePort getOrCreateFormStatePort, PutFormStatePort putFormStatePort, GetFormStatePort getFormStatePort, SetBatchEntriesPort setBatchEntriesPort, SetBatchCurrentIndexPort setBatchCurrentIndexPort, GetBatchEntriesPort getBatchEntriesPort, GetBatchCurrentIndexPort getBatchCurrentIndexPort, ClearBatchStatePort clearBatchStatePort, DeleteFormStatePort deleteFormStatePort, ResetFormStatePort resetFormStatePort, MessageSource messageSource) {
+        super(getOrCreateFormStatePort, putFormStatePort, getFormStatePort, setBatchEntriesPort, setBatchCurrentIndexPort, getBatchEntriesPort, getBatchCurrentIndexPort, clearBatchStatePort, deleteFormStatePort, resetFormStatePort);
+        this.messageSource = messageSource;
     }
+
     @Override
     public boolean canHandle(String componentId) {
         return "create-complete-modal".equals(componentId) ||
@@ -71,7 +75,7 @@ public class ModalInputHandler extends AbstractInteractionHandler {
     private MessageSource messageSource;
 
     private java.util.Locale getUserLocale(long userId) {
-        return formStateService.getOrCreateState(userId).getLocale();
+        return getOrCreateFormStatePort.getOrCreateState(userId).getLocale();
     }
     private void handleEditDescriptionButton(ButtonInteractionEvent event, FormState state) {
         log.info("Editando descrição");

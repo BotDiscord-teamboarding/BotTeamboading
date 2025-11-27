@@ -1,6 +1,6 @@
 package com.meli.teamboardingBot.adapters.handler;
 import com.meli.teamboardingBot.core.domain.FormState;
-import com.meli.teamboardingBot.service.FormStateService;
+import com.meli.teamboardingBot.core.ports.formstate.*;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
@@ -17,10 +17,11 @@ public class SummaryHandler extends AbstractInteractionHandler {
 
     private final MessageSource messageSource;
 
-    public SummaryHandler(FormStateService formStateService, MessageSource messageSource) {
-        super(formStateService);
+    public SummaryHandler(GetOrCreateFormStatePort getOrCreateFormStatePort, PutFormStatePort putFormStatePort, GetFormStatePort getFormStatePort, SetBatchEntriesPort setBatchEntriesPort, SetBatchCurrentIndexPort setBatchCurrentIndexPort, GetBatchEntriesPort getBatchEntriesPort, GetBatchCurrentIndexPort getBatchCurrentIndexPort, ClearBatchStatePort clearBatchStatePort, DeleteFormStatePort deleteFormStatePort, ResetFormStatePort resetFormStatePort, MessageSource messageSource) {
+        super(getOrCreateFormStatePort, putFormStatePort, getFormStatePort, setBatchEntriesPort, setBatchCurrentIndexPort, getBatchEntriesPort, getBatchCurrentIndexPort, clearBatchStatePort, deleteFormStatePort, resetFormStatePort);
         this.messageSource = messageSource;
     }
+
     @Override
     public boolean canHandle(String componentId) {
         return false;

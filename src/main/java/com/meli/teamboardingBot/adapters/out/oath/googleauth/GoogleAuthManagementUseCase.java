@@ -1,7 +1,7 @@
 package com.meli.teamboardingBot.adapters.out.oath.googleauth;
 
-import com.meli.teamboardingBot.adapters.out.oath.ports.googleauth.ExchangeCodeForTokenPort;
-import com.meli.teamboardingBot.adapters.out.oath.ports.googleauth.GetGoogleLoginUrlPort;
+import com.meli.teamboardingBot.adapters.out.oath.googleauth.ports.ExchangeCodeForTokenPort;
+import com.meli.teamboardingBot.adapters.out.oath.googleauth.ports.GetGoogleLoginUrlPort;
 import com.meli.teamboardingBot.core.ports.logger.LoggerApiPort;
 import com.meli.teamboardingBot.core.ports.rest.RestPort;
 import org.springframework.http.HttpEntity;

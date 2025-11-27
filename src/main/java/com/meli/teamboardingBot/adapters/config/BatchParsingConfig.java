@@ -1,7 +1,7 @@
 package com.meli.teamboardingBot.adapters.config;
 
-import com.meli.teamboardingBot.service.batch.TextParser;
-import com.meli.teamboardingBot.service.batch.impl.IntelligentTextParsingService;
+import com.meli.teamboardingBot.adapters.out.batch.TextParser;
+import com.meli.teamboardingBot.adapters.out.batch.impl.IntelligentTextParsingService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;

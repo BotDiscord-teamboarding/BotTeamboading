@@ -18,9 +18,8 @@ import com.meli.teamboardingBot.core.usecase.defaultclient.PostDefaultClientUseC
 import com.meli.teamboardingBot.core.usecase.defaultclient.PutDefaultClientUseCase;
 import com.meli.teamboardingBot.core.usecase.auth.manual.ManualLogoutUseCase;
 import com.meli.teamboardingBot.core.usecase.auth.manual.ManualAuthenticationUseCase;
-import com.meli.teamboardingBot.core.usecase.formstate.FormStateManagementUseCase;
 import com.meli.teamboardingBot.adapters.out.oath.googleauth.GoogleAuthManagementUseCase;
-import com.meli.teamboardingBot.service.UserLanguageService;
+import com.meli.teamboardingBot.adapters.out.language.UserLanguageService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.context.annotation.Bean;

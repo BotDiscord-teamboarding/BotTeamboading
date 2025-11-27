@@ -1,11 +1,11 @@
 package com.meli.teamboardingBot.adapters.handler;
-import com.meli.teamboardingBot.core.context.DiscordUserContext;
+import com.meli.teamboardingBot.core.context.UserContext;
 import com.meli.teamboardingBot.core.domain.enums.FormStep;
 import com.meli.teamboardingBot.core.domain.FormState;
 import com.meli.teamboardingBot.core.ports.auth.GetIsUserAuthenticatedPort;
-import com.meli.teamboardingBot.service.FormStateService;
-import com.meli.teamboardingBot.service.PendingAuthMessageService;
-import com.meli.teamboardingBot.service.SquadLogService;
+import com.meli.teamboardingBot.core.ports.formstate.*;
+import com.meli.teamboardingBot.adapters.out.language.PendingAuthMessageService;
+import com.meli.teamboardingBot.adapters.out.language.SquadLogService;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
@@ -26,25 +26,21 @@ public class SquadSelectionHandler extends AbstractInteractionHandler {
     private final SquadLogService squadLogService;
     private final GetIsUserAuthenticatedPort isUserAuthenticated;
     private final PendingAuthMessageService pendingAuthMessageService;
+    private SummaryHandler summaryHandler;
+    private MessageSource messageSource;
 
     @Autowired
-    private SummaryHandler summaryHandler;
-    
-    public SquadSelectionHandler(FormStateService formStateService, 
-                                SquadLogService squadLogService, 
-                                 GetIsUserAuthenticatedPort isUserAuthenticated,
-                                PendingAuthMessageService pendingAuthMessageService) {
-        super(formStateService);
+    public SquadSelectionHandler(GetOrCreateFormStatePort getOrCreateFormStatePort, PutFormStatePort putFormStatePort, GetFormStatePort getFormStatePort, SetBatchEntriesPort setBatchEntriesPort, SetBatchCurrentIndexPort setBatchCurrentIndexPort, GetBatchEntriesPort getBatchEntriesPort, GetBatchCurrentIndexPort getBatchCurrentIndexPort, ClearBatchStatePort clearBatchStatePort, DeleteFormStatePort deleteFormStatePort, ResetFormStatePort resetFormStatePort, SquadLogService squadLogService, GetIsUserAuthenticatedPort isUserAuthenticated, PendingAuthMessageService pendingAuthMessageService, SummaryHandler summaryHandler, MessageSource messageSource) {
+        super(getOrCreateFormStatePort, putFormStatePort, getFormStatePort, setBatchEntriesPort, setBatchCurrentIndexPort, getBatchEntriesPort, getBatchCurrentIndexPort, clearBatchStatePort, deleteFormStatePort, resetFormStatePort);
         this.squadLogService = squadLogService;
         this.isUserAuthenticated = isUserAuthenticated;
         this.pendingAuthMessageService = pendingAuthMessageService;
+        this.summaryHandler = summaryHandler;
+        this.messageSource = messageSource;
     }
 
-    @Autowired
-    private MessageSource messageSource;
-
     private java.util.Locale getUserLocale(long userId) {
-        return formStateService.getOrCreateState(userId).getLocale();
+        return getOrCreateFormStatePort.getOrCreateState(userId).getLocale();
     }
 
     @Override
@@ -239,7 +235,7 @@ public class SquadSelectionHandler extends AbstractInteractionHandler {
             log.error("Erro ao exibir seleção de usuário: {}", e.getMessage());
             showError(event, messageSource.getMessage("txt_erro_carregar_selecao_de_usuario", null, getUserLocale(event.getUser().getIdLong())) + ".");
         } finally {
-            DiscordUserContext.clear();
+            UserContext.clear();
         }
     }
     private void showSummary(StringSelectInteractionEvent event) {

@@ -2,8 +2,7 @@ package com.meli.teamboardingBot.adapters.in.listener;
 import com.meli.teamboardingBot.adapters.handler.BatchCreationHandler;
 import com.meli.teamboardingBot.adapters.handler.InteractionHandler;
 import com.meli.teamboardingBot.core.domain.FormState;
-import com.meli.teamboardingBot.service.FormStateService;
-import com.meli.teamboardingBot.core.context.DiscordUserContext;
+import com.meli.teamboardingBot.core.context.UserContext;
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
@@ -45,7 +44,7 @@ public class ComponentInteractionListener extends ListenerAdapter {
         
         if (buttonId.equals("open-batch-modal")) {
             try {
-                DiscordUserContext.setCurrentUserId(String.valueOf(userId));
+                UserContext.setCurrentUserId(String.valueOf(userId));
                 batchCreationHandler.handleOpenBatchModalButton(event);
                 return;
             } catch (Exception e) {
@@ -53,13 +52,13 @@ public class ComponentInteractionListener extends ListenerAdapter {
                 event.reply("❌ Erro interno. Tente novamente.").setEphemeral(true).queue();
                 return;
             } finally {
-                DiscordUserContext.clear();
+                UserContext.clear();
             }
         }
         
         if (isBatchButton(buttonId)) {
             try {
-                DiscordUserContext.setCurrentUserId(String.valueOf(userId));
+                UserContext.setCurrentUserId(String.valueOf(userId));
                 batchCreationHandler.handleBatchNavigation(event);
                 return;
             } catch (Exception e) {
@@ -67,7 +66,7 @@ public class ComponentInteractionListener extends ListenerAdapter {
                 event.reply("❌ Erro interno. Tente novamente.").setEphemeral(true).queue();
                 return;
             } finally {
-                DiscordUserContext.clear();
+                UserContext.clear();
             }
         }
         
@@ -131,7 +130,7 @@ public class ComponentInteractionListener extends ListenerAdapter {
         
         if (isBatchModal(modalId)) {
             try {
-                DiscordUserContext.setCurrentUserId(String.valueOf(userId));
+                UserContext.setCurrentUserId(String.valueOf(userId));
                 if (modalId.equals("batch-creation-modal")) {
                     batchCreationHandler.handleBatchCreationModal(event);
                 } else if (modalId.equals("batch-edit-modal")) {
@@ -147,7 +146,7 @@ public class ComponentInteractionListener extends ListenerAdapter {
                 event.reply("❌ Erro interno. Tente novamente.").setEphemeral(true).queue();
                 return;
             } finally {
-                DiscordUserContext.clear();
+                UserContext.clear();
             }
         }
         

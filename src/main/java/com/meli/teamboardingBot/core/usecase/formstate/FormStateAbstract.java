@@ -6,7 +6,6 @@ import com.meli.teamboardingBot.core.ports.logger.LoggerApiPort;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 

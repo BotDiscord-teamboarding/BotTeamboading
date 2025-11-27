@@ -1,7 +1,7 @@
 package com.meli.teamboardingBot.adapters.handler;
 import com.meli.teamboardingBot.core.domain.enums.FormStep;
 import com.meli.teamboardingBot.core.domain.FormState;
-import com.meli.teamboardingBot.service.FormStateService;
+import com.meli.teamboardingBot.core.ports.formstate.*;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
@@ -15,9 +15,15 @@ import org.springframework.stereotype.Component;
 @Component
 @Order(7)
 public class NavigationHandler extends AbstractInteractionHandler {
-    public NavigationHandler(FormStateService formStateService) {
-        super(formStateService);
+
+    private MessageSource messageSource;
+
+    @Autowired
+    public NavigationHandler(GetOrCreateFormStatePort getOrCreateFormStatePort, PutFormStatePort putFormStatePort, GetFormStatePort getFormStatePort, SetBatchEntriesPort setBatchEntriesPort, SetBatchCurrentIndexPort setBatchCurrentIndexPort, GetBatchEntriesPort getBatchEntriesPort, GetBatchCurrentIndexPort getBatchCurrentIndexPort, ClearBatchStatePort clearBatchStatePort, DeleteFormStatePort deleteFormStatePort, ResetFormStatePort resetFormStatePort, MessageSource messageSource) {
+        super(getOrCreateFormStatePort, putFormStatePort, getFormStatePort, setBatchEntriesPort, setBatchCurrentIndexPort, getBatchEntriesPort, getBatchCurrentIndexPort, clearBatchStatePort, deleteFormStatePort, resetFormStatePort);
+        this.messageSource = messageSource;
     }
+
     @Override
     public boolean canHandle(String componentId) {
         return "atualizar".equals(componentId) ||
@@ -41,11 +47,9 @@ public class NavigationHandler extends AbstractInteractionHandler {
             case "voltar-resumo" -> handleBackToSummaryButton(event, state);
         }
     }
-    @Autowired
-    private MessageSource messageSource;
 
     private java.util.Locale getUserLocale(long userId) {
-        return formStateService.getOrCreateState(userId).getLocale();
+        return getOrCreateFormStatePort.getOrCreateState(userId).getLocale();
     }
 
     private void handleUpdateButton(ButtonInteractionEvent event, FormState state) {
@@ -71,8 +75,8 @@ public class NavigationHandler extends AbstractInteractionHandler {
     }
     private void handleCreateNewButton(ButtonInteractionEvent event, FormState state) {
         log.info("Iniciando novo fluxo de criação");
-        formStateService.resetState(event.getUser().getIdLong());
-        FormState newState = formStateService.getOrCreateState(event.getUser().getIdLong());
+        resetFormStatePort.resetState(event.getUser().getIdLong());
+        FormState newState = getOrCreateFormStatePort.getOrCreateState(event.getUser().getIdLong());
         newState.setCreating(true);
         newState.setEditing(false);
         newState.setStep(FormStep.SQUAD_SELECTION);
@@ -135,7 +139,7 @@ public class NavigationHandler extends AbstractInteractionHandler {
     private void showLogSelectionWithHook(net.dv8tion.jda.api.interactions.InteractionHook hook, String userId) {
     }
     private void exitBot(net.dv8tion.jda.api.interactions.InteractionHook hook, Long userId) {
-        formStateService.removeState(userId);
+        deleteFormStatePort.removeState(userId);
         java.util.Locale locale = getUserLocale(userId);
         EmbedBuilder embed = new EmbedBuilder()
             .setTitle("👋 " + messageSource.getMessage("txt_ate_logo", null, locale))
@@ -147,7 +151,7 @@ public class NavigationHandler extends AbstractInteractionHandler {
     }
 
     private void exitBotWithTimer(net.dv8tion.jda.api.interactions.InteractionHook hook, Long userId) {
-        formStateService.removeState(userId);
+        deleteFormStatePort.removeState(userId);
         java.util.Locale locale = getUserLocale(userId);
         EmbedBuilder embed = new EmbedBuilder()
             .setTitle("👋 " + messageSource.getMessage("txt_ate_logo", null, locale))

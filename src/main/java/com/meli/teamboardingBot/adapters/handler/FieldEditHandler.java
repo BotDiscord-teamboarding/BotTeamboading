@@ -1,9 +1,9 @@
 package com.meli.teamboardingBot.adapters.handler;
 
+import com.meli.teamboardingBot.core.ports.formstate.*;
 import lombok.extern.slf4j.Slf4j;
 import com.meli.teamboardingBot.core.domain.FormState;
-import com.meli.teamboardingBot.service.FormStateService;
-import com.meli.teamboardingBot.service.SquadLogService;
+import com.meli.teamboardingBot.adapters.out.language.SquadLogService;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
@@ -23,19 +23,21 @@ import org.springframework.stereotype.Component;
 @Component
 @Order(9)
 public class FieldEditHandler extends AbstractInteractionHandler {
-    @Autowired
-    private SquadLogService squadLogService;
 
-    @Autowired
+    private SquadLogService squadLogService;
     private MessageSource messageSource;
 
     private java.util.Locale getUserLocale(long userId) {
-        return formStateService.getOrCreateState(userId).getLocale();
+        return getOrCreateFormStatePort.getOrCreateState(userId).getLocale();
     }
-    
-    public FieldEditHandler(FormStateService formStateService) {
-        super(formStateService);
+
+    @Autowired
+    public FieldEditHandler(GetOrCreateFormStatePort getOrCreateFormStatePort, PutFormStatePort putFormStatePort, GetFormStatePort getFormStatePort, SetBatchEntriesPort setBatchEntriesPort, SetBatchCurrentIndexPort setBatchCurrentIndexPort, GetBatchEntriesPort getBatchEntriesPort, GetBatchCurrentIndexPort getBatchCurrentIndexPort, ClearBatchStatePort clearBatchStatePort, DeleteFormStatePort deleteFormStatePort, ResetFormStatePort resetFormStatePort, SquadLogService squadLogService, MessageSource messageSource) {
+        super(getOrCreateFormStatePort, putFormStatePort, getFormStatePort, setBatchEntriesPort, setBatchCurrentIndexPort, getBatchEntriesPort, getBatchCurrentIndexPort, clearBatchStatePort, deleteFormStatePort, resetFormStatePort);
+        this.squadLogService = squadLogService;
+        this.messageSource = messageSource;
     }
+
     @Override
     public boolean canHandle(String componentId) {
         return "edit-squad".equals(componentId) ||
