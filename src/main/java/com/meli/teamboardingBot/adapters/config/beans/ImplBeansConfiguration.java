@@ -27,8 +27,7 @@ import com.meli.teamboardingBot.core.usecase.auth.manual.ManualLogoutUseCase;
 import com.meli.teamboardingBot.core.usecase.auth.manual.ManualAuthenticationUseCase;
 import com.meli.teamboardingBot.adapters.out.oath.googleauth.GoogleAuthManagementUseCase;
 import com.meli.teamboardingBot.adapters.out.language.UserLanguageService;
-import com.meli.teamboardingBot.core.usecase.formstate.GetFormStateUseCase;
-import com.meli.teamboardingBot.core.usecase.formstate.GetOrCreateFormStateUseCase;
+import com.meli.teamboardingBot.core.usecase.formstate.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.MessageSource;
 import org.springframework.web.client.RestTemplate;
@@ -105,9 +104,48 @@ public class ImplBeansConfiguration {
     }
 
     @Bean
-    public GetOrCreateFormStateUseCase getOrCreateFormStateUseCase(LoggerApiPort loggerApiPort, UserLanguageService userLanguageService) {
-        return new GetOrCreateFormStateUseCase( loggerApiPort, userLanguageService);
+    public PutFormStateUseCase putFormStateUseCase(LoggerApiPort loggerApiPort) {
+        return new PutFormStateUseCase(loggerApiPort);
     }
 
+    @Bean
+    public GetFormStateUseCase getFormStateUseCase(LoggerApiPort loggerApiPort) {
+        return new GetFormStateUseCase(loggerApiPort);
+    }
+
+    @Bean
+    public SetBatchEntriesUseCase setBatchEntriesUseCase(LoggerApiPort loggerApiPort) {
+        return new SetBatchEntriesUseCase(loggerApiPort);
+    }
+
+    @Bean
+    public SetBatchCurrentIndexUseCase setBatchCurrentIndexUseCase(LoggerApiPort loggerApiPort) {
+        return new SetBatchCurrentIndexUseCase(loggerApiPort);
+    }
+
+    @Bean
+    public GetBatchEntriesUseCase getBatchEntriesUseCase(LoggerApiPort loggerApiPort) {
+        return new GetBatchEntriesUseCase(loggerApiPort);
+    }
+
+    @Bean
+    public GetBatchCurrentIndexUseCase getBatchCurrentIndexUseCase(LoggerApiPort loggerApiPort) {
+        return new GetBatchCurrentIndexUseCase(loggerApiPort);
+    }
+
+    @Bean
+    public ClearBatchStateUseCase clearBatchStateUseCase(LoggerApiPort loggerApiPort) {
+        return new ClearBatchStateUseCase(loggerApiPort);
+    }
+
+    @Bean
+    public DeleteFormStateUseCase deleteFormStateUseCase(LoggerApiPort loggerApiPort) {
+        return new DeleteFormStateUseCase(loggerApiPort);
+    }
+
+    @Bean
+    public ResetFormStateUseCase resetFormStateUseCase(LoggerApiPort loggerApiPort) {
+        return new ResetFormStateUseCase(loggerApiPort);
+    }
 
 }
