@@ -8,6 +8,7 @@ import com.meli.teamboardingBot.adapters.out.batch.BatchValidator;
 import com.meli.teamboardingBot.adapters.out.batch.PreviewNavigator;
 import com.meli.teamboardingBot.adapters.out.batch.TextParser;
 import com.meli.teamboardingBot.adapters.out.batch.impl.EmbedPreviewNavigationService;
+import com.meli.teamboardingBot.core.ports.logger.LoggerApiPort;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.MessageEmbed;
@@ -44,16 +45,18 @@ public class BatchCreationHandler extends AbstractInteractionHandler {
     private final BatchValidator batchValidator;
     private final PreviewNavigator previewNavigator;
     private final SquadLogService squadLogService;
+    
 
     @Autowired
-    public BatchCreationHandler(GetOrCreateFormStatePort getOrCreateFormStatePort, PutFormStatePort putFormStatePort, GetFormStatePort getFormStatePort, SetBatchEntriesPort setBatchEntriesPort, SetBatchCurrentIndexPort setBatchCurrentIndexPort, GetBatchEntriesPort getBatchEntriesPort, GetBatchCurrentIndexPort getBatchCurrentIndexPort, ClearBatchStatePort clearBatchStatePort, DeleteFormStatePort deleteFormStatePort, ResetFormStatePort resetFormStatePort, MessageSource messageSource, TextParser intelligentTextParser, BatchValidator batchValidator, PreviewNavigator previewNavigator, SquadLogService squadLogService) {
-        super(getOrCreateFormStatePort, putFormStatePort, getFormStatePort, setBatchEntriesPort, setBatchCurrentIndexPort, getBatchEntriesPort, getBatchCurrentIndexPort, clearBatchStatePort, deleteFormStatePort, resetFormStatePort);
-        this.messageSource = messageSource;
+    public BatchCreationHandler(GetOrCreateFormStatePort getOrCreateFormStatePort, PutFormStatePort putFormStatePort, GetFormStatePort getFormStatePort, SetBatchEntriesPort setBatchEntriesPort, SetBatchCurrentIndexPort setBatchCurrentIndexPort, GetBatchEntriesPort getBatchEntriesPort, GetBatchCurrentIndexPort getBatchCurrentIndexPort, ClearBatchStatePort clearBatchStatePort, DeleteFormStatePort deleteFormStatePort, ResetFormStatePort resetFormStatePort, LoggerApiPort loggerApiPort, TextParser intelligentTextParser, BatchValidator batchValidator, PreviewNavigator previewNavigator, SquadLogService squadLogService, MessageSource messageSource) {
+        super(getOrCreateFormStatePort, putFormStatePort, getFormStatePort, setBatchEntriesPort, setBatchCurrentIndexPort, getBatchEntriesPort, getBatchCurrentIndexPort, clearBatchStatePort, deleteFormStatePort, resetFormStatePort, loggerApiPort);
         this.intelligentTextParser = intelligentTextParser;
         this.batchValidator = batchValidator;
         this.previewNavigator = previewNavigator;
         this.squadLogService = squadLogService;
+        this.messageSource = messageSource;
     }
+
 
     private java.util.Locale getUserLocale(long userId) {
         return getOrCreateFormStatePort.getOrCreateState(userId).getLocale();
@@ -79,7 +82,7 @@ public class BatchCreationHandler extends AbstractInteractionHandler {
     }
 
     public void handleBatchCreationCommand(SlashCommandInteractionEvent event) {
-        log.info("Iniciando comando /squad-log-lote para usuário: {}", event.getUser().getId());
+        loggerApiPort.info("Iniciando comando /squad-log-lote para usuário: {}", event.getUser().getId());
 
         TextInput textInput = TextInput.create("batch-text", messageSource.getMessage("txt_digite_os_squad_logs", null, getUserLocale(event.getUser().getIdLong())), TextInputStyle.PARAGRAPH)
                 .setPlaceholder(messageSource.getMessage("txt_squad_pessoa_categoria_data_ex", null, getUserLocale(event.getUser().getIdLong())))
@@ -94,7 +97,7 @@ public class BatchCreationHandler extends AbstractInteractionHandler {
     }
 
     public void handleOpenBatchModalButton(ButtonInteractionEvent event) {
-        log.info("Abrindo modal de criação em lote via botão para usuário: {}", event.getUser().getId());
+        loggerApiPort.info("Abrindo modal de criação em lote via botão para usuário: {}", event.getUser().getId());
 
         TextInput textInput = TextInput.create("batch-text", messageSource.getMessage("txt_digite_os_squad_logs", null, getUserLocale(event.getUser().getIdLong())), TextInputStyle.PARAGRAPH)
                 .setPlaceholder(messageSource.getMessage("txt_squad_pessoa_categoria_data_ex", null, getUserLocale(event.getUser().getIdLong())))
@@ -109,7 +112,7 @@ public class BatchCreationHandler extends AbstractInteractionHandler {
     }
 
     public void handleBatchCreationModal(ModalInteractionEvent event) {
-        log.info("Processando modal de criação em lote");
+        loggerApiPort.info("Processando modal de criação em lote");
 
         event.deferReply(true).queue();
 
@@ -127,20 +130,20 @@ public class BatchCreationHandler extends AbstractInteractionHandler {
             return;
         }
 
-        log.info("Parsed entries before validation:");
+        loggerApiPort.info("Parsed entries before validation:");
         for (int i = 0; i < parsedEntries.size(); i++) {
             BatchLogEntry entry = parsedEntries.get(i);
-            log.info("Entry {}: Squad='{}', Person='{}', Type='{}'",
+            loggerApiPort.info("Entry {}: Squad='{}', Person='{}', Type='{}'",
                     i, entry.getSquadName(), entry.getPersonName(), entry.getLogType());
         }
 
         BatchParsingResult validationResult;
         try {
-            log.info("Iniciando validação com API...");
+            loggerApiPort.info("Iniciando validação com API...");
             validationResult = batchValidator.validateEntries(parsedEntries);
-            log.info("Validação com API concluída");
+            loggerApiPort.info("Validação com API concluída");
         } catch (RuntimeException e) {
-            log.error("Erro durante validação com API: {}", e.getMessage());
+            loggerApiPort.error("Erro durante validação com API: {}", e.getMessage());
             if (e.getMessage().contains("Timeout") || e.getMessage().contains("timeout")) {
                 showApiTimeoutError(event);
             } else if (e.getMessage().contains("Credenciais") || e.getMessage().contains("autenticação") ||
@@ -157,11 +160,11 @@ public class BatchCreationHandler extends AbstractInteractionHandler {
             return;
         }
 
-        log.info("Valid entries after validation:");
+        loggerApiPort.info("Valid entries after validation:");
         List<BatchLogEntry> validEntries = validationResult.getValidEntries();
         for (int i = 0; i < validEntries.size(); i++) {
             BatchLogEntry entry = validEntries.get(i);
-            log.info("Valid Entry {}: Squad='{}', Person='{}', Type='{}'",
+            loggerApiPort.info("Valid Entry {}: Squad='{}', Person='{}', Type='{}'",
                     i, entry.getSquadName(), entry.getPersonName(), entry.getLogType());
         }
 
@@ -361,7 +364,7 @@ public class BatchCreationHandler extends AbstractInteractionHandler {
         List<BatchLogEntry> entries = result.getValidEntries();
         BatchLogEntry firstEntry = entries.get(0);
 
-        log.info("Creating first preview for entry: Squad='{}', Person='{}', Type='{}'",
+        loggerApiPort.info("Creating first preview for entry: Squad='{}', Person='{}', Type='{}'",
                 firstEntry.getSquadName(), firstEntry.getPersonName(), firstEntry.getLogType());
 
         MessageEmbed previewEmbed = previewNavigator.createPreviewEmbed(firstEntry, 0, entries.size());
@@ -388,7 +391,7 @@ public class BatchCreationHandler extends AbstractInteractionHandler {
     private void updatePreview(ButtonInteractionEvent event, List<BatchLogEntry> entries, int currentIndex) {
         BatchLogEntry entry = entries.get(currentIndex);
 
-        log.info("Updating preview for entry {}: Squad='{}', Person='{}', Type='{}'",
+        loggerApiPort.info("Updating preview for entry {}: Squad='{}', Person='{}', Type='{}'",
                 currentIndex, entry.getSquadName(), entry.getPersonName(), entry.getLogType());
 
         MessageEmbed previewEmbed = previewNavigator.createPreviewEmbed(entry, currentIndex, entries.size());
@@ -429,7 +432,7 @@ public class BatchCreationHandler extends AbstractInteractionHandler {
     }
 
     private void createAllLogs(ButtonInteractionEvent event, List<BatchLogEntry> entries) {
-        log.info("Iniciando criação em lote de {} logs", entries.size());
+        loggerApiPort.info("Iniciando criação em lote de {} logs", entries.size());
 
         EmbedBuilder embed = new EmbedBuilder()
                 .setTitle("⏳ " + messageSource.getMessage("txt_criando_squad_logs", null, getUserLocale(event.getUser().getIdLong())) + "...")
@@ -448,10 +451,10 @@ public class BatchCreationHandler extends AbstractInteractionHandler {
                 JSONObject payload = createSquadLogPayload(entry);
                 squadLogService.createSquadLog(payload.toString());
                 successes.add(String.format("✅ %s - %s", entry.getSquadName(), entry.getPersonName()));
-                log.info("Log criado com sucesso: Squad {} - {}", entry.getSquadName(), entry.getPersonName());
+                loggerApiPort.info("Log criado com sucesso: Squad {} - {}", entry.getSquadName(), entry.getPersonName());
             } catch (Exception e) {
                 failures.add(String.format("❌ %s - %s: %s", entry.getSquadName(), entry.getPersonName(), e.getMessage()));
-                log.error("Erro ao criar log: Squad {} - {}", entry.getSquadName(), entry.getPersonName(), e);
+                loggerApiPort.error("Erro ao criar log: Squad {} - {}", entry.getSquadName(), entry.getPersonName(), e);
             }
         }
 
@@ -733,7 +736,7 @@ public class BatchCreationHandler extends AbstractInteractionHandler {
             }
 
         } catch (Exception e) {
-            log.error(messageSource.getMessage("txt_erro_ao_processar_datas", null, getUserLocale(event.getUser().getIdLong())) + ": {}", e.getMessage());
+            loggerApiPort.error(messageSource.getMessage("txt_erro_ao_processar_datas", null, getUserLocale(event.getUser().getIdLong())) + ": {}", e.getMessage());
             showDateValidationError(event, messageSource.getMessage("txt_formato_de_data_invalido_use_o_formato", null, getUserLocale(event.getUser().getIdLong())) + " DD-MM-AAAA (ex: 15-01-2025)");
             return;
         }
@@ -1055,7 +1058,7 @@ public class BatchCreationHandler extends AbstractInteractionHandler {
                 entry.setEndDate(null);
             }
         } catch (Exception e) {
-            log.error(messageSource.getMessage("txt_erro_ao_processar_datas", null, getUserLocale(event.getUser().getIdLong())) + ": {}", e.getMessage());
+            loggerApiPort.error(messageSource.getMessage("txt_erro_ao_processar_datas", null, getUserLocale(event.getUser().getIdLong())) + ": {}", e.getMessage());
             showDateValidationError(event);
         }
     }
@@ -1154,8 +1157,8 @@ public class BatchCreationHandler extends AbstractInteractionHandler {
 
         event.replyModal(modal).queue(success -> {
             event.getMessage().delete().queue(
-                    deleteSuccess -> log.info(messageSource.getMessage("txt_mensagem_anterior_deletada_c_sucesso", null, getUserLocale(event.getUser().getIdLong()))),
-                    deleteError -> log.warn(messageSource.getMessage("txt_n_foi_possivel_deletar)mensagem_anteriro", null, getUserLocale(event.getUser().getIdLong())) + ": {}", deleteError.getMessage())
+                    deleteSuccess -> loggerApiPort.info(messageSource.getMessage("txt_mensagem_anterior_deletada_c_sucesso", null, getUserLocale(event.getUser().getIdLong()))),
+                    deleteError -> loggerApiPort.warn(messageSource.getMessage("txt_n_foi_possivel_deletar)mensagem_anteriro", null, getUserLocale(event.getUser().getIdLong())) + ": {}", deleteError.getMessage())
             );
         });
     }
