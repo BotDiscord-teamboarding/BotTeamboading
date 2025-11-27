@@ -3,9 +3,10 @@ package com.meli.teamboardingBot.adapters.handler;
 import com.meli.teamboardingBot.core.domain.FormState;
 import com.meli.teamboardingBot.core.ports.auth.GetUserAuthenticatePort;
 import com.meli.teamboardingBot.core.ports.auth.GetUserAuthenticateWithTokenPort;
-import com.meli.teamboardingBot.core.usecase.auth.UserTokenAbstract;
+import com.meli.teamboardingBot.adapters.out.oath.ports.googleauth.ExchangeCodeForTokenPort;
+import com.meli.teamboardingBot.adapters.out.oath.ports.googleauth.GetGoogleLoginUrlPort;
+import com.meli.teamboardingBot.core.usecase.auth.oath.UserTokenAbstract;
 import com.meli.teamboardingBot.service.FormStateService;
-import com.meli.teamboardingBot.service.GoogleAuthIntegrationService;
 import com.meli.teamboardingBot.service.SquadLogService;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
@@ -30,20 +31,23 @@ public class LoginModalHandler extends ListenerAdapter {
     private final GetUserAuthenticateWithTokenPort getUserAuthenticateWithTokenPort;
     private final FormStateService formStateService;
     private final SquadLogService squadLogService;
-    private final GoogleAuthIntegrationService googleAuthIntegration;
+    private final GetGoogleLoginUrlPort getGoogleLoginUrlPort;
+    private final ExchangeCodeForTokenPort exchangeCodeForTokenPort;
     private final com.meli.teamboardingBot.service.UserInteractionChannelService channelService;
 
     @Autowired
     public LoginModalHandler(GetUserAuthenticatePort getUserAuthenticatePort,
                              FormStateService formStateService,
                              SquadLogService squadLogService,
-                             GoogleAuthIntegrationService googleAuthIntegration,
+                             GetGoogleLoginUrlPort getGoogleLoginUrlPort,
+                             ExchangeCodeForTokenPort exchangeCodeForTokenPort,
                              com.meli.teamboardingBot.service.UserInteractionChannelService channelService,
                              GetUserAuthenticateWithTokenPort getUserAuthenticateWithTokenPort) {
         this.getUserAuthenticatePort = getUserAuthenticatePort;
         this.formStateService = formStateService;
         this.squadLogService = squadLogService;
-        this.googleAuthIntegration = googleAuthIntegration;
+        this.getGoogleLoginUrlPort = getGoogleLoginUrlPort;
+        this.exchangeCodeForTokenPort = exchangeCodeForTokenPort;
         this.channelService = channelService;
         this.getUserAuthenticateWithTokenPort = getUserAuthenticateWithTokenPort;
     }
@@ -210,7 +214,7 @@ public class LoginModalHandler extends ListenerAdapter {
                 channelService.registerUserChannel(userId, channelId, messageId);
                 logger.info("📍 Canal registrado: userId={}, channelId={}, messageId={}", userId, channelId, messageId);
                 
-                String authUrl = googleAuthIntegration.getGoogleLoginConnectionUrl(userId);
+                String authUrl = getGoogleLoginUrlPort.getGoogleLoginConnectionUrl(userId);
 
                 logger.info("URL de autenticação Google obtida da API: {}", authUrl);
 
@@ -342,7 +346,7 @@ public class LoginModalHandler extends ListenerAdapter {
         event.deferReply(true).queue(hook -> {
             try {
                 logger.info("🔄 Trocando código por token...");
-                String accessToken = googleAuthIntegration.exchangeCodeForToken(code, userId);
+                String accessToken = exchangeCodeForTokenPort.exchangeCodeForToken(code, userId);
                 logger.info("✅ Token obtido com sucesso!");
 
                 logger.info("🔐 Autenticando usuário...");

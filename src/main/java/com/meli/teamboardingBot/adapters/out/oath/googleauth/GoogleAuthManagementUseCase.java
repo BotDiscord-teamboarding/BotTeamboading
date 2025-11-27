@@ -1,51 +1,39 @@
-package com.meli.teamboardingBot.service;
+package com.meli.teamboardingBot.adapters.out.oath.googleauth;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
+import com.meli.teamboardingBot.adapters.out.oath.ports.googleauth.ExchangeCodeForTokenPort;
+import com.meli.teamboardingBot.adapters.out.oath.ports.googleauth.GetGoogleLoginUrlPort;
+import com.meli.teamboardingBot.core.ports.logger.LoggerApiPort;
+import com.meli.teamboardingBot.core.ports.rest.RestPort;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
-import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.net.URLDecoder;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
 
-@Deprecated
-@Service
-public class GoogleAuthIntegrationService {
-
-    private static final Logger logger = LoggerFactory.getLogger(GoogleAuthIntegrationService.class);
-
-    @Value("${api.auth.google.connection.url:https://api.prod.tq.teamcubation.com/auth/get_google_login_connection_url}")
-    private String googleConnectionUrl;
-
-    @Value("${api.auth.google.login.url:https://api.prod.tq.teamcubation.com/auth/google_login}")
-    private String googleLoginUrl;
+public class GoogleAuthManagementUseCase extends GoogleAuthAbstract 
+        implements GetGoogleLoginUrlPort, ExchangeCodeForTokenPort {
 
     private final RestTemplate restTemplate;
-    
 
-    private final ConcurrentHashMap<String, String> processedCodes = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<String, Long> codeTimestamps = new ConcurrentHashMap<>();
-
-    public GoogleAuthIntegrationService(RestTemplate restTemplate) {
+    public GoogleAuthManagementUseCase(LoggerApiPort loggerApiPort, RestPort restPort,
+                                      RestTemplate restTemplate,
+                                      String googleConnectionUrl, String googleLoginUrl) {
+        super(loggerApiPort, restPort, googleConnectionUrl, googleLoginUrl);
         this.restTemplate = restTemplate;
     }
 
-
+    @Override
     public String getGoogleLoginConnectionUrl(String discordUserId) {
         try {
-            logger.info("=".repeat(80));
-            logger.info("OBTENDO URL DE AUTENTICAÇÃO GOOGLE");
-            logger.info("=".repeat(80));
-            logger.info("Discord User ID: {}", discordUserId);
+            loggerApiPort.info("=".repeat(80));
+            loggerApiPort.info("OBTENDO URL DE AUTENTICAÇÃO GOOGLE");
+            loggerApiPort.info("=".repeat(80));
+            loggerApiPort.info("Discord User ID: {}", discordUserId);
             
             String urlWithParams = googleConnectionUrl + "?state=" + discordUserId + "&from_discord=true";
-            logger.info("Endpoint da API: {}", urlWithParams);
+            loggerApiPort.info("Endpoint da API: {}", urlWithParams);
 
             HttpHeaders headers = new HttpHeaders();
             headers.set("accept", "application/json");
@@ -58,52 +46,51 @@ public class GoogleAuthIntegrationService {
                     request,
                     String.class
             ).getBody();
-            logger.info("Response from Google API: {}", response);
-
-
+            loggerApiPort.info("Response from Google API: {}", response);
 
             if (response != null && response.startsWith("\"") && response.endsWith("\"")) {
                 response = response.substring(1, response.length() - 1);
             }
 
-            logger.info("-".repeat(80));
-            logger.info("URL COMPLETA DO GOOGLE:");
-            logger.info("{}", response);
-            logger.info("-".repeat(80));
+            loggerApiPort.info("-".repeat(80));
+            loggerApiPort.info("URL COMPLETA DO GOOGLE:");
+            loggerApiPort.info("{}", response);
+            loggerApiPort.info("-".repeat(80));
             
             if (response != null && response.contains("?")) {
                 String[] parts = response.split("\\?");
-                logger.info("Base URL: {}", parts[0]);
+                loggerApiPort.info("Base URL: {}", parts[0]);
                 
                 if (parts.length > 1) {
-                    logger.info("PARÂMETROS:");
+                    loggerApiPort.info("PARÂMETROS:");
                     String[] params = parts[1].split("&");
                     for (String param : params) {
                         String[] keyValue = param.split("=", 2);
                         if (keyValue.length == 2) {
                             String key = keyValue[0];
                             String value = URLDecoder.decode(keyValue[1], "UTF-8");
-                            logger.info("  {} = {}", key, value);
+                            loggerApiPort.info("  {} = {}", key, value);
                         }
                     }
                 }
             }
             
-            logger.info("=".repeat(80));
+            loggerApiPort.info("=".repeat(80));
             return response;
 
         } catch (Exception e) {
-            logger.error("Erro ao obter URL de conexão Google", e);
+            loggerApiPort.error("Erro ao obter URL de conexão Google: {}", e.getMessage());
             throw new RuntimeException("Falha ao obter URL de conexão: " + e.getMessage(), e);
         }
     }
 
+    @Override
     public String exchangeCodeForToken(String code, String discordUserId) {
         try {
             if (processedCodes.containsKey(code)) {
-                logger.warn("⚠️ Code OAuth já foi usado anteriormente. Ignorando requisição duplicada.");
-                logger.warn("Discord User ID: {}", discordUserId);
-                logger.warn("Code: {}...", code.substring(0, Math.min(20, code.length())));
+                loggerApiPort.warn("⚠️ Code OAuth já foi usado anteriormente. Ignorando requisição duplicada.");
+                loggerApiPort.warn("Discord User ID: {}", discordUserId);
+                loggerApiPort.warn("Code: {}...", code.substring(0, Math.min(20, code.length())));
                 throw new RuntimeException("Code OAuth já foi utilizado. Por favor, faça login novamente.");
             }
             
@@ -112,58 +99,58 @@ public class GoogleAuthIntegrationService {
             
             cleanupOldCodes();
             
-            logger.info("=".repeat(80));
-            logger.info("TROCANDO CODE POR TOKEN");
-            logger.info("=".repeat(80));
-            logger.info("Discord User ID: {}", discordUserId);
-            logger.info("Code recebido (já decodificado): {}", code);
+            loggerApiPort.info("=".repeat(80));
+            loggerApiPort.info("TROCANDO CODE POR TOKEN");
+            loggerApiPort.info("=".repeat(80));
+            loggerApiPort.info("Discord User ID: {}", discordUserId);
+            loggerApiPort.info("Code recebido (já decodificado): {}", code);
             
             String encodedCode = java.net.URLEncoder.encode(code, "UTF-8");
             String url = googleLoginUrl + "?code=" + code + "&from_discord=true";
             
-            logger.info("Chamando: POST {}", googleLoginUrl);
-            logger.info("Query params: code={}, from_discord=true", encodedCode);
-            logger.info("URL completa: {}", url);
+            loggerApiPort.info("Chamando: POST {}", googleLoginUrl);
+            loggerApiPort.info("Query params: code={}, from_discord=true", encodedCode);
+            loggerApiPort.info("URL completa: {}", url);
             
             HttpHeaders headers = new HttpHeaders();
             headers.set("accept", "application/json");
             
             HttpEntity<String> request = new HttpEntity<>("", headers);
             
-            logger.info("Headers: {}", headers);
-            logger.info("Body: (vazio)");
+            loggerApiPort.info("Headers: {}", headers);
+            loggerApiPort.info("Body: (vazio)");
             
             Map<String, Object> response = restTemplate.postForObject(url, request, Map.class);
             
-            logger.info("-".repeat(80));
-            logger.info("RESPOSTA DA API:");
+            loggerApiPort.info("-".repeat(80));
+            loggerApiPort.info("RESPOSTA DA API:");
             if (response != null) {
                 response.forEach((key, value) -> {
                     if ("access_token".equals(key)) {
                         String token = (String) value;
-                        logger.info("  {} = {}...", key, token.substring(0, Math.min(20, token.length())));
+                        loggerApiPort.info("  {} = {}...", key, token.substring(0, Math.min(20, token.length())));
                     } else {
-                        logger.info("  {} = {}", key, value);
+                        loggerApiPort.info("  {} = {}", key, value);
                     }
                 });
             }
-            logger.info("-".repeat(80));
+            loggerApiPort.info("-".repeat(80));
             
             if (response != null && response.containsKey("access_token")) {
                 String accessToken = (String) response.get("access_token");
-                logger.info("✅ Token obtido com sucesso para Discord User ID: {}", discordUserId);
-                logger.info("=".repeat(80));
+                loggerApiPort.info("✅ Token obtido com sucesso para Discord User ID: {}", discordUserId);
+                loggerApiPort.info("=".repeat(80));
                 return accessToken;
             } else {
-                logger.error("❌ Resposta não contém access_token: {}", response);
+                loggerApiPort.error("❌ Resposta não contém access_token: {}", response);
                 throw new RuntimeException("Token não encontrado na resposta");
             }
             
         } catch (org.springframework.web.client.HttpClientErrorException e) {
-            logger.error("❌ Erro HTTP ao trocar code por token");
-            logger.error("Status Code: {}", e.getStatusCode());
-            logger.error("Response Body: {}", e.getResponseBodyAsString());
-            logger.error("Headers: {}", e.getResponseHeaders());
+            loggerApiPort.error("❌ Erro HTTP ao trocar code por token");
+            loggerApiPort.error("Status Code: {}", e.getStatusCode());
+            loggerApiPort.error("Response Body: {}", e.getResponseBodyAsString());
+            loggerApiPort.error("Headers: {}", e.getResponseHeaders());
             
             String errorMessage = String.format("Erro %s: %s", 
                 e.getStatusCode(), 
@@ -171,19 +158,8 @@ public class GoogleAuthIntegrationService {
             );
             throw new RuntimeException(errorMessage, e);
         } catch (Exception e) {
-            logger.error("❌ Erro ao trocar code por token", e);
+            loggerApiPort.error("❌ Erro ao trocar code por token: {}", e.getMessage());
             throw new RuntimeException("Falha ao obter token: " + e.getMessage(), e);
         }
-    }
-    
-    private void cleanupOldCodes() {
-        long tenMinutesAgo = System.currentTimeMillis() - TimeUnit.MINUTES.toMillis(10);
-        codeTimestamps.entrySet().removeIf(entry -> {
-            if (entry.getValue() < tenMinutesAgo) {
-                processedCodes.remove(entry.getKey());
-                return true;
-            }
-            return false;
-        });
     }
 }

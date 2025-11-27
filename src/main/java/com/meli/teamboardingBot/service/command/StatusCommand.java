@@ -3,7 +3,7 @@ package com.meli.teamboardingBot.service.command;
 import com.meli.teamboardingBot.core.domain.FormState;
 import com.meli.teamboardingBot.core.ports.auth.GetIsUserAuthenticatedPort;
 import com.meli.teamboardingBot.core.ports.logger.LoggerApiPort;
-import com.meli.teamboardingBot.core.usecase.auth.UserTokenAbstract;
+import com.meli.teamboardingBot.core.usecase.auth.oath.UserTokenAbstract;
 import com.meli.teamboardingBot.service.FormStateService;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;

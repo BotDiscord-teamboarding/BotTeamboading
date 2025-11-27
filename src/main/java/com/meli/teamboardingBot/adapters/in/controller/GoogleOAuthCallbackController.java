@@ -1,7 +1,7 @@
 package com.meli.teamboardingBot.adapters.in.controller;
 
 import com.meli.teamboardingBot.core.ports.discorduserauthentication.DiscordUserAuthenticationPort;
-import com.meli.teamboardingBot.service.GoogleAuthIntegrationService;
+import com.meli.teamboardingBot.adapters.out.oath.ports.googleauth.ExchangeCodeForTokenPort;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
 import org.slf4j.Logger;
@@ -19,14 +19,14 @@ public class GoogleOAuthCallbackController {
 
     private static final Logger logger = LoggerFactory.getLogger(GoogleOAuthCallbackController.class);
     
-    private final GoogleAuthIntegrationService googleAuthIntegration;
+    private final ExchangeCodeForTokenPort googleAuthIntegration;
     private final DiscordUserAuthenticationPort authService;
     private final JDA jda;
     private final com.meli.teamboardingBot.service.UserInteractionChannelService channelService;
     private final com.meli.teamboardingBot.service.UserLanguageService languageService;
 
     public GoogleOAuthCallbackController(
-            GoogleAuthIntegrationService googleAuthIntegration,
+            ExchangeCodeForTokenPort googleAuthIntegration,
             DiscordUserAuthenticationPort authService,
             JDA jda,
             com.meli.teamboardingBot.service.UserInteractionChannelService channelService,

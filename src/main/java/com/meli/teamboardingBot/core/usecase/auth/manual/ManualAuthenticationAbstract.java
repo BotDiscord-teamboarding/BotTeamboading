@@ -1,4 +1,4 @@
-package com.meli.teamboardingBot.core.usecase.discorduserauthentication;
+package com.meli.teamboardingBot.core.usecase.auth.manual;
 
 import com.meli.teamboardingBot.adapters.dto.AuthTokenResponseDTO;
 import com.meli.teamboardingBot.core.ports.logger.LoggerApiPort;
@@ -6,13 +6,13 @@ import com.meli.teamboardingBot.core.ports.logger.LoggerApiPort;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class DiscrdUserAuthenticationAbstract {
+public class ManualAuthenticationAbstract {
 
     protected final LoggerApiPort loggerApiPort;
     protected static final long TOKEN_EXPIRATION_TIME = 24 * 3600 * 1000L;
     protected final Map<String, UserAuthData> userTokens = new ConcurrentHashMap<>();
 
-    public DiscrdUserAuthenticationAbstract(LoggerApiPort loggerApiPort) {
+    public ManualAuthenticationAbstract(LoggerApiPort loggerApiPort) {
         this.loggerApiPort = loggerApiPort;
     }
 

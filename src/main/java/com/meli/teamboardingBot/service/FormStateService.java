@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+@Deprecated
 @Service
 public class FormStateService {
     private final Map<Long, FormState> userStates = new ConcurrentHashMap<>();

@@ -1,4 +1,4 @@
-package com.meli.teamboardingBot.core.usecase.auth;
+package com.meli.teamboardingBot.core.usecase.auth.oath;
 
 import com.meli.teamboardingBot.core.ports.auth.GetIsUserAuthenticatedPort;
 import com.meli.teamboardingBot.core.ports.logger.LoggerApiPort;

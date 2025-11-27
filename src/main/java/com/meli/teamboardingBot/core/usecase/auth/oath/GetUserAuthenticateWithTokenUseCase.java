@@ -1,15 +1,15 @@
-package com.meli.teamboardingBot.core.usecase.discorduserauthentication;
+package com.meli.teamboardingBot.core.usecase.auth.oath;
 
 import com.meli.teamboardingBot.adapters.dto.AuthTokenResponseDTO;
-import com.meli.teamboardingBot.core.ports.discorduserauthentication.DiscordUserAuthenticationPort;
+import com.meli.teamboardingBot.core.ports.auth.GetUserAuthenticateWithTokenPort;
 import com.meli.teamboardingBot.core.ports.logger.LoggerApiPort;
 
-public class DiscordUserAuthenticationUseCase extends DiscrdUserAuthenticationAbstract implements DiscordUserAuthenticationPort {
+public class GetUserAuthenticateWithTokenUseCase extends UserTokenAbstract implements GetUserAuthenticateWithTokenPort {
 
-    public DiscordUserAuthenticationUseCase(LoggerApiPort loggerApiPort) {
+    public GetUserAuthenticateWithTokenUseCase(LoggerApiPort loggerApiPort) {
         super(loggerApiPort);
     }
-
+    @Override
     public AuthResponse authenticateUserWithToken(String discordUserId, String accessToken) {
         try {
             loggerApiPort.info("Autenticando usuário Discord via Google: {}", discordUserId);
