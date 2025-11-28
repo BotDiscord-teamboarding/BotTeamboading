@@ -70,14 +70,14 @@ public class CategorySelectionHandler extends AbstractInteractionHandler {
     }
 
     private void handleSelectCategoryButton(ButtonInteractionEvent event, FormState state) {
-        log.info("Iniciando seleção de categoria");
+           loggerApiPort.info("Iniciando seleção de categoria");
         state.setStep(FormStep.CATEGORY_SELECTION);
         updateFormState(event.getUser().getIdLong(), state);
         showCategorySelection(event);
     }
 
     private void handleEditCategoriesButton(ButtonInteractionEvent event, FormState state) {
-        log.info("Editando categorias");
+           loggerApiPort.info("Editando categorias");
         state.setStep(FormStep.CATEGORY_MODIFY);
         updateFormState(event.getUser().getIdLong(), state);
         showCategorySelection(event);
@@ -85,7 +85,7 @@ public class CategorySelectionHandler extends AbstractInteractionHandler {
 
     private void handleCategorySelect(StringSelectInteractionEvent event, FormState state) {
         List<String> selectedCategoryIds = event.getValues();
-        log.info("Categorias selecionadas: {}", selectedCategoryIds);
+           loggerApiPort.info("Categorias selecionadas: {}", selectedCategoryIds);
         try {
             String categoriesJson = withUserContext(event.getUser().getId(), () -> squadLogService.getSquadCategories());
             JSONArray categoriesArray = new JSONArray(categoriesJson);
@@ -108,7 +108,7 @@ public class CategorySelectionHandler extends AbstractInteractionHandler {
                 openDescriptionModal(event, state);
             }
         } catch (Exception e) {
-            log.error("Erro na seleção de categorias: {}", e.getMessage());
+               loggerApiPort.error("Erro na seleção de categorias: {}", e.getMessage());
             showError(event, messageSource.getMessage("txt_erro_processar_selecao_das_categorias", null, state.getLocale()));
         }
     }
@@ -148,7 +148,7 @@ public class CategorySelectionHandler extends AbstractInteractionHandler {
                         .queue();
             }
         } catch (Exception e) {
-            log.error("Erro ao carregar categorias: {}", e.getMessage());
+               loggerApiPort.error("Erro ao carregar categorias: {}", e.getMessage());
             FormState state = getFormState(event.getUser().getIdLong());
             EmbedBuilder errorEmbed = new EmbedBuilder()
                     .setTitle("❌ " + messageSource.getMessage("txt_erro_carregar_categorias", null, state.getLocale()))
@@ -161,7 +161,7 @@ public class CategorySelectionHandler extends AbstractInteractionHandler {
     }
 
     private void openDescriptionModal(StringSelectInteractionEvent event, FormState state) {
-        log.info("Abrindo modal de descrição e datas");
+           loggerApiPort.info("Abrindo modal de descrição e datas");
         TextInput descriptionInput = TextInput.create("description", messageSource.getMessage("txt_descricao", null, state.getLocale()), TextInputStyle.PARAGRAPH)
                 .setPlaceholder(messageSource.getMessage("txt_digite_a_descricao_do_log", null, state.getLocale()) + "...")
                 .setMaxLength(1000)
@@ -185,9 +185,9 @@ public class CategorySelectionHandler extends AbstractInteractionHandler {
                 .build();
         try {
             event.replyModal(modal).queue();
-            log.info("Modal aberto com sucesso!");
+               loggerApiPort.info("Modal aberto com sucesso!");
         } catch (Exception modalError) {
-            log.error("Erro ao abrir modal: {}", modalError.getMessage());
+               loggerApiPort.error("Erro ao abrir modal: {}", modalError.getMessage());
             showError(event, messageSource.getMessage("txt_erro_ao_processar_selecao_das_categorias", null, getUserLocale(event.getUser().getIdLong())) + ".");
         }
     }
