@@ -3,21 +3,18 @@ package com.meli.teamboardingBot.core.usecase.auth.oath;
 import com.meli.teamboardingBot.core.ports.auth.GetIsUserAuthenticatedPort;
 import com.meli.teamboardingBot.core.ports.logger.LoggerApiPort;
 
-public class GetIsUserAuthenticatedUseCase extends UserTokenAbstract implements GetIsUserAuthenticatedPort {
+public class GetIsUserAuthenticatedUseCase implements GetIsUserAuthenticatedPort {
+
+    private final LoggerApiPort loggerApiPort;
 
     public GetIsUserAuthenticatedUseCase(LoggerApiPort logger) {
-        super(logger);
+        this.loggerApiPort = logger;
     }
 
     public boolean isUserAuthenticated(String discordUserId) {
-        UserTokenAbstract.UserAuthData authData = userTokens.get(discordUserId);
+        UserTokenManager.UserAuthData authData = UserTokenManager.getUserToken(discordUserId);
         if (authData == null) {
-            return false;
-        }
-
-        if (System.currentTimeMillis() >= authData.expirationTime) {
-            userTokens.remove(discordUserId);
-            loggerApiPort.info("Token expirado para usuário Discord: {}", discordUserId);
+            loggerApiPort.info("Usuário não autenticado ou token expirado: {}", discordUserId);
             return false;
         }
         return true;

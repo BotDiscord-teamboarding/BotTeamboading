@@ -5,12 +5,13 @@ import com.meli.teamboardingBot.core.ports.auth.GetUserTokenPort;
 import com.meli.teamboardingBot.core.ports.logger.LoggerApiPort;
 import com.meli.teamboardingBot.adapters.dto.AuthTokenResponseDTO;
 
-public class GetUserTokenUseCase extends UserTokenAbstract implements GetUserTokenPort {
+public class GetUserTokenUseCase implements GetUserTokenPort {
 
+    private final LoggerApiPort loggerApiPort;
     private final GetIsUserAuthenticatedPort isUserAuthenticated;
 
     public GetUserTokenUseCase(LoggerApiPort logger, GetIsUserAuthenticatedPort isUserAuthenticated) {
-        super(logger);
+        this.loggerApiPort = logger;
         this.isUserAuthenticated = isUserAuthenticated;
     }
 
@@ -19,6 +20,7 @@ public class GetUserTokenUseCase extends UserTokenAbstract implements GetUserTok
         if (!isUserAuthenticated.isUserAuthenticated(discordUserId)) {
             return null;
         }
-        return userTokens.get(discordUserId).token;
+        UserTokenManager.UserAuthData authData = UserTokenManager.getUserToken(discordUserId);
+        return authData != null ? authData.token : null;
     }
 }

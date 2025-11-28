@@ -4,7 +4,7 @@ import com.meli.teamboardingBot.core.domain.FormState;
 import com.meli.teamboardingBot.core.ports.auth.GetIsUserAuthenticatedPort;
 import com.meli.teamboardingBot.core.ports.formstate.GetOrCreateFormStatePort;
 import com.meli.teamboardingBot.core.ports.logger.LoggerApiPort;
-import com.meli.teamboardingBot.core.usecase.auth.oath.UserTokenAbstract;
+import com.meli.teamboardingBot.core.usecase.auth.oath.UserTokenManager;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
@@ -17,13 +17,14 @@ import java.util.Locale;
 
 
 @Component
-public class StatusCommand extends UserTokenAbstract implements SlashCommandHandler{
+public class StatusCommand implements SlashCommandHandler{
+    private final LoggerApiPort loggerApiPort;
     private final GetIsUserAuthenticatedPort isUserAuthenticated;
     private final MessageSource messageSource;
     private final GetOrCreateFormStatePort getOrCreateFormStatePort;
 
     public StatusCommand(LoggerApiPort loggerApiPort, GetIsUserAuthenticatedPort isUserAuthenticated, MessageSource messageSource, GetOrCreateFormStatePort getOrCreateFormStatePort) {
-        super(loggerApiPort);
+        this.loggerApiPort = loggerApiPort;
         this.isUserAuthenticated = isUserAuthenticated;
         this.messageSource = messageSource;
         this.getOrCreateFormStatePort = getOrCreateFormStatePort;
@@ -55,7 +56,7 @@ public class StatusCommand extends UserTokenAbstract implements SlashCommandHand
     }
 
     private void showAuthenticatedStatus(SlashCommandInteractionEvent event, String userId, Locale locale) {
-        String authMethod = getAuthMethod(userId);
+        String authMethod = UserTokenManager.getAuthMethod(userId);
         String authMethodText = "manual".equals(authMethod) ?
                 messageSource.getMessage("status.auth.method.manual", null, locale) :
                 messageSource.getMessage("status.auth.method.google", null, locale);
