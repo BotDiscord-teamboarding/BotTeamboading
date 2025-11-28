@@ -606,7 +606,7 @@ public class ModalInputHandler extends AbstractInteractionHandler {
             }
         }
 
-        TextInput.Builder endDateBuilder = TextInput.create("end_date", messageSource.getMessage("txt_data_de_fim ", null, getUserLocale(event.getUser().getIdLong())) + " (DD-MM-AAAA) - "
+        TextInput.Builder endDateBuilder = TextInput.create("end_date", messageSource.getMessage("txt_data_de_fim", null, getUserLocale(event.getUser().getIdLong())) + " (DD-MM-AAAA) - "
                         + messageSource.getMessage("txt_opcional", null, getUserLocale(event.getUser().getIdLong())), TextInputStyle.SHORT)
             .setPlaceholder(messageSource.getMessage("txt_exemplo_data_opcional", null, getUserLocale(event.getUser().getIdLong())))
             .setMaxLength(10)
@@ -640,7 +640,7 @@ public class ModalInputHandler extends AbstractInteractionHandler {
             }
         }
 
-        TextInput.Builder endDateBuilder = TextInput.create("end_date", messageSource.getMessage("txt_data_de_fim ", null, getUserLocale(event.getUser().getIdLong())) + " (DD-MM-AAAA)", TextInputStyle.SHORT)
+        TextInput.Builder endDateBuilder = TextInput.create("end_date", messageSource.getMessage("txt_data_de_fim", null, getUserLocale(event.getUser().getIdLong())) + " (DD-MM-AAAA)", TextInputStyle.SHORT)
             .setPlaceholder(messageSource.getMessage("txt_exemplo_data_opcional", null, getUserLocale(event.getUser().getIdLong())))
             .setMaxLength(10)
             .setRequired(false);

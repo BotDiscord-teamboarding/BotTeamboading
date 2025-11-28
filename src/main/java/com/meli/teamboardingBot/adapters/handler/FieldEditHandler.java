@@ -208,7 +208,7 @@ public class FieldEditHandler extends AbstractInteractionHandler {
         String startDate = state.getStartDate() != null ? formatToBrazilianDate(state.getStartDate()) : messageSource.getMessage("txt_nao_informado", null, getUserLocale(event.getUser().getIdLong()));
         String endDate = state.getEndDate() != null ? formatToBrazilianDate(state.getEndDate()) : messageSource.getMessage("txt_nao_informado", null, getUserLocale(event.getUser().getIdLong()));
         embed.addField("📅 " + messageSource.getMessage("txt_data_de_inicio", null, getUserLocale(event.getUser().getIdLong())), startDate, false);
-        embed.addField("📅 " + messageSource.getMessage("txt_data_de_fim ", null, getUserLocale(event.getUser().getIdLong())), endDate, false);
+        embed.addField("📅 " + messageSource.getMessage("txt_data_de_fim", null, getUserLocale(event.getUser().getIdLong())), endDate, false);
         event.editMessageEmbeds(embed.build())
             .setComponents(
                 ActionRow.of(
