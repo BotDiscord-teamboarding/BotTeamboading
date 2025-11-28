@@ -3,22 +3,22 @@ package com.meli.teamboardingBot.core.usecase.formstate;
 import com.meli.teamboardingBot.core.domain.FormState;
 import com.meli.teamboardingBot.core.ports.formstate.GetFormStatePort;
 import com.meli.teamboardingBot.core.ports.logger.LoggerApiPort;
+import org.springframework.stereotype.Component;
 
-import java.util.Locale;
+@Component
+public class GetFormStateUseCase implements GetFormStatePort {
 
-public class GetFormStateUseCase extends FormStateAbstract implements GetFormStatePort {
+    private final LoggerApiPort loggerApiPort;
 
     public GetFormStateUseCase(LoggerApiPort loggerApiPort) {
-        super(loggerApiPort);
+        this.loggerApiPort = loggerApiPort;
     }
 
     @Override
     public FormState getState(Long userId) {
-        FormState state = userStates.get(userId);
-        if (state != null && isExpired(state)) {
-            userStates.remove(userId);
-            loggerApiPort.info("Estado expirado removido para usuário: {}", userId);
-            return null;
+        FormState state = FormStateManager.getState(userId);
+        if (state == null) {
+            loggerApiPort.info("Estado não encontrado ou expirado para usuário: {}", userId);
         }
         return state;
     }

@@ -22,7 +22,7 @@ public class DefaultClientAbstract {
         String discordUserId = UserContext.getCurrentUserId();
         if (discordUserId != null) {
             AuthTokenResponseDTO token = userToken.getUserToken(discordUserId);
-            if (userToken != null) {
+            if (token != null) {
                 logger.debug("Usando token do usuário Discord: {}", discordUserId);
                 return token.getAccessToken();
             }

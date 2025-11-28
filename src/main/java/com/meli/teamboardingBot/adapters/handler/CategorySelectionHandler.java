@@ -33,7 +33,15 @@ public class CategorySelectionHandler extends AbstractInteractionHandler {
     private MessageSource messageSource;
 
     private Locale getUserLocale(long userId) {
-        return getOrCreateFormStatePort.getOrCreateState(userId).getLocale();
+        try {
+            FormState state = getOrCreateFormStatePort.getOrCreateState(userId);
+            if (state != null && state.getLocale() != null) {
+                return state.getLocale();
+            }
+        } catch (Exception e) {
+            loggerApiPort.warn("Erro ao obter locale do usuário {}: {}", userId, e.getMessage());
+        }
+        return Locale.getDefault();
     }
 
     @Autowired
@@ -83,33 +91,55 @@ public class CategorySelectionHandler extends AbstractInteractionHandler {
         showCategorySelection(event);
     }
 
+
     private void handleCategorySelect(StringSelectInteractionEvent event, FormState state) {
         List<String> selectedCategoryIds = event.getValues();
            loggerApiPort.info("Categorias selecionadas: {}", selectedCategoryIds);
         try {
+            loggerApiPort.info("Obtendo categorias da API...");
             String categoriesJson = withUserContext(event.getUser().getId(), () -> squadLogService.getSquadCategories());
+            loggerApiPort.info("Resposta da API de categorias: {}", categoriesJson);
             JSONArray categoriesArray = new JSONArray(categoriesJson);
+            loggerApiPort.info("JSON parseado com sucesso, {} categorias encontradas", categoriesArray.length());
             state.getCategoryIds().clear();
             state.getCategoryNames().clear();
+            loggerApiPort.info("Processando {} categorias selecionadas", selectedCategoryIds.size());
             for (String categoryId : selectedCategoryIds) {
+                loggerApiPort.info("Procurando categoria com ID: {}", categoryId);
                 for (int i = 0; i < categoriesArray.length(); i++) {
                     JSONObject category = categoriesArray.getJSONObject(i);
                     if (String.valueOf(category.get("id")).equals(categoryId)) {
                         state.getCategoryIds().add(categoryId);
                         state.getCategoryNames().add(category.optString("name", ""));
+                        loggerApiPort.info("Categoria encontrada: {} - {}", categoryId, category.optString("name", ""));
                         break;
                     }
                 }
             }
+            loggerApiPort.info("Atualizando FormState...");
             updateFormState(event.getUser().getIdLong(), state);
+            loggerApiPort.info("FormState atualizado. Step atual: {}", state.getStep());
             if (state.getStep() == FormStep.CATEGORY_MODIFY) {
+                loggerApiPort.info("Mostrando resumo (modo edição)");
+                // Para modo edição, precisamos defer antes de chamar showSummary
+                event.deferEdit().queue();
                 showSummary(event);
             } else {
+                loggerApiPort.info("Abrindo modal de descrição (modo criação)");
                 openDescriptionModal(event, state);
             }
         } catch (Exception e) {
-               loggerApiPort.error("Erro na seleção de categorias: {}", e.getMessage());
-            showError(event, messageSource.getMessage("txt_erro_processar_selecao_das_categorias", null, state.getLocale()));
+               loggerApiPort.error("Erro na seleção de categorias: {}", e.getMessage(), e);
+            try {
+                String errorMessage = "Erro ao processar seleção das categorias.";
+                if (state != null && state.getLocale() != null) {
+                    errorMessage = messageSource.getMessage("txt_erro_processar_selecao_das_categorias", null, state.getLocale());
+                }
+                showError(event, errorMessage);
+            } catch (Exception errorHandlingException) {
+                loggerApiPort.error("Erro ao tratar erro de seleção de categorias: {}", errorHandlingException.getMessage());
+                showError(event, "Erro ao processar seleção das categorias.");
+            }
         }
     }
 
@@ -117,6 +147,16 @@ public class CategorySelectionHandler extends AbstractInteractionHandler {
         try {
             event.deferEdit().queue();
             FormState state = getFormState(event.getUser().getIdLong());
+            if (state == null) {
+                EmbedBuilder errorEmbed = new EmbedBuilder()
+                        .setTitle("❌ Sessão Expirada")
+                        .setDescription("Sua sessão expirou. Use /squad-log para começar novamente.")
+                        .setColor(0xFF0000);
+                event.getHook().editOriginalEmbeds(errorEmbed.build())
+                        .setComponents()
+                        .queue();
+                return;
+            }
             String categoriesJson = withUserContext(event.getUser().getId(), () -> squadLogService.getSquadCategories());
             JSONArray categoriesArray = new JSONArray(categoriesJson);
             StringSelectMenu.Builder categoryMenuBuilder = StringSelectMenu.create("category-select")
@@ -151,44 +191,97 @@ public class CategorySelectionHandler extends AbstractInteractionHandler {
                loggerApiPort.error("Erro ao carregar categorias: {}", e.getMessage());
             FormState state = getFormState(event.getUser().getIdLong());
             EmbedBuilder errorEmbed = new EmbedBuilder()
-                    .setTitle("❌ " + messageSource.getMessage("txt_erro_carregar_categorias", null, state.getLocale()))
-                    .setDescription(messageSource.getMessage("txt_erro_carregar_categorias_mensagem", null, state.getLocale()) + ".")
+                    .setTitle("❌ Erro ao Carregar Categorias")
+                    .setDescription("Ocorreu um erro ao carregar as categorias. Tente novamente.")
                     .setColor(0xFF0000);
-            event.getHook().editOriginalEmbeds(errorEmbed.build())
-                    .setActionRow(Button.secondary("voltar-inicio", "🏠 " + messageSource.getMessage("txt_voltar_inicio", null, state.getLocale())))
-                    .queue();
+            
+            if (state != null) {
+                errorEmbed.setTitle("❌ " + messageSource.getMessage("txt_erro_carregar_categorias", null, state.getLocale()));
+                errorEmbed.setDescription(messageSource.getMessage("txt_erro_carregar_categorias_mensagem", null, state.getLocale()) + ".");
+                event.getHook().editOriginalEmbeds(errorEmbed.build())
+                        .setActionRow(Button.secondary("voltar-inicio", "🏠 " + messageSource.getMessage("txt_voltar_inicio", null, state.getLocale())))
+                        .queue();
+            } else {
+                errorEmbed.setTitle("❌ Sessão Expirada");
+                errorEmbed.setDescription("Sua sessão expirou. Use /squad-log para começar novamente.");
+                event.getHook().editOriginalEmbeds(errorEmbed.build())
+                        .setComponents()
+                        .queue();
+            }
         }
     }
 
     private void openDescriptionModal(StringSelectInteractionEvent event, FormState state) {
-           loggerApiPort.info("Abrindo modal de descrição e datas");
-        TextInput descriptionInput = TextInput.create("description", messageSource.getMessage("txt_descricao", null, state.getLocale()), TextInputStyle.PARAGRAPH)
-                .setPlaceholder(messageSource.getMessage("txt_digite_a_descricao_do_log", null, state.getLocale()) + "...")
-                .setMaxLength(1000)
-                .setRequired(true)
-                .build();
-        TextInput startDateInput = TextInput.create("start_date", messageSource.getMessage("txt_data_inicio", null, state.getLocale()) + " (DD-MM-AAAA)", TextInputStyle.SHORT)
-                .setPlaceholder(messageSource.getMessage("txt_exemplo_data", null, state.getLocale()))
-                .setMaxLength(10)
-                .setRequired(true)
-                .build();
-        TextInput endDateInput = TextInput.create("end_date", messageSource.getMessage("txt_data_fim", null, state.getLocale()) + " (DD-MM-AAAA) - "
-                        + messageSource.getMessage("txt_opcional", null, state.getLocale()), TextInputStyle.SHORT)
-                .setPlaceholder(messageSource.getMessage("txt_exemplo_data_opcional", null, state.getLocale()))
-                .setMaxLength(10)
-                .setRequired(false)
-                .build();
-        Modal modal = Modal.create("create-complete-modal", "📝 " + messageSource.getMessage("txt_finalizar_criacao_do_log", null, state.getLocale()))
-                .addActionRow(descriptionInput)
-                .addActionRow(startDateInput)
-                .addActionRow(endDateInput)
-                .build();
+           loggerApiPort.info("Abrindo modal de descrição e datas diretamente");
         try {
+            TextInput descriptionInput = TextInput.create("description", "Descrição", TextInputStyle.PARAGRAPH)
+                    .setPlaceholder("Digite a descrição do log...")
+                    .setMaxLength(1000)
+                    .setRequired(true)
+                    .build();
+            TextInput startDateInput = TextInput.create("start_date", "Data Início (DD-MM-AAAA)", TextInputStyle.SHORT)
+                    .setPlaceholder("Ex: 28-11-2025")
+                    .setMaxLength(10)
+                    .setRequired(true)
+                    .build();
+            TextInput endDateInput = TextInput.create("end_date", "Data Fim (DD-MM-AAAA) - Opcional", TextInputStyle.SHORT)
+                    .setPlaceholder("Ex: 30-11-2025 (opcional)")
+                    .setMaxLength(10)
+                    .setRequired(false)
+                    .build();
+            
+            // Tentar usar mensagens localizadas se possível
+            try {
+                if (state != null && state.getLocale() != null) {
+                    String descLabel = messageSource.getMessage("txt_descricao", null, state.getLocale());
+                    String descPlaceholder = messageSource.getMessage("txt_digite_a_descricao_do_log", null, state.getLocale());
+                    String startLabel = messageSource.getMessage("txt_data_inicio", null, state.getLocale());
+                    String endLabel = messageSource.getMessage("txt_data_fim", null, state.getLocale());
+                    String opcional = messageSource.getMessage("txt_opcional", null, state.getLocale());
+                    String modalTitle = messageSource.getMessage("txt_finalizar_criacao_do_log", null, state.getLocale());
+                    
+                    descriptionInput = TextInput.create("description", descLabel, TextInputStyle.PARAGRAPH)
+                            .setPlaceholder(descPlaceholder + "...")
+                            .setMaxLength(1000)
+                            .setRequired(true)
+                            .build();
+                    startDateInput = TextInput.create("start_date", startLabel + " (DD-MM-AAAA)", TextInputStyle.SHORT)
+                            .setPlaceholder("Ex: 28-11-2025")
+                            .setMaxLength(10)
+                            .setRequired(true)
+                            .build();
+                    endDateInput = TextInput.create("end_date", endLabel + " (DD-MM-AAAA) - " + opcional, TextInputStyle.SHORT)
+                            .setPlaceholder("Ex: 30-11-2025 (opcional)")
+                            .setMaxLength(10)
+                            .setRequired(false)
+                            .build();
+                    
+                    Modal modal = Modal.create("create-complete-modal", "📝 " + modalTitle)
+                            .addActionRow(descriptionInput)
+                            .addActionRow(startDateInput)
+                            .addActionRow(endDateInput)
+                            .build();
+                    
+                    event.replyModal(modal).queue();
+                    loggerApiPort.info("Modal aberto com sucesso (localizado)!");
+                    return;
+                }
+            } catch (Exception localeError) {
+                loggerApiPort.warn("Erro ao usar mensagens localizadas no modal, usando padrão: {}", localeError.getMessage());
+            }
+            
+            Modal modal = Modal.create("create-complete-modal", "📝 Finalizar Criação do Log")
+                    .addActionRow(descriptionInput)
+                    .addActionRow(startDateInput)
+                    .addActionRow(endDateInput)
+                    .build();
+            
             event.replyModal(modal).queue();
-               loggerApiPort.info("Modal aberto com sucesso!");
+            loggerApiPort.info("Modal aberto com sucesso!");
         } catch (Exception modalError) {
-               loggerApiPort.error("Erro ao abrir modal: {}", modalError.getMessage());
-            showError(event, messageSource.getMessage("txt_erro_ao_processar_selecao_das_categorias", null, getUserLocale(event.getUser().getIdLong())) + ".");
+               loggerApiPort.error("Erro ao abrir modal diretamente: {}", modalError.getMessage(), modalError);
+            // Como fallback, mostrar uma mensagem de erro
+            event.reply("❌ Erro ao abrir modal. Tente novamente.").setEphemeral(true).queue();
         }
     }
 
@@ -200,14 +293,29 @@ public class CategorySelectionHandler extends AbstractInteractionHandler {
     }
 
     private void showError(StringSelectInteractionEvent event, String message) {
-        EmbedBuilder errorEmbed = new EmbedBuilder()
-                .setTitle("❌ " + messageSource.getMessage("txt_erro", null, getUserLocale(event.getUser().getIdLong())))
-                .setDescription(message)
-                .setColor(0xFF0000);
-        if (event.getHook() != null) {
-            event.getHook().editOriginalEmbeds(errorEmbed.build())
-                    .setComponents()
-                    .queue();
+        try {
+            EmbedBuilder errorEmbed = new EmbedBuilder()
+                    .setTitle("❌ Erro")
+                    .setDescription(message)
+                    .setColor(0xFF0000);
+            
+            // Tentar usar locale se possível
+            try {
+                Locale userLocale = getUserLocale(event.getUser().getIdLong());
+                if (userLocale != null) {
+                    errorEmbed.setTitle("❌ " + messageSource.getMessage("txt_erro", null, userLocale));
+                }
+            } catch (Exception localeError) {
+                loggerApiPort.warn("Erro ao obter locale do usuário: {}", localeError.getMessage());
+            }
+            
+            if (event.getHook() != null) {
+                event.getHook().editOriginalEmbeds(errorEmbed.build())
+                        .setComponents()
+                        .queue();
+            }
+        } catch (Exception e) {
+            loggerApiPort.error("Erro ao mostrar mensagem de erro: {}", e.getMessage());
         }
     }
 
