@@ -1,5 +1,7 @@
 package com.meli.teamboardingBot.adapters.handler;
 
+import com.meli.teamboardingBot.adapters.out.language.ActiveFlowMessageService;
+import com.meli.teamboardingBot.core.domain.FormState;
 import com.meli.teamboardingBot.core.domain.batch.BatchLogEntry;
 import com.meli.teamboardingBot.core.domain.batch.BatchParsingResult;
 import com.meli.teamboardingBot.core.ports.formstate.*;
@@ -45,16 +47,18 @@ public class BatchCreationHandler extends AbstractInteractionHandler {
     private final BatchValidator batchValidator;
     private final PreviewNavigator previewNavigator;
     private final SquadLogService squadLogService;
+    private final ActiveFlowMessageService activeFlowMessageService;
     
 
     @Autowired
-    public BatchCreationHandler(GetOrCreateFormStatePort getOrCreateFormStatePort, PutFormStatePort putFormStatePort, GetFormStatePort getFormStatePort, SetBatchEntriesPort setBatchEntriesPort, SetBatchCurrentIndexPort setBatchCurrentIndexPort, GetBatchEntriesPort getBatchEntriesPort, GetBatchCurrentIndexPort getBatchCurrentIndexPort, ClearBatchStatePort clearBatchStatePort, DeleteFormStatePort deleteFormStatePort, ResetFormStatePort resetFormStatePort, LoggerApiPort loggerApiPort, TextParser intelligentTextParser, BatchValidator batchValidator, PreviewNavigator previewNavigator, SquadLogService squadLogService, MessageSource messageSource) {
+    public BatchCreationHandler(GetOrCreateFormStatePort getOrCreateFormStatePort, PutFormStatePort putFormStatePort, GetFormStatePort getFormStatePort, SetBatchEntriesPort setBatchEntriesPort, SetBatchCurrentIndexPort setBatchCurrentIndexPort, GetBatchEntriesPort getBatchEntriesPort, GetBatchCurrentIndexPort getBatchCurrentIndexPort, ClearBatchStatePort clearBatchStatePort, DeleteFormStatePort deleteFormStatePort, ResetFormStatePort resetFormStatePort, LoggerApiPort loggerApiPort, TextParser intelligentTextParser, BatchValidator batchValidator, PreviewNavigator previewNavigator, SquadLogService squadLogService, MessageSource messageSource, ActiveFlowMessageService activeFlowMessageService) {
         super(getOrCreateFormStatePort, putFormStatePort, getFormStatePort, setBatchEntriesPort, setBatchCurrentIndexPort, getBatchEntriesPort, getBatchCurrentIndexPort, clearBatchStatePort, deleteFormStatePort, resetFormStatePort, loggerApiPort);
         this.intelligentTextParser = intelligentTextParser;
         this.batchValidator = batchValidator;
         this.previewNavigator = previewNavigator;
         this.squadLogService = squadLogService;
         this.messageSource = messageSource;
+        this.activeFlowMessageService = activeFlowMessageService;
     }
 
 
@@ -385,7 +389,10 @@ public class BatchCreationHandler extends AbstractInteractionHandler {
 
         event.getHook().editOriginalEmbeds(summaryEmbed.build(), previewEmbed)
                 .setComponents(actionRows)
-                .queue();
+                .queue(success -> {
+                    activeFlowMessageService.registerFlowHook(event.getUser().getIdLong(), event.getHook());
+                    loggerApiPort.info("📌 Hook registrado para fluxo em lote do usuário: {}", event.getUser().getIdLong());
+                });
     }
 
     private void updatePreview(ButtonInteractionEvent event, List<BatchLogEntry> entries, int currentIndex) {

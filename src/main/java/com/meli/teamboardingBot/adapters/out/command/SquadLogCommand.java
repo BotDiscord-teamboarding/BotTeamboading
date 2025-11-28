@@ -1,4 +1,5 @@
 package com.meli.teamboardingBot.adapters.out.command;
+import com.meli.teamboardingBot.adapters.out.language.ActiveFlowMessageService;
 import com.meli.teamboardingBot.core.domain.FormState;
 import com.meli.teamboardingBot.core.ports.auth.GetIsUserAuthenticatedPort;
 import com.meli.teamboardingBot.core.ports.formstate.GetOrCreateFormStatePort;
@@ -19,15 +20,18 @@ public class SquadLogCommand implements SlashCommandHandler {
     private final PendingAuthMessageService pendingAuthMessageService;
     private final MessageSource messageSource;
     private final GetOrCreateFormStatePort getOrCreateState;
+    private final ActiveFlowMessageService activeFlowMessageService;
 
     public SquadLogCommand(GetIsUserAuthenticatedPort isUserAuthenticated,
                           PendingAuthMessageService pendingAuthMessageService,
                           MessageSource messageSource,
-                           GetOrCreateFormStatePort getOrCreateState) {
+                           GetOrCreateFormStatePort getOrCreateState,
+                           ActiveFlowMessageService activeFlowMessageService) {
         this.isUserAuthenticated = isUserAuthenticated;
         this.pendingAuthMessageService = pendingAuthMessageService;
         this.messageSource = messageSource;
         this.getOrCreateState = getOrCreateState;
+        this.activeFlowMessageService = activeFlowMessageService;
     }
 
     @Override
@@ -65,14 +69,15 @@ public class SquadLogCommand implements SlashCommandHandler {
             return;
         }
         
-        event.deferReply(true).queue(hook ->
+        event.deferReply(true).queue(hook -> {
+                activeFlowMessageService.registerFlowHook(userIdLong, hook);
                 hook.editOriginalEmbeds(
                         Ui.info(messageSource.getMessage("txt_escolha_uma_opcao", null, locale)).build()
                 ).setActionRow(
                         Button.primary("criar", "✅ " + messageSource.getMessage("txt_criar", null, locale)),
                         Button.secondary("atualizar", "📝 " + messageSource.getMessage("txt_atualizar", null, locale)),
                         Button.danger("sair", "🚪 " + messageSource.getMessage("txt_sair", null, locale))
-                ).queue()
-        );
+                ).queue();
+        });
     }
 }
