@@ -3,17 +3,17 @@ package com.meli.teamboardingBot.core.usecase.formstate;
 import com.meli.teamboardingBot.core.ports.formstate.SetBatchCurrentIndexPort;
 import com.meli.teamboardingBot.core.ports.logger.LoggerApiPort;
 
-import java.util.List;
+public class SetBatchCurrentIndexUseCase implements SetBatchCurrentIndexPort {
 
-public class SetBatchCurrentIndexUseCase extends FormStateAbstract implements SetBatchCurrentIndexPort {
+    private final LoggerApiPort loggerApiPort;
 
     public SetBatchCurrentIndexUseCase(LoggerApiPort loggerApiPort) {
-        super(loggerApiPort);
+        this.loggerApiPort = loggerApiPort;
     }
 
     @Override
     public void setBatchCurrentIndex(String userId, int index) {
-        batchCurrentIndex.put(userId, index);
+        BatchStateManager.setBatchCurrentIndex(userId, index);
         loggerApiPort.info("Batch index atualizado para usuário: {} - index: {}", userId, index);
     }
 

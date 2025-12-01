@@ -471,7 +471,15 @@ public class BatchCreationHandler extends AbstractInteractionHandler {
     private JSONObject createSquadLogPayload(BatchLogEntry entry) {
         JSONObject payload = new JSONObject();
         payload.put("squad_id", entry.getSquadId());
-        payload.put("user_id", entry.getUserId());
+        
+        // Para "All team", omitir user_id do payload (seguindo mesmo padrão do CrudOperationHandler)
+        if (entry.getUserId() != 0) {
+            payload.put("user_id", entry.getUserId());
+            loggerApiPort.info("Incluindo user_id no payload: {}", entry.getUserId());
+        } else {
+            loggerApiPort.info("All team detectado - omitindo user_id do payload");
+        }
+        
         payload.put("squad_log_type_id", entry.getTypeId());
         payload.put("skill_category_ids", entry.getCategoryIds());
         payload.put("description", entry.getDescription());

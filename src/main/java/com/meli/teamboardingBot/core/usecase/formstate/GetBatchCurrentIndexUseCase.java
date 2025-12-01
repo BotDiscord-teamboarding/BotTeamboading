@@ -1,21 +1,20 @@
 package com.meli.teamboardingBot.core.usecase.formstate;
 
-import com.meli.teamboardingBot.core.domain.batch.BatchLogEntry;
 import com.meli.teamboardingBot.core.ports.formstate.GetBatchCurrentIndexPort;
-import com.meli.teamboardingBot.core.ports.formstate.SetBatchCurrentIndexPort;
 import com.meli.teamboardingBot.core.ports.logger.LoggerApiPort;
 
-import java.util.List;
+public class GetBatchCurrentIndexUseCase implements GetBatchCurrentIndexPort {
 
-public class GetBatchCurrentIndexUseCase extends FormStateAbstract implements GetBatchCurrentIndexPort {
+    private final LoggerApiPort loggerApiPort;
 
     public GetBatchCurrentIndexUseCase(LoggerApiPort loggerApiPort) {
-        super(loggerApiPort);
+        this.loggerApiPort = loggerApiPort;
     }
 
     @Override
     public int getBatchCurrentIndex(String userId) {
-        return batchCurrentIndex.getOrDefault(userId, 0);
+        Integer index = BatchStateManager.getBatchCurrentIndex(userId);
+        return index != null ? index : 0;
     }
 
 }
