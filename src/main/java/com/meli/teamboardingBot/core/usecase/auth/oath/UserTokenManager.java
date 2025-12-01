@@ -31,7 +31,7 @@ public class UserTokenManager {
 
     public static UserAuthData getUserToken(String discordUserId) {
         UserAuthData authData = userTokens.get(discordUserId);
-        if (authData != null && System.currentTimeMillis() >= authData.expirationTime) {
+        if (authData != null && System.currentTimeMillis() > authData.expirationTime) {
             userTokens.remove(discordUserId);
             return null;
         }
