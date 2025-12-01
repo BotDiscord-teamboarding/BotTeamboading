@@ -3,6 +3,7 @@ package com.meli.teamboardingBot.adapters.handler;
 import com.meli.teamboardingBot.core.domain.FormState;
 import com.meli.teamboardingBot.core.ports.auth.GetUserAuthenticatePort;
 import com.meli.teamboardingBot.core.ports.auth.GetUserAuthenticateWithTokenPort;
+import com.meli.teamboardingBot.core.ports.auth.GetIsUserAuthenticatedPort;
 import com.meli.teamboardingBot.adapters.out.oath.googleauth.ports.ExchangeCodeForTokenPort;
 import com.meli.teamboardingBot.adapters.out.oath.googleauth.ports.GetGoogleLoginUrlPort;
 import com.meli.teamboardingBot.core.ports.formstate.GetOrCreateFormStatePort;
@@ -34,6 +35,7 @@ public class LoginModalHandler extends ListenerAdapter {
     private final GetGoogleLoginUrlPort getGoogleLoginUrlPort;
     private final ExchangeCodeForTokenPort exchangeCodeForTokenPort;
     private final UserInteractionChannelService channelService;
+    private final GetIsUserAuthenticatedPort getIsUserAuthenticatedPort;
 
     @Autowired
     public LoginModalHandler(GetUserAuthenticatePort getUserAuthenticatePort,
@@ -42,7 +44,8 @@ public class LoginModalHandler extends ListenerAdapter {
                              GetGoogleLoginUrlPort getGoogleLoginUrlPort,
                              ExchangeCodeForTokenPort exchangeCodeForTokenPort,
                              UserInteractionChannelService channelService,
-                             GetUserAuthenticateWithTokenPort getUserAuthenticateWithTokenPort) {
+                             GetUserAuthenticateWithTokenPort getUserAuthenticateWithTokenPort,
+                             GetIsUserAuthenticatedPort getIsUserAuthenticatedPort) {
         this.getUserAuthenticatePort = getUserAuthenticatePort;
         this.getOrCreateFormStatePort = getOrCreateFormStatePort;
         this.squadLogService = squadLogService;
@@ -50,6 +53,7 @@ public class LoginModalHandler extends ListenerAdapter {
         this.exchangeCodeForTokenPort = exchangeCodeForTokenPort;
         this.channelService = channelService;
         this.getUserAuthenticateWithTokenPort = getUserAuthenticateWithTokenPort;
+        this.getIsUserAuthenticatedPort = getIsUserAuthenticatedPort;
     }
     @Autowired
     private MessageSource messageSource;
@@ -110,6 +114,21 @@ public class LoginModalHandler extends ListenerAdapter {
             }
 
             if ("voltar-inicio".equals(buttonId)) {
+                // Verificar se usuário está autenticado
+                String userId = event.getUser().getId();
+                try {
+                    boolean isAuthenticated = getIsUserAuthenticatedPort.isUserAuthenticated(userId);
+                    if (isAuthenticated) {
+                        // Se autenticado, não processar aqui - deixar para o ComponentInteractionListener
+                        logger.info("voltar-inicio ignorado no LoginModalHandler - usuário {} está autenticado", userId);
+                        return;
+                    }
+                } catch (Exception e) {
+                    logger.warn("Erro ao verificar autenticação do usuário {}: {}", userId, e.getMessage());
+                }
+                
+                // Se não autenticado, processar normalmente
+                logger.info("voltar-inicio processado no LoginModalHandler - usuário {} não autenticado", userId);
                 handleCancelAuth(event);
                 return;
             }
