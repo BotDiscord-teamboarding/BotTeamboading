@@ -471,7 +471,6 @@ public class BatchCreationHandler extends AbstractInteractionHandler {
         JSONObject payload = new JSONObject();
         payload.put("squad_id", entry.getSquadId());
         
-        // Para "All team", omitir user_id do payload (seguindo mesmo padrão do CrudOperationHandler)
         if (entry.getUserId() != 0) {
             payload.put("user_id", entry.getUserId());
             loggerApiPort.info("Incluindo user_id no payload: {}", entry.getUserId());

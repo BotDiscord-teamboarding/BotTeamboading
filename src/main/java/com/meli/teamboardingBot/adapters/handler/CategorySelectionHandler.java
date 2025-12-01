@@ -121,7 +121,6 @@ public class CategorySelectionHandler extends AbstractInteractionHandler {
             loggerApiPort.info("FormState atualizado. Step atual: {}", state.getStep());
             if (state.getStep() == FormStep.CATEGORY_MODIFY) {
                 loggerApiPort.info("Mostrando resumo (modo edição)");
-                // Para modo edição, precisamos defer antes de chamar showSummary
                 event.deferEdit().queue();
                 showSummary(event);
             } else {
@@ -230,7 +229,6 @@ public class CategorySelectionHandler extends AbstractInteractionHandler {
                     .setRequired(false)
                     .build();
             
-            // Tentar usar mensagens localizadas se possível
             try {
                 if (state != null && state.getLocale() != null) {
                     String descLabel = messageSource.getMessage("txt_descricao", null, state.getLocale());
@@ -280,7 +278,6 @@ public class CategorySelectionHandler extends AbstractInteractionHandler {
             loggerApiPort.info("Modal aberto com sucesso!");
         } catch (Exception modalError) {
                loggerApiPort.error("Erro ao abrir modal diretamente: {}", modalError.getMessage(), modalError);
-            // Como fallback, mostrar uma mensagem de erro
             event.reply("❌ Erro ao abrir modal. Tente novamente.").setEphemeral(true).queue();
         }
     }
@@ -299,7 +296,6 @@ public class CategorySelectionHandler extends AbstractInteractionHandler {
                     .setDescription(message)
                     .setColor(0xFF0000);
             
-            // Tentar usar locale se possível
             try {
                 Locale userLocale = getUserLocale(event.getUser().getIdLong());
                 if (userLocale != null) {

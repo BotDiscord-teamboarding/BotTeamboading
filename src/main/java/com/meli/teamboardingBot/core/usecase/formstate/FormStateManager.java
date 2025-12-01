@@ -12,7 +12,6 @@ public class FormStateManager {
     private static final int EXPIRATION_HOURS = 2;
     
     private FormStateManager() {
-        // Singleton - construtor privado
     }
     
     public static FormState getState(Long userId) {

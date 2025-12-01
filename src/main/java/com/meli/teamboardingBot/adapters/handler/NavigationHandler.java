@@ -162,7 +162,6 @@ public class NavigationHandler extends AbstractInteractionHandler {
         hook.editOriginalEmbeds(embed.build())
             .setComponents()
             .queue(success -> {
-                // Agenda a remoção da mensagem após 8 segundos
                 hook.deleteOriginal().queueAfter(8, java.util.concurrent.TimeUnit.SECONDS, 
                     deleteSuccess -> log.info("Mensagem de saída removida após 8 segundos"),
                     deleteError -> log.warn("Erro ao remover mensagem de saída: {}", deleteError.getMessage())

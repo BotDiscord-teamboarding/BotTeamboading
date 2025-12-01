@@ -15,7 +15,6 @@ public class BatchStateManager {
     private static final int EXPIRATION_HOURS = 2;
     
     private BatchStateManager() {
-        // Singleton - construtor privado
     }
     
     public static List<BatchLogEntry> getBatchEntries(String userId) {

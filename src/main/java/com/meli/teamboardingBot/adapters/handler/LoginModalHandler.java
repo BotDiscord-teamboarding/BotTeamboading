@@ -114,12 +114,10 @@ public class LoginModalHandler extends ListenerAdapter {
             }
 
             if ("voltar-inicio".equals(buttonId)) {
-                // Verificar se usuário está autenticado
                 String userId = event.getUser().getId();
                 try {
                     boolean isAuthenticated = getIsUserAuthenticatedPort.isUserAuthenticated(userId);
                     if (isAuthenticated) {
-                        // Se autenticado, não processar aqui - deixar para o ComponentInteractionListener
                         logger.info("voltar-inicio ignorado no LoginModalHandler - usuário {} está autenticado", userId);
                         return;
                     }
@@ -127,7 +125,6 @@ public class LoginModalHandler extends ListenerAdapter {
                     logger.warn("Erro ao verificar autenticação do usuário {}: {}", userId, e.getMessage());
                 }
                 
-                // Se não autenticado, processar normalmente
                 logger.info("voltar-inicio processado no LoginModalHandler - usuário {} não autenticado", userId);
                 handleCancelAuth(event);
                 return;
@@ -253,7 +250,12 @@ public class LoginModalHandler extends ListenerAdapter {
                                 Button.link(authUrl, "🌐 " + messageSource.getMessage("txt_autenticar_com_google", null, formState.getLocale()) ),
                                 Button.secondary("voltar-para-escolha", "🏠 " + messageSource.getMessage("txt_voltar", null, formState.getLocale()) )
                         )
-                        .queue();
+                        .queue(success -> {
+                            hook.deleteOriginal().queueAfter(60, java.util.concurrent.TimeUnit.SECONDS,
+                                deleteSuccess -> logger.info("Mensagem de autenticação Google removida após 60 segundos para usuário: {}", userId),
+                                deleteError -> logger.debug("Mensagem de autenticação já foi removida ou não existe mais: {}", deleteError.getMessage())
+                            );
+                        });
 
             } catch (Exception e) {
                 logger.error("Erro ao obter URL de autenticação Google", e);

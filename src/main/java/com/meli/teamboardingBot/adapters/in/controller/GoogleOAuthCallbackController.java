@@ -190,7 +190,7 @@ public class GoogleOAuthCallbackController {
                                 );
                     },
                     error -> {
-                        logger.error("❌ Erro ao recuperar mensagem {}: {}", messageId, error.getMessage());
+
                         channelService.clearUserChannel(discordUserId);
                     }
                 );
