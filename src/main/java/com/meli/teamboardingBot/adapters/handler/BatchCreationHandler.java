@@ -400,7 +400,12 @@ public class BatchCreationHandler extends AbstractInteractionHandler {
         loggerApiPort.info("Updating preview for entry {}: Squad='{}', Person='{}', Type='{}'",
                 currentIndex, entry.getSquadName(), entry.getPersonName(), entry.getLogType());
 
-        MessageEmbed previewEmbed = previewNavigator.createPreviewEmbed(entry, currentIndex, entries.size());
+        MessageEmbed previewEmbed;
+        if (entry.getModifiedField() != null && previewNavigator instanceof EmbedPreviewNavigationService) {
+            previewEmbed = ((EmbedPreviewNavigationService) previewNavigator).createPreviewEmbed(entry, currentIndex, entries.size(), entry.getModifiedField());
+        } else {
+            previewEmbed = previewNavigator.createPreviewEmbed(entry, currentIndex, entries.size());
+        }
 
         long userId = event.getUser().getIdLong();
         List<ActionRow> actionRows = createNavigationActionRows(currentIndex, entries.size(), userId);
@@ -538,14 +543,15 @@ public class BatchCreationHandler extends AbstractInteractionHandler {
                 .queue();
 
         EmbedBuilder exitEmbed = new EmbedBuilder()
-                .setTitle("👋 " + messageSource.getMessage("txt_obrigado_por_usar_o_squad_log_bot", null, getUserLocale(event.getUser().getIdLong())) + "!")
-                .setDescription(messageSource.getMessage("txt_ate_a_proxima", null, getUserLocale(event.getUser().getIdLong())) + "! 🚀\n\n" +
-                        "**" + messageSource.getMessage("txt_comandos_disponiveis", null, getUserLocale(event.getUser().getIdLong())) + ":**\n" +
-                        "`/squad-log` - " + messageSource.getMessage("txt_criar_ou_atualizar_squad_log", null, getUserLocale(event.getUser().getIdLong())) + "\n" +
-                        "`/squad-log-lote` - " + messageSource.getMessage("txt_criar_multiplos_logs_de_uma_vez", null, getUserLocale(event.getUser().getIdLong())) + "\n" +
-                        "`/language` - " + messageSource.getMessage("txt_alterar_idioma", null, getUserLocale(event.getUser().getIdLong())))
-                .setColor(Color.BLUE)
-                .setFooter(messageSource.getMessage("txt_esta_mensagem_sera_excluida_automaticamente", null, getUserLocale(event.getUser().getIdLong())));
+                .setTitle("🛑 " + messageSource.getMessage("txt_fluxo_de", null, getUserLocale(event.getUser().getIdLong())) + " " + 
+                         messageSource.getMessage("txt_criacao", null, getUserLocale(event.getUser().getIdLong())) + " " + 
+                         messageSource.getMessage("txt_encerrado", null, getUserLocale(event.getUser().getIdLong())))
+                .setDescription(messageSource.getMessage("txt_o_processo_foi_cancelado_com_sucesso", null, getUserLocale(event.getUser().getIdLong())) + ".\n\n" +
+                        messageSource.getMessage("txt_todos_os_dados_nao_salvos_foram_descartados", null, getUserLocale(event.getUser().getIdLong())) + ".\n\n" +
+                        messageSource.getMessage("txt_use_squad_log_quando_quiser_comecar_novamente", null, getUserLocale(event.getUser().getIdLong())) + ".")
+                .setColor(0xe74c3c)
+                .setFooter(messageSource.getMessage("txt_processo_cancelado_pelo_usuario", null, getUserLocale(event.getUser().getIdLong())) + " • " + 
+                          messageSource.getMessage("txt_esta_mensagem_sera_excluida_automaticamente", null, getUserLocale(event.getUser().getIdLong())));
 
         event.getHook().editOriginalEmbeds(exitEmbed.build())
                 .setComponents()

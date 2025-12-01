@@ -16,6 +16,7 @@ public class BatchLogEntry {
     private Long userId;
     private Long typeId;
     private List<Long> categoryIds;
+    private String modifiedField;
 
     public BatchLogEntry() {}
 
@@ -67,4 +68,7 @@ public class BatchLogEntry {
 
     public List<Long> getCategoryIds() { return categoryIds; }
     public void setCategoryIds(List<Long> categoryIds) { this.categoryIds = categoryIds; }
+
+    public String getModifiedField() { return modifiedField; }
+    public void setModifiedField(String modifiedField) { this.modifiedField = modifiedField; }
 }
