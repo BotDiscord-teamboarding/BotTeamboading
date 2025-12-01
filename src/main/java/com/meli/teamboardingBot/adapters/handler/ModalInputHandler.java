@@ -79,7 +79,7 @@ public class ModalInputHandler extends AbstractInteractionHandler {
         return getOrCreateFormStatePort.getOrCreateState(userId).getLocale();
     }
     private void handleEditDescriptionButton(ButtonInteractionEvent event, FormState state) {
-        log.info("Editando descrição");
+         loggerApiPort.info("Editando descrição");
         TextInput.Builder descriptionBuilder = TextInput.create("description", messageSource.getMessage("txt_descricao", null, getUserLocale(event.getUser().getIdLong())), TextInputStyle.PARAGRAPH)
             .setPlaceholder(messageSource.getMessage("txt_digite_a_descricao_do_log", null, getUserLocale(event.getUser().getIdLong())) + "...")
             .setMaxLength(1000)
@@ -88,13 +88,13 @@ public class ModalInputHandler extends AbstractInteractionHandler {
             descriptionBuilder.setValue(state.getDescription());
         }
         TextInput descriptionInput = descriptionBuilder.build();
-        Modal modal = Modal.create("modal-edit-description", "📝 " + messageSource.getMessage("txt_editar_descrição", null, getUserLocale(event.getUser().getIdLong())))
+        Modal modal = Modal.create("modal-edit-description", "📝 " + messageSource.getMessage("txt_editar_descricao", null, getUserLocale(event.getUser().getIdLong())))
             .addActionRow(descriptionInput)
             .build();
         event.replyModal(modal).queue();
     }
     private void handleEditDatesButton(ButtonInteractionEvent event, FormState state) {
-        log.info("Editando datas");
+        loggerApiPort.info("Editando datas");
         TextInput.Builder startDateBuilder = TextInput.create("start_date", messageSource.getMessage("txt_data_de_inicio", null, getUserLocale(event.getUser().getIdLong())) + " (DD-MM-AAAA)", TextInputStyle.SHORT)
             .setPlaceholder(messageSource.getMessage("txt_exemplo_data", null, getUserLocale(event.getUser().getIdLong())))
             .setMaxLength(10)
@@ -125,7 +125,7 @@ public class ModalInputHandler extends AbstractInteractionHandler {
         event.replyModal(modal).queue();
     }
     private void handleCreateCompleteModal(ModalInteractionEvent event, FormState state) {
-        log.info("Processando modal de criação completa");
+         loggerApiPort.info("Processando modal de criação completa");
         String description = event.getValue("description").getAsString();
         String startDate = event.getValue("start_date").getAsString();
         String endDate = event.getValue("end_date") != null ? event.getValue("end_date").getAsString() : null;
@@ -197,7 +197,7 @@ public class ModalInputHandler extends AbstractInteractionHandler {
         showCreateSummary(event, state);
     }
     private void handleEditDescriptionModal(ModalInteractionEvent event, FormState state) {
-        log.info("Processando edição de descrição");
+         loggerApiPort.info("Processando edição de descrição");
         String description = event.getValue("description").getAsString();
         state.setDescription(description);
         updateFormState(event.getUser().getIdLong(), state);
@@ -205,7 +205,7 @@ public class ModalInputHandler extends AbstractInteractionHandler {
         showSummary(event, state);
     }
     private void handleEditDatesModal(ModalInteractionEvent event, FormState state) {
-        log.info("Processando edição de datas");
+         loggerApiPort.info("Processando edição de datas");
         String startDate = event.getValue("start_date").getAsString();
         String endDate = event.getValue("end_date") != null ? event.getValue("end_date").getAsString() : null;
         if (!isValidDate(startDate)) {
@@ -277,35 +277,35 @@ public class ModalInputHandler extends AbstractInteractionHandler {
         try {
             String[] parts = dateStr.split("-");
             if (parts.length != 3) {
-                log.warn("Data com formato inválido (não tem 3 partes): {}", dateStr);
+                 loggerApiPort.warn("Data com formato inválido (não tem 3 partes): {}", dateStr);
                 return false;
             }
             int day = Integer.parseInt(parts[0]);
             int month = Integer.parseInt(parts[1]);
             int year = Integer.parseInt(parts[2]);
-            log.info("Validando data: dateStr={}, day={}, month={}, year={}", dateStr, day, month, year);
+             loggerApiPort.info("Validando data: dateStr={}, day={}, month={}, year={}", dateStr, day, month, year);
             if (year < 1900 || year > 2100) {
-                log.warn("Ano inválido: {}", year);
+                 loggerApiPort.warn("Ano inválido: {}", year);
                 return false;
             }
             if (month < 1 || month > 12) {
-                log.warn("Mês inválido: {}", month);
+                 loggerApiPort.warn("Mês inválido: {}", month);
                 return false;
             }
             if (day < 1 || day > 31) {
-                log.warn("Dia inválido: {}", day);
+                 loggerApiPort.warn("Dia inválido: {}", day);
                 return false;
             }
             LocalDate.of(year, month, day);
             return true;
         } catch (DateTimeParseException e) {
-            log.error("Erro ao criar LocalDate: {}", e.getMessage());
+             loggerApiPort.error("Erro ao criar LocalDate: {}", e.getMessage());
             return false;
         } catch (NumberFormatException e) {
-            log.error("Erro ao converter string para número na data {}: {}", dateStr, e.getMessage());
+             loggerApiPort.error("Erro ao converter string para número na data {}: {}", dateStr, e.getMessage());
             return false;
         } catch (Exception e) {
-            log.error("Erro inesperado ao validar data {}: {}", dateStr, e.getMessage());
+             loggerApiPort.error("Erro inesperado ao validar data {}: {}", dateStr, e.getMessage());
             return false;
         }
     }
@@ -331,12 +331,12 @@ public class ModalInputHandler extends AbstractInteractionHandler {
             
             return endDate.isBefore(startDate);
         } catch (Exception e) {
-            log.error("Erro ao comparar datas: startDate={}, endDate={}, erro={}", startDateStr, endDateStr, e.getMessage());
+             loggerApiPort.error("Erro ao comparar datas: startDate={}, endDate={}, erro={}", startDateStr, endDateStr, e.getMessage());
             return false;
         }
     }
     private void showCreateSummary(ModalInteractionEvent event, FormState state) {
-        log.info("Mostrando resumo após preenchimento do modal");
+         loggerApiPort.info("Mostrando resumo após preenchimento do modal");
         long userId = event.getUser().getIdLong();
         net.dv8tion.jda.api.EmbedBuilder embed = buildCompleteSummaryEmbed(state, userId);
         event.getHook().editOriginalEmbeds(embed.build())
@@ -347,7 +347,7 @@ public class ModalInputHandler extends AbstractInteractionHandler {
             .queue();
     }
     private void showSummary(ModalInteractionEvent event, FormState state) {
-        log.info("Mostrando resumo após edição via modal");
+         loggerApiPort.info("Mostrando resumo após edição via modal");
         if (state.isCreating()) {
             showCreateSummary(event, state);
         } else {
@@ -388,7 +388,7 @@ public class ModalInputHandler extends AbstractInteractionHandler {
         return embed;
     }
     private void handleFieldEditDescriptionModal(ModalInteractionEvent event, FormState state) {
-        log.info("Processando edição de descrição via modal de campo");
+         loggerApiPort.info("Processando edição de descrição via modal de campo");
         String description = event.getValue("description").getAsString();
         state.setDescription(description);
         updateFormState(event.getUser().getIdLong(), state);
@@ -396,7 +396,7 @@ public class ModalInputHandler extends AbstractInteractionHandler {
         returnToFieldEditSummaryWithHook(event, state);
     }
     private void handleFieldEditDatesModal(ModalInteractionEvent event, FormState state) {
-        log.info("Processando edição de datas via modal de campo");
+         loggerApiPort.info("Processando edição de datas via modal de campo");
         String startDate = event.getValue("start_date").getAsString();
         String endDate = event.getValue("end_date") != null ? event.getValue("end_date").getAsString() : null;
         if (endDate != null && endDate.trim().isEmpty()) {
@@ -458,16 +458,16 @@ public class ModalInputHandler extends AbstractInteractionHandler {
                 .queue();
             return;
         }
-        log.info("Atualizando datas no estado: startDate={}, endDate={}", startDate, endDate);
+         loggerApiPort.info("Atualizando datas no estado: startDate={}, endDate={}", startDate, endDate);
         state.setStartDate(startDate);
         state.setEndDate(endDate);
         updateFormState(event.getUser().getIdLong(), state);
-        log.info("Estado atualizado. Novas datas: startDate={}, endDate={}", state.getStartDate(), state.getEndDate());
+         loggerApiPort.info("Estado atualizado. Novas datas: startDate={}, endDate={}", state.getStartDate(), state.getEndDate());
         event.deferEdit().queue();
         returnToFieldEditSummaryWithHook(event, state);
     }
     private void returnToFieldEditSummary(ModalInteractionEvent event, FormState state) {
-        log.info("Retornando ao resumo de edição após modal (descrição/datas)");
+         loggerApiPort.info("Retornando ao resumo de edição após modal (descrição/datas)");
         EmbedBuilder embed = new EmbedBuilder()
             .setTitle("📝 " + messageSource.getMessage("txt_editar_squad_log", null, getUserLocale(event.getUser().getIdLong())))
             .setDescription(messageSource.getMessage("txt_dados_atuais_do_squad_log", null, getUserLocale(event.getUser().getIdLong()))
@@ -512,7 +512,7 @@ public class ModalInputHandler extends AbstractInteractionHandler {
             .queue();
     }
     private void returnToFieldEditSummaryWithHook(ModalInteractionEvent event, FormState state) {
-        log.info("Retornando ao resumo de edição após modal (descrição/datas) via hook");
+         loggerApiPort.info("Retornando ao resumo de edição após modal (descrição/datas) via hook");
         EmbedBuilder embed = new EmbedBuilder()
             .setTitle("📝 " + messageSource.getMessage("txt_editar_squad_log", null, getUserLocale(event.getUser().getIdLong())))
             .setDescription(messageSource.getMessage("txt_dados_atuais_do_squad_log", null, getUserLocale(event.getUser().getIdLong()))
@@ -556,7 +556,7 @@ public class ModalInputHandler extends AbstractInteractionHandler {
             .queue();
     }
     private void handleRetryCreateModal(ButtonInteractionEvent event, FormState state) {
-        log.info("Reabrindo modal de criação após erro de data");
+         loggerApiPort.info("Reabrindo modal de criação após erro de data");
         
         TextInput.Builder descriptionBuilder = TextInput.create("description", messageSource.getMessage("txt_descricao", null, getUserLocale(event.getUser().getIdLong())), TextInputStyle.PARAGRAPH)
             .setPlaceholder(messageSource.getMessage("txt_digite_a_descricao_do_log", null, getUserLocale(event.getUser().getIdLong())) + "...")
@@ -593,7 +593,7 @@ public class ModalInputHandler extends AbstractInteractionHandler {
     }
 
     private void handleRetryEditDatesModal(ButtonInteractionEvent event, FormState state) {
-        log.info("Reabrindo modal de edição de datas após erro");
+         loggerApiPort.info("Reabrindo modal de edição de datas após erro");
         
         TextInput.Builder startDateBuilder = TextInput.create("start_date", messageSource.getMessage("txt_data_de_inicio", null, getUserLocale(event.getUser().getIdLong())) + " (DD-MM-AAAA)", TextInputStyle.SHORT)
             .setPlaceholder(messageSource.getMessage("txt_exemplo_data", null, getUserLocale(event.getUser().getIdLong())))
@@ -627,7 +627,7 @@ public class ModalInputHandler extends AbstractInteractionHandler {
     }
 
     private void handleRetryFieldEditDatesModal(ButtonInteractionEvent event, FormState state) {
-        log.info("Reabrindo modal de edição de datas de campo após erro");
+         loggerApiPort.info("Reabrindo modal de edição de datas de campo após erro");
         
         TextInput.Builder startDateBuilder = TextInput.create("start_date", messageSource.getMessage("txt_data_de_inicio", null, getUserLocale(event.getUser().getIdLong())) + " (DD-MM-AAAA)", TextInputStyle.SHORT)
             .setPlaceholder(messageSource.getMessage("txt_exemplo_data", null, getUserLocale(event.getUser().getIdLong())))
@@ -675,7 +675,7 @@ public class ModalInputHandler extends AbstractInteractionHandler {
             java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("dd-MM-yyyy");
             return localDate.format(formatter);
         } catch (Exception e) {
-            log.warn("Não foi possível converter a data da API: {}", apiDate);
+             loggerApiPort.warn("Não foi possível converter a data da API: {}", apiDate);
             return apiDate;
         }
     }
