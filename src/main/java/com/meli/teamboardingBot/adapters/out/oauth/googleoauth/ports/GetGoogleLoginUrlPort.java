@@ -1,4 +1,4 @@
-package com.meli.teamboardingBot.adapters.out.oath.googleauth.ports;
+package com.meli.teamboardingBot.adapters.out.oauth.googleoauth.ports;
 
 public interface GetGoogleLoginUrlPort {
     String getGoogleLoginConnectionUrl(String discordUserId);

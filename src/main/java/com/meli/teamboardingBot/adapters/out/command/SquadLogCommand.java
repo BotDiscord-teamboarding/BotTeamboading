@@ -1,9 +1,9 @@
 package com.meli.teamboardingBot.adapters.out.command;
-import com.meli.teamboardingBot.adapters.out.language.ActiveFlowMessageService;
+import com.meli.teamboardingBot.adapters.out.session.ActiveFlowMessageService;
 import com.meli.teamboardingBot.core.domain.FormState;
 import com.meli.teamboardingBot.core.ports.auth.GetIsUserAuthenticatedPort;
 import com.meli.teamboardingBot.core.ports.formstate.GetOrCreateFormStatePort;
-import com.meli.teamboardingBot.adapters.out.language.PendingAuthMessageService;
+import com.meli.teamboardingBot.adapters.out.session.PendingAuthMessageService;
 
 import java.util.Locale;
 import com.meli.teamboardingBot.adapters.out.ui.Ui;

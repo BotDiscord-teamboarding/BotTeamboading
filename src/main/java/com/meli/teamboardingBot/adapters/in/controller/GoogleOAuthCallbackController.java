@@ -1,8 +1,8 @@
 package com.meli.teamboardingBot.adapters.in.controller;
 
 import com.meli.teamboardingBot.core.ports.discorduserauthentication.DiscordUserAuthenticationPort;
-import com.meli.teamboardingBot.adapters.out.oath.googleauth.ports.ExchangeCodeForTokenPort;
-import com.meli.teamboardingBot.adapters.out.language.UserInteractionChannelService;
+import com.meli.teamboardingBot.adapters.out.oauth.googleoauth.ports.ExchangeCodeForTokenPort;
+import com.meli.teamboardingBot.adapters.out.session.UserInteractionChannelService;
 import com.meli.teamboardingBot.adapters.out.language.UserLanguageService;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;

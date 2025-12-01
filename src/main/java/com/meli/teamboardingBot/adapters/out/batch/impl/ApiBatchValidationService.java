@@ -3,7 +3,7 @@ package com.meli.teamboardingBot.adapters.out.batch.impl;
 import com.meli.teamboardingBot.adapters.out.batch.BatchValidator;
 import com.meli.teamboardingBot.core.domain.batch.BatchLogEntry;
 import com.meli.teamboardingBot.core.domain.batch.BatchParsingResult;
-import com.meli.teamboardingBot.adapters.out.language.SquadLogService;
+import com.meli.teamboardingBot.adapters.out.client.SquadLogService;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.stereotype.Service;

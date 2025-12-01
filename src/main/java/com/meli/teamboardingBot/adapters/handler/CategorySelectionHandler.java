@@ -3,7 +3,7 @@ package com.meli.teamboardingBot.adapters.handler;
 import com.meli.teamboardingBot.core.domain.enums.FormStep;
 import com.meli.teamboardingBot.core.domain.FormState;
 import com.meli.teamboardingBot.core.ports.formstate.*;
-import com.meli.teamboardingBot.adapters.out.language.SquadLogService;
+import com.meli.teamboardingBot.adapters.out.client.SquadLogService;
 import com.meli.teamboardingBot.core.ports.logger.LoggerApiPort;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.EmbedBuilder;

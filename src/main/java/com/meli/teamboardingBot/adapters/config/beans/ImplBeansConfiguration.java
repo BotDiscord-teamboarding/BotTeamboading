@@ -1,18 +1,11 @@
 package com.meli.teamboardingBot.adapters.config.beans;
 
-import com.meli.teamboardingBot.adapters.handler.BatchCreationHandler;
-import com.meli.teamboardingBot.adapters.out.batch.BatchValidator;
-import com.meli.teamboardingBot.adapters.out.batch.PreviewNavigator;
-import com.meli.teamboardingBot.adapters.out.batch.TextParser;
-import com.meli.teamboardingBot.adapters.out.batch.impl.IntelligentTextParsingService;
 import com.meli.teamboardingBot.adapters.out.client.DefaultAuthenticationService;
-import com.meli.teamboardingBot.adapters.out.language.SquadLogService;
 import com.meli.teamboardingBot.core.ports.auth.GetIsUserAuthenticatedPort;
 import com.meli.teamboardingBot.core.ports.auth.GetUserTokenPort;
 import com.meli.teamboardingBot.core.ports.auth.api.GetApiTokenPort;
 import com.meli.teamboardingBot.core.ports.auth.api.GetManualApiTokenPort;
 import com.meli.teamboardingBot.core.ports.defaultclient.GetDefaultClientPort;
-import com.meli.teamboardingBot.core.ports.formstate.*;
 import com.meli.teamboardingBot.core.ports.logger.LoggerApiPort;
 import com.meli.teamboardingBot.core.ports.rest.RestPort;
 import com.meli.teamboardingBot.core.usecase.auth.oath.GetIsUserAuthenticatedUseCase;
@@ -25,11 +18,10 @@ import com.meli.teamboardingBot.core.usecase.defaultclient.PostDefaultClientUseC
 import com.meli.teamboardingBot.core.usecase.defaultclient.PutDefaultClientUseCase;
 import com.meli.teamboardingBot.core.usecase.auth.manual.ManualLogoutUseCase;
 import com.meli.teamboardingBot.core.usecase.auth.manual.ManualAuthenticationUseCase;
-import com.meli.teamboardingBot.adapters.out.oath.googleauth.GoogleAuthManagementUseCase;
+import com.meli.teamboardingBot.adapters.out.oauth.googleoauth.GoogleAuthManagementUseCase;
 import com.meli.teamboardingBot.adapters.out.language.UserLanguageService;
 import com.meli.teamboardingBot.core.usecase.formstate.*;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.MessageSource;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

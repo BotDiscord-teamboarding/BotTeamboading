@@ -1,4 +1,4 @@
-package com.meli.teamboardingBot.adapters.out.oath.googleauth;
+package com.meli.teamboardingBot.adapters.out.oauth.googleoauth;
 
 import com.meli.teamboardingBot.core.ports.logger.LoggerApiPort;
 import com.meli.teamboardingBot.core.ports.rest.RestPort;

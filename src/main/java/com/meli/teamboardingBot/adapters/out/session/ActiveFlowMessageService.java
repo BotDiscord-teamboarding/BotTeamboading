@@ -1,4 +1,4 @@
-package com.meli.teamboardingBot.adapters.out.language;
+package com.meli.teamboardingBot.adapters.out.session;
 
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import org.slf4j.Logger;

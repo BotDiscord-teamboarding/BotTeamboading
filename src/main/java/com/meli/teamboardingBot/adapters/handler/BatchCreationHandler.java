@@ -1,11 +1,10 @@
 package com.meli.teamboardingBot.adapters.handler;
 
-import com.meli.teamboardingBot.adapters.out.language.ActiveFlowMessageService;
-import com.meli.teamboardingBot.core.domain.FormState;
+import com.meli.teamboardingBot.adapters.out.session.ActiveFlowMessageService;
 import com.meli.teamboardingBot.core.domain.batch.BatchLogEntry;
 import com.meli.teamboardingBot.core.domain.batch.BatchParsingResult;
 import com.meli.teamboardingBot.core.ports.formstate.*;
-import com.meli.teamboardingBot.adapters.out.language.SquadLogService;
+import com.meli.teamboardingBot.adapters.out.client.SquadLogService;
 import com.meli.teamboardingBot.adapters.out.batch.BatchValidator;
 import com.meli.teamboardingBot.adapters.out.batch.PreviewNavigator;
 import com.meli.teamboardingBot.adapters.out.batch.TextParser;

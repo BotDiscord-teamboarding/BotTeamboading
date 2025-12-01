@@ -4,7 +4,7 @@ import com.meli.teamboardingBot.core.ports.formstate.*;
 import com.meli.teamboardingBot.core.ports.logger.LoggerApiPort;
 import lombok.extern.slf4j.Slf4j;
 import com.meli.teamboardingBot.core.domain.FormState;
-import com.meli.teamboardingBot.adapters.out.language.SquadLogService;
+import com.meli.teamboardingBot.adapters.out.client.SquadLogService;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.interactions.components.ActionRow;

@@ -1,6 +1,6 @@
 package com.meli.teamboardingBot.adapters.out.command;
 
-import com.meli.teamboardingBot.adapters.out.language.ActiveFlowMessageService;
+import com.meli.teamboardingBot.adapters.out.session.ActiveFlowMessageService;
 import com.meli.teamboardingBot.core.domain.FormState;
 import com.meli.teamboardingBot.core.ports.formstate.DeleteFormStatePort;
 import com.meli.teamboardingBot.core.ports.formstate.GetFormStatePort;
