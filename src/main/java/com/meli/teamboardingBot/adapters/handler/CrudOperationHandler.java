@@ -512,7 +512,8 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
         event.getHook().editOriginalEmbeds(embed.build())
                 .setActionRow(
                         Button.success("criar", "🆕 " + messageSource.getMessage("txt_criar", null, getUserLocale(event.getUser().getIdLong()))),
-                        secondary("atualizar", "📝 " + messageSource.getMessage("txt_atualizar", null, getUserLocale(event.getUser().getIdLong())))
+                        Button.secondary("atualizar", "📝 " + messageSource.getMessage("txt_atualizar", null, getUserLocale(event.getUser().getIdLong()))),
+                        Button.danger("sair-bot", "🚪 " + messageSource.getMessage("txt_sair", null, getUserLocale(event.getUser().getIdLong())))
                 )
                 .queue();
     }
