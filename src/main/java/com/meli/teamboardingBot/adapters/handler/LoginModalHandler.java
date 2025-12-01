@@ -1,10 +1,15 @@
 package com.meli.teamboardingBot.adapters.handler;
 
 import com.meli.teamboardingBot.core.domain.FormState;
-import com.meli.teamboardingBot.service.DiscordUserAuthenticationService;
-import com.meli.teamboardingBot.service.FormStateService;
-import com.meli.teamboardingBot.service.GoogleAuthIntegrationService;
-import com.meli.teamboardingBot.service.SquadLogService;
+import com.meli.teamboardingBot.core.ports.auth.GetUserAuthenticatePort;
+import com.meli.teamboardingBot.core.ports.auth.GetUserAuthenticateWithTokenPort;
+import com.meli.teamboardingBot.core.ports.auth.GetIsUserAuthenticatedPort;
+import com.meli.teamboardingBot.adapters.out.oauth.googleoauth.ports.ExchangeCodeForTokenPort;
+import com.meli.teamboardingBot.adapters.out.oauth.googleoauth.ports.GetGoogleLoginUrlPort;
+import com.meli.teamboardingBot.core.ports.formstate.GetOrCreateFormStatePort;
+import com.meli.teamboardingBot.core.usecase.auth.oath.UserTokenAbstract;
+import com.meli.teamboardingBot.adapters.out.client.SquadLogService;
+import com.meli.teamboardingBot.adapters.out.session.UserInteractionChannelService;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
@@ -20,26 +25,35 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Component;
 
-
 @Component
 public class LoginModalHandler extends ListenerAdapter {
     private static final Logger logger = LoggerFactory.getLogger(LoginModalHandler.class);
-    private final DiscordUserAuthenticationService authService;
-    private final FormStateService formStateService;
+    private final GetUserAuthenticatePort getUserAuthenticatePort;
+    private final GetUserAuthenticateWithTokenPort getUserAuthenticateWithTokenPort;
+    private final GetOrCreateFormStatePort getOrCreateFormStatePort;
     private final SquadLogService squadLogService;
-    private final GoogleAuthIntegrationService googleAuthIntegration;
-    private final com.meli.teamboardingBot.service.UserInteractionChannelService channelService;
+    private final GetGoogleLoginUrlPort getGoogleLoginUrlPort;
+    private final ExchangeCodeForTokenPort exchangeCodeForTokenPort;
+    private final UserInteractionChannelService channelService;
+    private final GetIsUserAuthenticatedPort getIsUserAuthenticatedPort;
 
-    public LoginModalHandler(DiscordUserAuthenticationService authService,
-                             FormStateService formStateService,
+    @Autowired
+    public LoginModalHandler(GetUserAuthenticatePort getUserAuthenticatePort,
+                             GetOrCreateFormStatePort getOrCreateFormStatePort,
                              SquadLogService squadLogService,
-                             GoogleAuthIntegrationService googleAuthIntegration,
-                             com.meli.teamboardingBot.service.UserInteractionChannelService channelService) {
-        this.authService = authService;
-        this.formStateService = formStateService;
+                             GetGoogleLoginUrlPort getGoogleLoginUrlPort,
+                             ExchangeCodeForTokenPort exchangeCodeForTokenPort,
+                             UserInteractionChannelService channelService,
+                             GetUserAuthenticateWithTokenPort getUserAuthenticateWithTokenPort,
+                             GetIsUserAuthenticatedPort getIsUserAuthenticatedPort) {
+        this.getUserAuthenticatePort = getUserAuthenticatePort;
+        this.getOrCreateFormStatePort = getOrCreateFormStatePort;
         this.squadLogService = squadLogService;
-        this.googleAuthIntegration = googleAuthIntegration;
+        this.getGoogleLoginUrlPort = getGoogleLoginUrlPort;
+        this.exchangeCodeForTokenPort = exchangeCodeForTokenPort;
         this.channelService = channelService;
+        this.getUserAuthenticateWithTokenPort = getUserAuthenticateWithTokenPort;
+        this.getIsUserAuthenticatedPort = getIsUserAuthenticatedPort;
     }
     @Autowired
     private MessageSource messageSource;
@@ -100,6 +114,18 @@ public class LoginModalHandler extends ListenerAdapter {
             }
 
             if ("voltar-inicio".equals(buttonId)) {
+                String userId = event.getUser().getId();
+                try {
+                    boolean isAuthenticated = getIsUserAuthenticatedPort.isUserAuthenticated(userId);
+                    if (isAuthenticated) {
+                        logger.info("voltar-inicio ignorado no LoginModalHandler - usuário {} está autenticado", userId);
+                        return;
+                    }
+                } catch (Exception e) {
+                    logger.warn("Erro ao verificar autenticação do usuário {}: {}", userId, e.getMessage());
+                }
+                
+                logger.info("voltar-inicio processado no LoginModalHandler - usuário {} não autenticado", userId);
                 handleCancelAuth(event);
                 return;
             }
@@ -124,7 +150,7 @@ public class LoginModalHandler extends ListenerAdapter {
 
     private void handleAuthenticationMethodSelection(ButtonInteractionEvent event) {
         logger.info("Botão autenticar clicado pelo usuário: {}", event.getUser().getId());
-        FormState formState = formStateService.getOrCreateState(event.getUser().getIdLong());
+        FormState formState = getOrCreateFormStatePort.getOrCreateState(event.getUser().getIdLong());
 
         event.deferEdit().queue(hook -> {
             EmbedBuilder embed = new EmbedBuilder()
@@ -146,7 +172,7 @@ public class LoginModalHandler extends ListenerAdapter {
 
     private void showManualLoginConfirmation(ButtonInteractionEvent event) {
         logger.info("Exibindo confirmação de login manual para usuário: {}", event.getUser().getId());
-        FormState formState = formStateService.getOrCreateState(event.getUser().getIdLong());
+        FormState formState = getOrCreateFormStatePort.getOrCreateState(event.getUser().getIdLong());
 
         event.deferEdit().queue(hook -> {
             EmbedBuilder embed = new EmbedBuilder()
@@ -167,7 +193,7 @@ public class LoginModalHandler extends ListenerAdapter {
 
     private void handleManualAuthButton(ButtonInteractionEvent event) {
         logger.info("Autenticação manual selecionada pelo usuário: {}", event.getUser().getId());
-        FormState formState = formStateService.getOrCreateState(event.getUser().getIdLong());
+        FormState formState = getOrCreateFormStatePort.getOrCreateState(event.getUser().getIdLong());
 
         TextInput username = TextInput.create("username", messageSource.getMessage("txt_email", null, formState.getLocale()) , TextInputStyle.SHORT)
                 .setPlaceholder(messageSource.getMessage("txt_digite_seu_email", null, formState.getLocale()) )
@@ -193,7 +219,7 @@ public class LoginModalHandler extends ListenerAdapter {
 
     private void handleGoogleAuthButton(ButtonInteractionEvent event) {
         logger.info("Autenticação Google selecionada pelo usuário: {}", event.getUser().getId());
-        FormState formState = formStateService.getOrCreateState(event.getUser().getIdLong());
+        FormState formState = getOrCreateFormStatePort.getOrCreateState(event.getUser().getIdLong());
 
         String userId = event.getUser().getId();
         String channelId = event.getChannel().getId();
@@ -204,7 +230,7 @@ public class LoginModalHandler extends ListenerAdapter {
                 channelService.registerUserChannel(userId, channelId, messageId);
                 logger.info("📍 Canal registrado: userId={}, channelId={}, messageId={}", userId, channelId, messageId);
                 
-                String authUrl = googleAuthIntegration.getGoogleLoginConnectionUrl(userId);
+                String authUrl = getGoogleLoginUrlPort.getGoogleLoginConnectionUrl(userId);
 
                 logger.info("URL de autenticação Google obtida da API: {}", authUrl);
 
@@ -224,7 +250,12 @@ public class LoginModalHandler extends ListenerAdapter {
                                 Button.link(authUrl, "🌐 " + messageSource.getMessage("txt_autenticar_com_google", null, formState.getLocale()) ),
                                 Button.secondary("voltar-para-escolha", "🏠 " + messageSource.getMessage("txt_voltar", null, formState.getLocale()) )
                         )
-                        .queue();
+                        .queue(success -> {
+                            hook.deleteOriginal().queueAfter(60, java.util.concurrent.TimeUnit.SECONDS,
+                                deleteSuccess -> logger.info("Mensagem de autenticação Google removida após 60 segundos para usuário: {}", userId),
+                                deleteError -> logger.debug("Mensagem de autenticação já foi removida ou não existe mais: {}", deleteError.getMessage())
+                            );
+                        });
 
             } catch (Exception e) {
                 logger.error("Erro ao obter URL de autenticação Google", e);
@@ -244,7 +275,7 @@ public class LoginModalHandler extends ListenerAdapter {
 
     private void handleGoogleCodeSubmission(ButtonInteractionEvent event) {
         logger.info("Botão inserir código Google clicado pelo usuário: {}", event.getUser().getId());
-        FormState formState = formStateService.getOrCreateState(event.getUser().getIdLong());
+        FormState formState = getOrCreateFormStatePort.getOrCreateState(event.getUser().getIdLong());
 
         TextInput codeInput = TextInput.create("google-code", messageSource.getMessage("txt_codigo_de_autorizacao", null, formState.getLocale()) , TextInputStyle.PARAGRAPH)
                 .setPlaceholder(messageSource.getMessage("txt_cole_aqui_o_codigo_obtido_apos_autenticacao", null, formState.getLocale()) )
@@ -274,13 +305,13 @@ public class LoginModalHandler extends ListenerAdapter {
         String userId = event.getUser().getId();
         String username = event.getValue("username").getAsString();
         String password = event.getValue("password").getAsString();
-        FormState formState = formStateService.getOrCreateState(event.getUser().getIdLong());
+        FormState formState = getOrCreateFormStatePort.getOrCreateState(event.getUser().getIdLong());
 
         logger.info("Processando modal de login para usuário Discord: {}", userId);
 
         event.deferEdit().queue(hook -> {
-            DiscordUserAuthenticationService.AuthResponse response =
-                    authService.authenticateUser(userId, username, password);
+            UserTokenAbstract.AuthResponse response =
+                    getUserAuthenticatePort.authenticateUser(userId, username, password);
 
             if (response.isSuccess()) {
                 logger.info("Login manual bem-sucedido para usuário: {}", userId);
@@ -328,7 +359,7 @@ public class LoginModalHandler extends ListenerAdapter {
     private void handleGoogleCodeModal(ModalInteractionEvent event) {
         String userId = event.getUser().getId();
         String code = event.getValue("google-code").getAsString().trim();
-        FormState formState = formStateService.getOrCreateState(event.getUser().getIdLong());
+        FormState formState = getOrCreateFormStatePort.getOrCreateState(event.getUser().getIdLong());
 
         logger.info("Processando código Google para usuário Discord: {}", userId);
         logger.info("Código recebido (primeiros 20 chars): {}...", code.substring(0, Math.min(20, code.length())));
@@ -336,11 +367,11 @@ public class LoginModalHandler extends ListenerAdapter {
         event.deferReply(true).queue(hook -> {
             try {
                 logger.info("🔄 Trocando código por token...");
-                String accessToken = googleAuthIntegration.exchangeCodeForToken(code, userId);
+                String accessToken = exchangeCodeForTokenPort.exchangeCodeForToken(code, userId);
                 logger.info("✅ Token obtido com sucesso!");
 
                 logger.info("🔐 Autenticando usuário...");
-                authService.authenticateUserWithToken(userId, accessToken);
+                getUserAuthenticateWithTokenPort.authenticateUserWithToken(userId, accessToken);
                 logger.info("✅ Usuário {} autenticado via Google com sucesso!", userId);
 
                 EmbedBuilder successEmbed = new EmbedBuilder()
@@ -401,7 +432,7 @@ public class LoginModalHandler extends ListenerAdapter {
 
     private void handleCancelAuth(ButtonInteractionEvent event) {
         logger.info("Usuário {} cancelou a autenticação", event.getUser().getId());
-        FormState formState = formStateService.getOrCreateState(event.getUser().getIdLong());
+        FormState formState = getOrCreateFormStatePort.getOrCreateState(event.getUser().getIdLong());
         
         event.deferEdit().queue(hook -> {
             EmbedBuilder embed = new EmbedBuilder()
@@ -426,7 +457,7 @@ public class LoginModalHandler extends ListenerAdapter {
         channelService.clearUserChannel(userId);
         logger.info("🧹 Canal limpo ao cancelar autenticação: userId={}", userId);
         
-        FormState formState = formStateService.getOrCreateState(event.getUser().getIdLong());
+        FormState formState = getOrCreateFormStatePort.getOrCreateState(event.getUser().getIdLong());
         
         event.deferEdit().queue(hook -> {
             EmbedBuilder embed = new EmbedBuilder()

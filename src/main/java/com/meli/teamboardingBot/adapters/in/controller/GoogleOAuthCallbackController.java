@@ -1,7 +1,9 @@
 package com.meli.teamboardingBot.adapters.in.controller;
 
-import com.meli.teamboardingBot.service.DiscordUserAuthenticationService;
-import com.meli.teamboardingBot.service.GoogleAuthIntegrationService;
+import com.meli.teamboardingBot.core.ports.discorduserauthentication.DiscordUserAuthenticationPort;
+import com.meli.teamboardingBot.adapters.out.oauth.googleoauth.ports.ExchangeCodeForTokenPort;
+import com.meli.teamboardingBot.adapters.out.session.UserInteractionChannelService;
+import com.meli.teamboardingBot.adapters.out.language.UserLanguageService;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
 import org.slf4j.Logger;
@@ -19,18 +21,18 @@ public class GoogleOAuthCallbackController {
 
     private static final Logger logger = LoggerFactory.getLogger(GoogleOAuthCallbackController.class);
     
-    private final GoogleAuthIntegrationService googleAuthIntegration;
-    private final DiscordUserAuthenticationService authService;
+    private final ExchangeCodeForTokenPort googleAuthIntegration;
+    private final DiscordUserAuthenticationPort authService;
     private final JDA jda;
-    private final com.meli.teamboardingBot.service.UserInteractionChannelService channelService;
-    private final com.meli.teamboardingBot.service.UserLanguageService languageService;
+    private final UserInteractionChannelService channelService;
+    private final UserLanguageService languageService;
 
     public GoogleOAuthCallbackController(
-            GoogleAuthIntegrationService googleAuthIntegration,
-            DiscordUserAuthenticationService authService,
+            ExchangeCodeForTokenPort googleAuthIntegration,
+            DiscordUserAuthenticationPort authService,
             JDA jda,
-            com.meli.teamboardingBot.service.UserInteractionChannelService channelService,
-            com.meli.teamboardingBot.service.UserLanguageService languageService) {
+            UserInteractionChannelService channelService,
+            UserLanguageService languageService) {
         this.googleAuthIntegration = googleAuthIntegration;
         this.authService = authService;
         this.jda = jda;
@@ -188,7 +190,7 @@ public class GoogleOAuthCallbackController {
                                 );
                     },
                     error -> {
-                        logger.error("❌ Erro ao recuperar mensagem {}: {}", messageId, error.getMessage());
+
                         channelService.clearUserChannel(discordUserId);
                     }
                 );

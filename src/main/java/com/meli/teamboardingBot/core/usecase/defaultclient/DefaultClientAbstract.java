@@ -3,7 +3,7 @@ package com.meli.teamboardingBot.core.usecase.defaultclient;
 import com.meli.teamboardingBot.core.ports.auth.GetUserTokenPort;
 import com.meli.teamboardingBot.core.ports.auth.api.GetApiTokenPort;
 import com.meli.teamboardingBot.core.ports.logger.LoggerApiPort;
-import com.meli.teamboardingBot.core.context.DiscordUserContext;
+import com.meli.teamboardingBot.core.context.UserContext;
 import com.meli.teamboardingBot.adapters.dto.AuthTokenResponseDTO;
 
 public class DefaultClientAbstract {
@@ -19,10 +19,10 @@ public class DefaultClientAbstract {
     }
 
     protected String getAuthToken() {
-        String discordUserId = DiscordUserContext.getCurrentUserId();
+        String discordUserId = UserContext.getCurrentUserId();
         if (discordUserId != null) {
             AuthTokenResponseDTO token = userToken.getUserToken(discordUserId);
-            if (userToken != null) {
+            if (token != null) {
                 logger.debug("Usando token do usuário Discord: {}", discordUserId);
                 return token.getAccessToken();
             }

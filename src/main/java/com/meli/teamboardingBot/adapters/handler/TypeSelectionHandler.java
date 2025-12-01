@@ -1,8 +1,9 @@
 package com.meli.teamboardingBot.adapters.handler;
 import com.meli.teamboardingBot.core.domain.enums.FormStep;
 import com.meli.teamboardingBot.core.domain.FormState;
-import com.meli.teamboardingBot.service.FormStateService;
-import com.meli.teamboardingBot.service.SquadLogService;
+import com.meli.teamboardingBot.core.ports.formstate.*;
+import com.meli.teamboardingBot.adapters.out.client.SquadLogService;
+import com.meli.teamboardingBot.core.ports.logger.LoggerApiPort;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
@@ -21,20 +22,20 @@ import org.springframework.stereotype.Component;
 @Order(3)
 public class TypeSelectionHandler extends AbstractInteractionHandler {
     private final SquadLogService squadLogService;
-    @Autowired
     private SummaryHandler summaryHandler;
-
-    @Autowired
     private MessageSource messageSource;
 
-    private java.util.Locale getUserLocale(long userId) {
-        return formStateService.getOrCreateState(userId).getLocale();
-    }
-    
-    public TypeSelectionHandler(FormStateService formStateService, SquadLogService squadLogService) {
-        super(formStateService);
+    @Autowired
+    public TypeSelectionHandler(GetOrCreateFormStatePort getOrCreateFormStatePort, PutFormStatePort putFormStatePort, GetFormStatePort getFormStatePort, SetBatchEntriesPort setBatchEntriesPort, SetBatchCurrentIndexPort setBatchCurrentIndexPort, GetBatchEntriesPort getBatchEntriesPort, GetBatchCurrentIndexPort getBatchCurrentIndexPort, ClearBatchStatePort clearBatchStatePort, DeleteFormStatePort deleteFormStatePort, ResetFormStatePort resetFormStatePort, LoggerApiPort loggerApiPort, SquadLogService squadLogService, SummaryHandler summaryHandler, MessageSource messageSource) {
+        super(getOrCreateFormStatePort, putFormStatePort, getFormStatePort, setBatchEntriesPort, setBatchCurrentIndexPort, getBatchEntriesPort, getBatchCurrentIndexPort, clearBatchStatePort, deleteFormStatePort, resetFormStatePort, loggerApiPort);
         this.squadLogService = squadLogService;
+        this.summaryHandler = summaryHandler;
+        this.messageSource = messageSource;
     }
+    private java.util.Locale getUserLocale(long userId) {
+        return getOrCreateFormStatePort.getOrCreateState(userId).getLocale();
+    }
+
     @Override
     public boolean canHandle(String componentId) {
         return "type-select".equals(componentId) || 

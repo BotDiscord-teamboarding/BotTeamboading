@@ -1,14 +1,15 @@
 package com.meli.teamboardingBot.adapters.in.listener;
 
-import com.meli.teamboardingBot.service.LanguageInterceptorService;
-import com.meli.teamboardingBot.service.command.LanguageCommand;
-import com.meli.teamboardingBot.service.command.LoginCommand;
-import com.meli.teamboardingBot.service.command.StartCommand;
-import com.meli.teamboardingBot.service.command.StatusCommand;
-import com.meli.teamboardingBot.service.command.StopCommand;
-import com.meli.teamboardingBot.service.command.SquadLogCommand;
-import com.meli.teamboardingBot.service.command.SquadLogLoteCommand;
-import com.meli.teamboardingBot.service.command.HelpCommand;
+import com.meli.teamboardingBot.adapters.out.command.SlashCommandHandler;
+import com.meli.teamboardingBot.adapters.out.language.LanguageInterceptorService;
+import com.meli.teamboardingBot.adapters.out.command.LanguageCommand;
+import com.meli.teamboardingBot.adapters.out.command.LoginCommand;
+import com.meli.teamboardingBot.adapters.out.command.StartCommand;
+import com.meli.teamboardingBot.adapters.out.command.StatusCommand;
+import com.meli.teamboardingBot.adapters.out.command.StopCommand;
+import com.meli.teamboardingBot.adapters.out.command.SquadLogCommand;
+import com.meli.teamboardingBot.adapters.out.command.SquadLogLoteCommand;
+import com.meli.teamboardingBot.adapters.out.command.HelpCommand;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.slf4j.Logger;
@@ -73,7 +74,7 @@ public class SlashCommandListener extends ListenerAdapter {
         executeCommand(event);
     }
     
-    private com.meli.teamboardingBot.service.command.SlashCommandHandler getCommandHandler(String commandName) {
+    private SlashCommandHandler getCommandHandler(String commandName) {
         if (commandName.equals(squadLogCommand.getName())) {
             return squadLogCommand;
         } else if (commandName.equals(squadLogLoteCommand.getName())) {

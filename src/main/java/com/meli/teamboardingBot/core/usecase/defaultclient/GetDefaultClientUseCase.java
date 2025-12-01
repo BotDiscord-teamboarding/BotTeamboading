@@ -5,6 +5,9 @@ import com.meli.teamboardingBot.core.ports.auth.api.GetApiTokenPort;
 import com.meli.teamboardingBot.core.ports.defaultclient.GetDefaultClientPort;
 import com.meli.teamboardingBot.core.ports.logger.LoggerApiPort;
 import com.meli.teamboardingBot.core.ports.rest.RestPort;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 
 public class GetDefaultClientUseCase extends DefaultClientAbstract implements GetDefaultClientPort {
 
@@ -30,5 +33,42 @@ public class GetDefaultClientUseCase extends DefaultClientAbstract implements Ge
             throw e;
         }
     }
+
+    @Override
+    public String post( String endpoint, String payload) {
+        String token = getAuthToken();
+        String fullUrl = apiUrl + endpoint;
+
+        try {
+            return restPort.postExchange(fullUrl, token, payload);
+
+        } catch (Exception e) {
+            logger.error("POST request failed: {}", e.getMessage());
+            throw e;
+        }
+    }
+    @Override
+    public String put(String endpoint, String payload) {
+        String token = getAuthToken();
+        String fullUrl = apiUrl + endpoint;
+        try {
+            return  restPort.putExchange(fullUrl, token, payload);
+        } catch (Exception e) {
+
+            throw e;
+        }
+
+    }
+
+    @Override
+    public String get(String endpoint, String queryParams) {
+        String fullEndpoint = endpoint + "?" + queryParams;
+        return get(fullEndpoint);
+    }
+
+
+
+
+
 
 }

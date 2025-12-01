@@ -1,6 +1,7 @@
 package com.meli.teamboardingBot.adapters.handler;
 import com.meli.teamboardingBot.core.domain.FormState;
-import com.meli.teamboardingBot.service.FormStateService;
+import com.meli.teamboardingBot.core.ports.formstate.*;
+import com.meli.teamboardingBot.core.ports.logger.LoggerApiPort;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
@@ -17,8 +18,9 @@ public class SummaryHandler extends AbstractInteractionHandler {
 
     private final MessageSource messageSource;
 
-    public SummaryHandler(FormStateService formStateService, MessageSource messageSource) {
-        super(formStateService);
+
+    public SummaryHandler(GetOrCreateFormStatePort getOrCreateFormStatePort, PutFormStatePort putFormStatePort, GetFormStatePort getFormStatePort, SetBatchEntriesPort setBatchEntriesPort, SetBatchCurrentIndexPort setBatchCurrentIndexPort, GetBatchEntriesPort getBatchEntriesPort, GetBatchCurrentIndexPort getBatchCurrentIndexPort, ClearBatchStatePort clearBatchStatePort, DeleteFormStatePort deleteFormStatePort, ResetFormStatePort resetFormStatePort, LoggerApiPort loggerApiPort, MessageSource messageSource) {
+        super(getOrCreateFormStatePort, putFormStatePort, getFormStatePort, setBatchEntriesPort, setBatchCurrentIndexPort, getBatchEntriesPort, getBatchCurrentIndexPort, clearBatchStatePort, deleteFormStatePort, resetFormStatePort, loggerApiPort);
         this.messageSource = messageSource;
     }
     @Override
@@ -26,7 +28,7 @@ public class SummaryHandler extends AbstractInteractionHandler {
         return false;
     }
     public void showCreateSummary(ModalInteractionEvent event, FormState state) {
-        log.info("Mostrando resumo de criação via modal");
+           loggerApiPort.info("Mostrando resumo de criação via modal");
         EmbedBuilder embed = buildSummaryEmbed(state, "📋 " + messageSource.getMessage("txt_resumo_do_squad_log", null, state.getLocale()), messageSource.getMessage("txt_confirme_os_dados_antes_de_criar", null, state.getLocale()) + ":");
         Button createButton = Button.success("confirmar-criacao", "✅ " + messageSource.getMessage("txt_criar", null, state.getLocale()));
         Button editButton = Button.secondary("editar-log", "✏️ " + messageSource.getMessage("txt-editar", null, state.getLocale()));
@@ -36,7 +38,7 @@ public class SummaryHandler extends AbstractInteractionHandler {
     }
 
     public void showCreateSummary(net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent event, FormState state) {
-        log.info("Mostrando resumo de criação");
+           loggerApiPort.info("Mostrando resumo de criação");
         event.deferEdit().queue();
         EmbedBuilder embed = buildSummaryEmbed(state, "📋 " + messageSource.getMessage("txt_resumo_do_que_foi_preenchido", null, state.getLocale()), messageSource.getMessage("txt_verifique_todos_os_dados_antes_de_criar_o_log", null, state.getLocale())+":");
         event.getHook().editOriginalEmbeds(embed.build())
@@ -47,7 +49,7 @@ public class SummaryHandler extends AbstractInteractionHandler {
             .queue();
     }
     public void showUpdateSummary(net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent event, FormState state) {
-        log.info("Mostrando resumo de atualização");
+           loggerApiPort.info("Mostrando resumo de atualização");
         event.deferEdit().queue();
         EmbedBuilder embed = buildSummaryEmbed(state, "📋 "+messageSource.getMessage("txt_resumo_do_questionario_selecionado", null, state.getLocale()), messageSource.getMessage("txt_dados_atuais_do_questionario", null, state.getLocale())+":");
         event.getHook().editOriginalEmbeds(embed.build())
@@ -59,8 +61,7 @@ public class SummaryHandler extends AbstractInteractionHandler {
             .queue();
     }
     public void showUpdateSummary(StringSelectInteractionEvent event, FormState state) {
-        log.info("Mostrando resumo de atualização via select");
-        event.deferEdit().queue();
+           loggerApiPort.info("Mostrando resumo de atualização via select");
         EmbedBuilder embed = buildSummaryEmbed(state, "📋 " + messageSource.getMessage("txt_resumo_do_questionario_selecionado", null, state.getLocale()), messageSource.getMessage("txt_dados_atuais_do_questionario", null, state.getLocale())+":");
         event.getHook().editOriginalEmbeds(embed.build())
             .setComponents(ActionRow.of(
@@ -71,7 +72,7 @@ public class SummaryHandler extends AbstractInteractionHandler {
             .queue();
     }
     public void showSummary(ModalInteractionEvent event, FormState state) {
-        log.info("Mostrando resumo após modal");
+           loggerApiPort.info("Mostrando resumo após modal");
         if (state.isCreating()) {
             showCreateSummary(event, state);
         } else {
@@ -86,7 +87,7 @@ public class SummaryHandler extends AbstractInteractionHandler {
         }
     }
     public void showSummary(StringSelectInteractionEvent event) {
-        log.warn("Método showSummary(StringSelectInteractionEvent) chamado mas não implementado");
+           loggerApiPort.warn("Método showSummary(StringSelectInteractionEvent) chamado mas não implementado");
     }
     private EmbedBuilder buildSummaryEmbed(FormState state, String title, String description) {
         EmbedBuilder embed = new EmbedBuilder()
@@ -95,7 +96,7 @@ public class SummaryHandler extends AbstractInteractionHandler {
             .setColor(0x0099FF);
         String squadName = state.getSquadName() != null ? state.getSquadName() : messageSource.getMessage("txt_nao_informado", null, state.getLocale() );
         String userName = state.getUserName() != null ? state.getUserName() : messageSource.getMessage("txt_nao_informado", null, state.getLocale() );
-        log.info("Construindo resumo - squadName: '{}', userName: '{}', userId: '{}'", 
+           loggerApiPort.info("Construindo resumo - squadName: '{}', userName: '{}', userId: '{}'", 
                    squadName, userName, state.getUserId());
         String typeName = state.getTypeName() != null ? state.getTypeName() : messageSource.getMessage("txt_nao_informado", null, state.getLocale() );
         String categoryNames = (!state.getCategoryNames().isEmpty()) ? 

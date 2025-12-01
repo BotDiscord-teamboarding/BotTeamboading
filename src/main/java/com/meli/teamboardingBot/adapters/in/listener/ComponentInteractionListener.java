@@ -2,8 +2,9 @@ package com.meli.teamboardingBot.adapters.in.listener;
 import com.meli.teamboardingBot.adapters.handler.BatchCreationHandler;
 import com.meli.teamboardingBot.adapters.handler.InteractionHandler;
 import com.meli.teamboardingBot.core.domain.FormState;
-import com.meli.teamboardingBot.service.FormStateService;
-import com.meli.teamboardingBot.core.context.DiscordUserContext;
+import com.meli.teamboardingBot.core.context.UserContext;
+import com.meli.teamboardingBot.core.ports.formstate.GetOrCreateFormStatePort;
+import com.meli.teamboardingBot.core.ports.formstate.PutFormStatePort;
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
@@ -17,12 +18,14 @@ import java.util.List;
 public class ComponentInteractionListener extends ListenerAdapter {
     private final Logger logger = LoggerFactory.getLogger(ComponentInteractionListener.class);
     private final List<InteractionHandler> handlers;
-    private final FormStateService formStateService;
+    private final GetOrCreateFormStatePort getOrCreateFormStatePort;
+    private final PutFormStatePort putFormStatePort;
     private final BatchCreationHandler batchCreationHandler;
     @Autowired
-    public ComponentInteractionListener(List<InteractionHandler> handlers, FormStateService formStateService, BatchCreationHandler batchCreationHandler) {
+    public ComponentInteractionListener(List<InteractionHandler> handlers, GetOrCreateFormStatePort getOrCreateFormStatePort, PutFormStatePort putFormStatePort, BatchCreationHandler batchCreationHandler) {
         this.handlers = handlers;
-        this.formStateService = formStateService;
+        this.getOrCreateFormStatePort = getOrCreateFormStatePort;
+        this.putFormStatePort = putFormStatePort;
         this.batchCreationHandler = batchCreationHandler;
         this.handlers.sort((h1, h2) -> Integer.compare(h1.getPriority(), h2.getPriority()));
         logger.info("Initialized with {} handlers", handlers.size());
@@ -45,7 +48,7 @@ public class ComponentInteractionListener extends ListenerAdapter {
         
         if (buttonId.equals("open-batch-modal")) {
             try {
-                DiscordUserContext.setCurrentUserId(String.valueOf(userId));
+                UserContext.setCurrentUserId(String.valueOf(userId));
                 batchCreationHandler.handleOpenBatchModalButton(event);
                 return;
             } catch (Exception e) {
@@ -53,13 +56,13 @@ public class ComponentInteractionListener extends ListenerAdapter {
                 event.reply("❌ Erro interno. Tente novamente.").setEphemeral(true).queue();
                 return;
             } finally {
-                DiscordUserContext.clear();
+                UserContext.clear();
             }
         }
         
         if (isBatchButton(buttonId)) {
             try {
-                DiscordUserContext.setCurrentUserId(String.valueOf(userId));
+                UserContext.setCurrentUserId(String.valueOf(userId));
                 batchCreationHandler.handleBatchNavigation(event);
                 return;
             } catch (Exception e) {
@@ -67,11 +70,11 @@ public class ComponentInteractionListener extends ListenerAdapter {
                 event.reply("❌ Erro interno. Tente novamente.").setEphemeral(true).queue();
                 return;
             } finally {
-                DiscordUserContext.clear();
+                UserContext.clear();
             }
         }
         
-        FormState state = formStateService.getOrCreateState(userId);
+        FormState state = getOrCreateFormStatePort.getOrCreateState(userId);
         if (state == null) {
             event.reply("❌ Sessão expirada. Use /squad-log para começar novamente.").setEphemeral(true).queue();
             return;
@@ -80,7 +83,7 @@ public class ComponentInteractionListener extends ListenerAdapter {
             if (handler.canHandle(buttonId)) {
                 try {
                     handler.handleButton(event, state);
-                    formStateService.updateState(userId, state);
+                    putFormStatePort.updateState(userId, state);
                     return;
                 } catch (Exception e) {
                     logger.error("Error handling button {} with handler {}: {}", buttonId, handler.getClass().getSimpleName(), e.getMessage());
@@ -97,7 +100,7 @@ public class ComponentInteractionListener extends ListenerAdapter {
         String selectId = event.getComponentId();
         long userId = event.getUser().getIdLong();
         logger.info("String select interaction: {} from user: {}", selectId, userId);
-        FormState state = formStateService.getOrCreateState(userId);
+        FormState state = getOrCreateFormStatePort.getOrCreateState(userId);
         if (state == null) {
             event.reply("❌ Sessão expirada. Use /squad-log para começar novamente.").setEphemeral(true).queue();
             return;
@@ -106,7 +109,7 @@ public class ComponentInteractionListener extends ListenerAdapter {
             if (handler.canHandle(selectId)) {
                 try {
                     handler.handleStringSelect(event, state);
-                    formStateService.updateState(userId, state);
+                    putFormStatePort.updateState(userId, state);
                     return;
                 } catch (Exception e) {
                     logger.error("Error handling select {} with handler {}: {}", selectId, handler.getClass().getSimpleName(), e.getMessage());
@@ -131,7 +134,7 @@ public class ComponentInteractionListener extends ListenerAdapter {
         
         if (isBatchModal(modalId)) {
             try {
-                DiscordUserContext.setCurrentUserId(String.valueOf(userId));
+                UserContext.setCurrentUserId(String.valueOf(userId));
                 if (modalId.equals("batch-creation-modal")) {
                     batchCreationHandler.handleBatchCreationModal(event);
                 } else if (modalId.equals("batch-edit-modal")) {
@@ -147,11 +150,11 @@ public class ComponentInteractionListener extends ListenerAdapter {
                 event.reply("❌ Erro interno. Tente novamente.").setEphemeral(true).queue();
                 return;
             } finally {
-                DiscordUserContext.clear();
+                UserContext.clear();
             }
         }
         
-        FormState state = formStateService.getOrCreateState(userId);
+        FormState state = getOrCreateFormStatePort.getOrCreateState(userId);
         if (state == null) {
             event.reply("❌ Sessão expirada. Use /squad-log para começar novamente.").setEphemeral(true).queue();
             return;
@@ -160,7 +163,7 @@ public class ComponentInteractionListener extends ListenerAdapter {
             if (handler.canHandle(modalId)) {
                 try {
                     handler.handleModal(event, state);
-                    formStateService.updateState(userId, state);
+                    putFormStatePort.updateState(userId, state);
                     return;
                 } catch (Exception e) {
                     logger.error("Error handling modal {} with handler {}: {}", modalId, handler.getClass().getSimpleName(), e.getMessage());
@@ -201,7 +204,6 @@ public class ComponentInteractionListener extends ListenerAdapter {
                 "auth-google".equals(buttonId) ||
                 "start-auth".equals(buttonId) ||
                 "cancel-auth".equals(buttonId) ||
-                "voltar-inicio".equals(buttonId) ||
                 "voltar-para-escolha".equals(buttonId) ||
                 "cancelar-escolha".equals(buttonId) ||
                 "status-close".equals(buttonId) ||

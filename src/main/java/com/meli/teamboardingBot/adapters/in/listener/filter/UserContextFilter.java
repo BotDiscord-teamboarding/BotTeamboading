@@ -1,6 +1,6 @@
 package com.meli.teamboardingBot.adapters.in.listener.filter;
 
-import com.meli.teamboardingBot.core.context.DiscordUserContext;
+import com.meli.teamboardingBot.core.context.UserContext;
 import net.dv8tion.jda.api.events.interaction.GenericInteractionCreateEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.jetbrains.annotations.NotNull;
@@ -15,9 +15,9 @@ public class UserContextFilter extends ListenerAdapter {
     public void onGenericInteractionCreate(@NotNull GenericInteractionCreateEvent event) {
         try {
             String userId = event.getUser().getId();
-            DiscordUserContext.setCurrentUserId(userId);
+            UserContext.setCurrentUserId(userId);
         } catch (Exception e) {
-            DiscordUserContext.clear();
+            UserContext.clear();
             throw e;
         }
     }
