@@ -111,7 +111,7 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
     private void handleCreateSquadLog(ButtonInteractionEvent event, FormState state) {
            loggerApiPort.info("Criando squad log");
         event.deferEdit().queue();
-        if (!isStateValid(state)) {
+        if (!isStateValidForCreation(state)) {
             EmbedBuilder errorEmbed = new EmbedBuilder()
                     .setTitle("❌ " + messageSource.getMessage("txt_dados_incompletos", null, getUserLocale(event.getUser().getIdLong())))
                     .setDescription(messageSource.getMessage("txt_verifique_se_todos_os_campos_foram_preenchidos", null, getUserLocale(event.getUser().getIdLong())) + ".")
@@ -139,9 +139,16 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
     }
 
     private void handleUpdateSquadLog(ButtonInteractionEvent event, FormState state) {
-           loggerApiPort.info("Atualizando squad log ID: {}", state.getSquadLogId());
+        loggerApiPort.info("Atualizando squad log ID: {}", state.getSquadLogId());
+        loggerApiPort.info("DEBUG Estado: squadId={}, userId={}, typeId={}, categoryIds={}, description={}, startDate={}, squadLogId={}",
+                state.getSquadId(), state.getUserId(), state.getTypeId(), 
+                state.getCategoryIds(), state.getDescription(), state.getStartDate(), state.getSquadLogId());
         event.deferEdit().queue();
         if (!isStateValid(state) || state.getSquadLogId() == null) {
+            loggerApiPort.warn("Validação falhou: isStateValid={}, squadLogId={}", isStateValid(state), state.getSquadLogId());
+            loggerApiPort.warn("Detalhes: squadId={}, userId={}, typeId={}, categoryIds.isEmpty={}, description={}, startDate={}",
+                    state.getSquadId() != null, state.getUserId() != null, state.getTypeId() != null,
+                    state.getCategoryIds().isEmpty(), state.getDescription() != null, state.getStartDate() != null);
             EmbedBuilder errorEmbed = new EmbedBuilder()
                     .setTitle("❌ " + messageSource.getMessage("txt_dados_incompletos", null, getUserLocale(event.getUser().getIdLong())))
                     .setDescription(messageSource.getMessage("txt_dados_incompletos_ou_id_log_nao_encontrado", null, getUserLocale(event.getUser().getIdLong())) + ".")
@@ -176,9 +183,12 @@ public class CrudOperationHandler extends AbstractInteractionHandler {
         return state.getSquadId() != null &&
                 state.getUserId() != null &&
                 state.getTypeId() != null &&
-                !state.getCategoryIds().isEmpty() &&
                 state.getDescription() != null &&
                 state.getStartDate() != null;
+    }
+    
+    private boolean isStateValidForCreation(FormState state) {
+        return isStateValid(state) && !state.getCategoryIds().isEmpty();
     }
 
     private String buildCreatePayload(FormState state) {

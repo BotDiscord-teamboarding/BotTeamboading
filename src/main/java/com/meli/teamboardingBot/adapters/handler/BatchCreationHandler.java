@@ -107,7 +107,7 @@ public class BatchCreationHandler extends AbstractInteractionHandler {
                 .setRequiredRange(10, 4000)
                 .build();
 
-        Modal modal = Modal.create("batch-creation-modal", "📋 " + messageSource.getMessage("txt_criar_squad_logs_em_lote", null, getUserLocale(event.getUser().getIdLong())))
+        Modal modal = Modal.create("batch-creation-modal-retry", "📋 " + messageSource.getMessage("txt_criar_squad_logs_em_lote", null, getUserLocale(event.getUser().getIdLong())))
                 .addActionRow(textInput)
                 .build();
 
@@ -116,9 +116,17 @@ public class BatchCreationHandler extends AbstractInteractionHandler {
 
     public void handleBatchCreationModal(ModalInteractionEvent event) {
         loggerApiPort.info("Processando modal de criação em lote");
-
         event.deferReply(true).queue();
+        processBatchModal(event);
+    }
 
+    public void handleBatchCreationModalRetry(ModalInteractionEvent event) {
+        loggerApiPort.info("Processando modal de criação em lote (retry)");
+        event.deferEdit().queue();
+        processBatchModal(event);
+    }
+
+    private void processBatchModal(ModalInteractionEvent event) {
         String inputText = event.getValue("batch-text").getAsString();
 
         if (!intelligentTextParser.canParse(inputText)) {
@@ -202,6 +210,12 @@ public class BatchCreationHandler extends AbstractInteractionHandler {
             }
         }
 
+        if (buttonId.equals("batch-cancel-from-error")) {
+            event.deferEdit().queue();
+            cancelBatchCreation(event, userId);
+            return;
+        }
+
         List<BatchLogEntry> entries = getBatchEntries(userId);
         int currentIndex = getCurrentIndex(userId);
 
@@ -274,31 +288,44 @@ public class BatchCreationHandler extends AbstractInteractionHandler {
     }
 
     private void showParsingError(ModalInteractionEvent event) {
+        java.util.Locale locale = getUserLocale(event.getUser().getIdLong());
         EmbedBuilder embed = new EmbedBuilder()
-                .setTitle("❌ " + messageSource.getMessage("txt_erro_no_formato", null, getUserLocale(event.getUser().getIdLong())))
-                .setDescription(messageSource.getMessage("txt_nao_foi_possivel_interpretar_o_texto_fornecido", null, getUserLocale(event.getUser().getIdLong())) + ".\n\n **" +
-                        messageSource.getMessage("txt_formato_esperado", null, getUserLocale(event.getUser().getIdLong())) + ":**\n`" +
-                        messageSource.getMessage("txt_squad_pessoa_tipo_categorias_data_inicio_data_fim_descricao", null, getUserLocale(event.getUser().getIdLong())) + "`\n\n**"
-                        + messageSource.getMessage("txt_exemplo", null, getUserLocale(event.getUser().getIdLong())) +
-                        ":**\n`" + messageSource.getMessage("txt_squad_exemplo", null, getUserLocale(event.getUser().getIdLong())) + "`")
+                .setTitle("❌ " + messageSource.getMessage("txt_erro_no_formato", null, locale))
+                .setDescription(messageSource.getMessage("txt_nao_foi_possivel_interpretar_o_texto_fornecido", null, locale) + ".\n\n **" +
+                        messageSource.getMessage("txt_formato_esperado", null, locale) + ":**\n`" +
+                        messageSource.getMessage("txt_squad_pessoa_tipo_categorias_data_inicio_data_fim_descricao", null, locale) + "`\n\n**"
+                        + messageSource.getMessage("txt_exemplo", null, locale) +
+                        ":**\n`" + messageSource.getMessage("txt_squad_exemplo", null, locale) + "`")
                 .setColor(Color.RED);
 
-        event.getHook().editOriginalEmbeds(embed.build()).queue();
+        event.getHook().editOriginalEmbeds(embed.build())
+                .setActionRow(
+                        Button.primary("open-batch-modal", "🔄 " + messageSource.getMessage("txt_preencher_novamente", null, locale)),
+                        Button.danger("batch-cancel-from-error", "❌ " + messageSource.getMessage("txt_cancelar", null, locale))
+                )
+                .queue();
     }
 
     private void showNoEntriesError(ModalInteractionEvent event) {
+        java.util.Locale locale = getUserLocale(event.getUser().getIdLong());
         EmbedBuilder embed = new EmbedBuilder()
-                .setTitle("❌ " + messageSource.getMessage("txt_nenhum_log_encontrado", null, getUserLocale(event.getUser().getIdLong())))
-                .setDescription(messageSource.getMessage("txt_nao_foi_possivel_extrair_nenhum_squad_log_do_texto_fornecido", null, getUserLocale(event.getUser().getIdLong())) + ".")
+                .setTitle("❌ " + messageSource.getMessage("txt_nenhum_log_encontrado", null, locale))
+                .setDescription(messageSource.getMessage("txt_nao_foi_possivel_extrair_nenhum_squad_log_do_texto_fornecido", null, locale) + ".")
                 .setColor(Color.RED);
 
-        event.getHook().editOriginalEmbeds(embed.build()).queue();
+        event.getHook().editOriginalEmbeds(embed.build())
+                .setActionRow(
+                        Button.primary("open-batch-modal", "🔄 " + messageSource.getMessage("txt_preencher_novamente", null, locale)),
+                        Button.danger("batch-cancel-from-error", "❌ " + messageSource.getMessage("txt_cancelar", null, locale))
+                )
+                .queue();
     }
 
     private void showValidationErrors(ModalInteractionEvent event, BatchParsingResult result) {
+        java.util.Locale locale = getUserLocale(event.getUser().getIdLong());
         EmbedBuilder embed = new EmbedBuilder()
-                .setTitle("❌ " + messageSource.getMessage("txt_erros_de_validacao", null, getUserLocale(event.getUser().getIdLong())))
-                .setDescription(messageSource.getMessage("txt_foram_encontrados_os_seguintes_erros", null, getUserLocale(event.getUser().getIdLong())) + ":")
+                .setTitle("❌ " + messageSource.getMessage("txt_erros_de_validacao", null, locale))
+                .setDescription(messageSource.getMessage("txt_foram_encontrados_os_seguintes_erros", null, locale) + ":")
                 .setColor(Color.RED);
 
         StringBuilder errorText = new StringBuilder();
@@ -306,15 +333,20 @@ public class BatchCreationHandler extends AbstractInteractionHandler {
             errorText.append("• ").append(error).append("\n");
         }
 
-        embed.addField(messageSource.getMessage("txt_erros_encontrados", null, getUserLocale(event.getUser().getIdLong())), errorText.toString(), false);
-        embed.setFooter(String.format(messageSource.getMessage("txt_total_processado", null, getUserLocale(event.getUser().getIdLong())) + ": %d | "
-                        + messageSource.getMessage("txt_validos", null, getUserLocale(event.getUser().getIdLong())) + ": %d | " +
-                        messageSource.getMessage("txt_erros", null, getUserLocale(event.getUser().getIdLong())) + ": %d",
+        embed.addField(messageSource.getMessage("txt_erros_encontrados", null, locale), errorText.toString(), false);
+        embed.setFooter(String.format(messageSource.getMessage("txt_total_processado", null, locale) + ": %d | "
+                        + messageSource.getMessage("txt_validos", null, locale) + ": %d | " +
+                        messageSource.getMessage("txt_erros", null, locale) + ": %d",
                 result.getTotalProcessed(),
                 result.getValidCount(),
                 result.getErrorCount()));
 
-        event.getHook().editOriginalEmbeds(embed.build()).queue();
+        event.getHook().editOriginalEmbeds(embed.build())
+                .setActionRow(
+                        Button.primary("open-batch-modal", "🔄 " + messageSource.getMessage("txt_preencher_novamente", null, locale)),
+                        Button.danger("batch-cancel-from-error", "❌ " + messageSource.getMessage("txt_cancelar", null, locale))
+                )
+                .queue();
     }
 
     private void showApiTimeoutError(ModalInteractionEvent event) {
@@ -527,29 +559,22 @@ public class BatchCreationHandler extends AbstractInteractionHandler {
 
     private void cancelBatchCreation(ButtonInteractionEvent event, String userId) {
         clearBatchState(userId);
+        java.util.Locale locale = getUserLocale(event.getUser().getIdLong());
 
-        EmbedBuilder cancelingEmbed = new EmbedBuilder()
-                .setTitle("⏳ " + messageSource.getMessage("txt_cancelando", null, getUserLocale(event.getUser().getIdLong())) + "...")
-                .setDescription(messageSource.getMessage("txt_cancelamento_criacao_em_lote", null, getUserLocale(event.getUser().getIdLong())) + "...")
-                .setColor(Color.YELLOW);
+        EmbedBuilder embed = new EmbedBuilder()
+                .setTitle("🛑 " + messageSource.getMessage("txt_fluxo_de", null, locale) + " " + 
+                        messageSource.getMessage("txt_criacao", null, locale) + " " + 
+                        messageSource.getMessage("txt_encerrado", null, locale))
+                .setDescription(messageSource.getMessage("txt_o_processo_foi_cancelado_com_sucesso", null, locale) + ".\n\n" +
+                        messageSource.getMessage("txt_todos_os_dados_nao_salvos_foram_descartados", null, locale) + ".\n\n" +
+                        messageSource.getMessage("txt_use_squad_log_quando_quiser_comecar_novamente", null, locale) + ".")
+                .setColor(0xe74c3c)
+                .setFooter(messageSource.getMessage("txt_processo_cancelado_pelo_usuario", null, locale) + " • " + 
+                        messageSource.getMessage("txt_esta_mensagem_sera_excluida_automaticamente", null, locale));
 
-        event.getHook().editOriginalEmbeds(cancelingEmbed.build())
+        event.getHook().editOriginalEmbeds(embed.build())
                 .setComponents()
                 .queue();
-
-        EmbedBuilder exitEmbed = new EmbedBuilder()
-                .setTitle("👋 " + messageSource.getMessage("txt_obrigado_por_usar_o_squad_log_bot", null, getUserLocale(event.getUser().getIdLong())) + "!")
-                .setDescription(messageSource.getMessage("txt_ate_a_proxima", null, getUserLocale(event.getUser().getIdLong())) + "! 🚀\n\n" +
-                        "**" + messageSource.getMessage("txt_comandos_disponiveis", null, getUserLocale(event.getUser().getIdLong())) + ":**\n" +
-                        "`/squad-log` - " + messageSource.getMessage("txt_criar_ou_atualizar_squad_log", null, getUserLocale(event.getUser().getIdLong())) + "\n" +
-                        "`/squad-log-lote` - " + messageSource.getMessage("txt_criar_multiplos_logs_de_uma_vez", null, getUserLocale(event.getUser().getIdLong())) + "\n" +
-                        "`/language` - " + messageSource.getMessage("txt_alterar_idioma", null, getUserLocale(event.getUser().getIdLong())))
-                .setColor(Color.BLUE)
-                .setFooter(messageSource.getMessage("txt_esta_mensagem_sera_excluida_automaticamente", null, getUserLocale(event.getUser().getIdLong())));
-
-        event.getHook().editOriginalEmbeds(exitEmbed.build())
-                .setComponents()
-                .queueAfter(2, TimeUnit.SECONDS);
 
         event.getHook().deleteOriginal().queueAfter(10, TimeUnit.SECONDS);
     }
