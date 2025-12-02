@@ -137,6 +137,8 @@ public class ComponentInteractionListener extends ListenerAdapter {
                 UserContext.setCurrentUserId(String.valueOf(userId));
                 if (modalId.equals("batch-creation-modal")) {
                     batchCreationHandler.handleBatchCreationModal(event);
+                } else if (modalId.equals("batch-creation-modal-retry")) {
+                    batchCreationHandler.handleBatchCreationModalRetry(event);
                 } else if (modalId.equals("batch-edit-modal")) {
                     batchCreationHandler.handleEditEntryModal(event);
                 } else if (modalId.equals("batch-edit-modal-page1") || modalId.equals("batch-edit-modal-page2")) {
@@ -181,7 +183,8 @@ public class ComponentInteractionListener extends ListenerAdapter {
     }
 
     private boolean isBatchModal(String modalId) {
-        return modalId.equals("batch-creation-modal") || modalId.equals("batch-edit-modal") ||
+        return modalId.equals("batch-creation-modal") || modalId.equals("batch-creation-modal-retry") ||
+               modalId.equals("batch-edit-modal") ||
                modalId.equals("batch-edit-modal-page1") || modalId.equals("batch-edit-modal-page2") ||
                (modalId.startsWith("batch-edit-") && modalId.endsWith("-modal"));
     }

@@ -103,7 +103,7 @@ public class LogSelectionHandler extends AbstractInteractionHandler {
         }
         JSONObject user = logJson.optJSONObject("user");
         if (user != null) {
-            String userId = String.valueOf(user.get("id"));
+            String odUserId = String.valueOf(user.get("id"));
             String firstName = user.optString("first_name", "");
             String lastName = user.optString("last_name", "");
             String userName = "";
@@ -116,13 +116,15 @@ public class LogSelectionHandler extends AbstractInteractionHandler {
             } else {
                 userName = user.optString("name", "");
             }
-               loggerApiPort.info("Carregando dados do usuário: id={}, firstName={}, lastName={}, fullName={}",
-                    userId, firstName, lastName, userName);
-            state.setUserId(userId);
+            loggerApiPort.info("Carregando dados do usuário: id={}, firstName={}, lastName={}, fullName={}",
+                    odUserId, firstName, lastName, userName);
+            state.setUserId(odUserId);
             state.setUserName(userName);
-               loggerApiPort.info("DEBUG: Definindo userId={} no estado (squadId={})", userId, state.getSquadId());
+            loggerApiPort.info("DEBUG: Definindo userId={} no estado (squadId={})", odUserId, state.getSquadId());
         } else {
-               loggerApiPort.warn("Objeto 'user' não encontrado no log JSON: {}", logJson.toString());
+            loggerApiPort.info("Objeto 'user' não encontrado - definindo como All Team (userId = squadId)");
+            state.setUserId(state.getSquadId());
+            state.setUserName("All Team");
         }
         JSONObject type = findTypeObject(logJson);
         if (type != null) {
@@ -132,16 +134,20 @@ public class LogSelectionHandler extends AbstractInteractionHandler {
         JSONArray categories = findCategoriesArray(logJson);
         state.getCategoryIds().clear();
         state.getCategoryNames().clear();
-        if (categories != null) {
+        loggerApiPort.info("DEBUG: Buscando categorias no JSON. Keys disponíveis: {}", logJson.keySet());
+        loggerApiPort.info("DEBUG: categories encontrado: {}", categories);
+        if (categories != null && categories.length() > 0) {
             for (int j = 0; j < categories.length(); j++) {
                 JSONObject category = categories.getJSONObject(j);
                 state.getCategoryIds().add(String.valueOf(category.get("id")));
                 state.getCategoryNames().add(category.optString("name", ""));
             }
+        } else {
+            loggerApiPort.warn("DEBUG: Nenhuma categoria encontrada! JSON completo: {}", logJson.toString());
         }
-           loggerApiPort.info("Estado carregado: squadId={}, squadName={}, userId={}, userName={}, typeId={}, typeName={}",
+        loggerApiPort.info("Estado carregado: squadId={}, squadName={}, userId={}, userName={}, typeId={}, typeName={}, categoryIds={}",
                 state.getSquadId(), state.getSquadName(), state.getUserId(), state.getUserName(),
-                state.getTypeId(), state.getTypeName());
+                state.getTypeId(), state.getTypeName(), state.getCategoryIds());
     }
 
     private JSONObject findTypeObject(JSONObject logJson) {
@@ -162,6 +168,12 @@ public class LogSelectionHandler extends AbstractInteractionHandler {
         }
         if (categories == null) {
             categories = logJson.optJSONArray("squad_categories");
+        }
+        if (categories == null) {
+            categories = logJson.optJSONArray("skill_category");
+        }
+        if (categories == null) {
+            categories = logJson.optJSONArray("category");
         }
         return categories;
     }

@@ -20,33 +20,38 @@ public class EmbedPreviewNavigationService implements PreviewNavigator {
     }
     
     public MessageEmbed createPreviewEmbed(BatchLogEntry entry, int currentIndex, int totalCount, String modifiedField) {
+        if (modifiedField != null) {
+            entry.addModifiedField(modifiedField);
+        }
+        
         EmbedBuilder embed = new EmbedBuilder();
         
+        boolean hasModifications = entry.hasModifications();
         String title = "📋 Preview do Squad Log";
-        if (modifiedField != null) {
+        if (hasModifications) {
             title += " ✅";
         }
         
         embed.setTitle(title)
-              .setColor(modifiedField != null ? Color.GREEN : Color.BLUE)
+              .setColor(hasModifications ? Color.GREEN : Color.BLUE)
               .setDescription(String.format("**Log %d de %d**", currentIndex + 1, totalCount));
 
-        embed.addField("🏢 Squad", formatFieldValue(entry.getSquadName(), "squad", modifiedField), false);
-        embed.addField("👤 Pessoa", formatFieldValue(entry.getPersonName(), "person", modifiedField), false);
-        embed.addField("📝 Tipo", formatFieldValue(entry.getLogType(), "type", modifiedField), false);
-        embed.addField("🏷️ Categorias", formatFieldValue(String.join(", ", entry.getCategories()), "categories", modifiedField), false);
-        embed.addField("📄 Descrição", formatFieldValue(entry.getDescription(), "description", modifiedField), false);
+        embed.addField("🏢 Squad", formatFieldValueFromEntry(entry.getSquadName(), "squad", entry), false);
+        embed.addField("👤 Pessoa", formatFieldValueFromEntry(entry.getPersonName(), "person", entry), false);
+        embed.addField("📝 Tipo", formatFieldValueFromEntry(entry.getLogType(), "type", entry), false);
+        embed.addField("🏷️ Categorias", formatFieldValueFromEntry(String.join(", ", entry.getCategories()), "categories", entry), false);
+        embed.addField("📄 Descrição", formatFieldValueFromEntry(entry.getDescription(), "description", entry), false);
         
         String startDate = entry.getStartDate() != null ? 
             entry.getStartDate().format(BRAZILIAN_DATE_FORMAT) : "Não informado";
-        embed.addField("📅 Data de Início", formatFieldValue(startDate, "dates", modifiedField), false);
+        embed.addField("📅 Data de Início", formatFieldValueFromEntry(startDate, "dates", entry), false);
         
         String endDate = entry.getEndDate() != null ? 
             entry.getEndDate().format(BRAZILIAN_DATE_FORMAT) : "Não informado";
-        embed.addField("📅 Data de Fim", formatFieldValue(endDate, "dates", modifiedField), false);
+        embed.addField("📅 Data de Fim", formatFieldValueFromEntry(endDate, "dates", entry), false);
 
-        if (modifiedField != null) {
-            embed.addField("", "✅ **Campo atualizado com sucesso!**\n✏️ Para editar novamente, clique nos botões abaixo", false);
+        if (hasModifications) {
+            embed.addField("", "✅ **Este log foi modificado**\n✏️ Para editar novamente, clique nos botões abaixo", false);
         } else {
             embed.addField("", "✏️ **Para editar, clique nos botões abaixo**", false);
         }
@@ -56,8 +61,8 @@ public class EmbedPreviewNavigationService implements PreviewNavigator {
         return embed.build();
     }
     
-    private String formatFieldValue(String value, String fieldName, String modifiedField) {
-        if (modifiedField != null && fieldName.equals(modifiedField)) {
+    private String formatFieldValueFromEntry(String value, String fieldName, BatchLogEntry entry) {
+        if (entry.isFieldModified(fieldName)) {
             return "✅ **" + value + "** *(modificado)*";
         }
         return value;

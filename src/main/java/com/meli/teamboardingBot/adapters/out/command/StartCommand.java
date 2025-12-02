@@ -122,11 +122,12 @@ public class StartCommand implements SlashCommandHandler {
                           "• `/status` - " + messageSource.getMessage("txt_verificar_seu_status_de_autenticacao", null, userLocale) + "\n" +
                           "• `/language` - " + messageSource.getMessage("txt_alterar_idioma", null, userLocale)+"\n" +
                           "• `/help` - " + messageSource.getMessage("txt_help", null, userLocale))
-            .setColor(0x00FF00);
+            .setColor(0x00FF00)
+            .setFooter(messageSource.getMessage("txt_esta_mensagem_sera_excluida_automaticamente", null, userLocale));
         
         event.replyEmbeds(embed.build())
             .setEphemeral(true)
-            .queue();
+            .queue(hook -> hook.deleteOriginal().queueAfter(10, java.util.concurrent.TimeUnit.SECONDS));
     }
     
     private void showAuthenticationScreen(SlashCommandInteractionEvent event, String userId, Locale userLocale) {
