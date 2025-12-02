@@ -1,13 +1,16 @@
 package com.meli.teamboardingBot.adapters.handler;
 
+import com.meli.teamboardingBot.adapters.out.language.LanguageInterceptorService;
+import com.meli.teamboardingBot.adapters.out.language.UserLanguageService;
+import com.meli.teamboardingBot.adapters.out.session.ActiveFlowMessageService;
 import com.meli.teamboardingBot.core.domain.FormState;
 import com.meli.teamboardingBot.core.ports.auth.GetIsUserAuthenticatedPort;
 import com.meli.teamboardingBot.core.ports.formstate.GetOrCreateFormStatePort;
-import com.meli.teamboardingBot.adapters.out.language.LanguageInterceptorService;
-import com.meli.teamboardingBot.adapters.out.language.UserLanguageService;
+import com.meli.teamboardingBot.core.usecase.auth.oath.UserTokenManager;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -28,18 +31,21 @@ public class LanguageSelectionHandler extends ListenerAdapter {
     private final GetOrCreateFormStatePort getOrCreateFormStatePort;
     private final LanguageInterceptorService languageInterceptor;
     private final GetIsUserAuthenticatedPort isUserAuthenticated;
+    private final ActiveFlowMessageService activeFlowMessageService;
 
     @Autowired
     public LanguageSelectionHandler(UserLanguageService languageService, 
                                    MessageSource messageSource, 
                                    GetOrCreateFormStatePort getOrCreateFormStatePort,
                                    LanguageInterceptorService languageInterceptor,
-                                    GetIsUserAuthenticatedPort isUserAuthenticated) {
+                                   GetIsUserAuthenticatedPort isUserAuthenticated,
+                                   ActiveFlowMessageService activeFlowMessageService) {
         this.languageService = languageService;
         this.messageSource = messageSource;
         this.getOrCreateFormStatePort = getOrCreateFormStatePort;
         this.languageInterceptor = languageInterceptor;
         this.isUserAuthenticated = isUserAuthenticated;
+        this.activeFlowMessageService = activeFlowMessageService;
     }
     
     @Override
@@ -453,20 +459,70 @@ public class LanguageSelectionHandler extends ListenerAdapter {
         });
     }
     
-    private void executeStatusCommandWithHook(net.dv8tion.jda.api.interactions.InteractionHook hook, Locale userLocale) {
-        String message = userLocale.equals(languageService.getPortugueseLocale())
-            ? "Use o comando `/status` para verificar seu status de autenticação."
-            : "Use el comando `/status` para verificar su estado de autenticación.";
-            
-        hook.editOriginal(message).setComponents().queue();
+    private void executeStatusCommandWithHook(InteractionHook hook, Locale userLocale) {
+        Long userId = hook.getInteraction().getUser().getIdLong();
+        String userIdStr = String.valueOf(userId);
+        
+        activeFlowMessageService.registerFlowHook(userId, hook);
+        
+        if (!isUserAuthenticated.isUserAuthenticated(userIdStr)) {
+            EmbedBuilder embed = new EmbedBuilder()
+                .setTitle(messageSource.getMessage("status.unauthenticated.title", null, userLocale))
+                .setDescription(messageSource.getMessage("status.unauthenticated.description", null, userLocale))
+                .setColor(0xFF0000);
+
+            hook.editOriginalEmbeds(embed.build())
+                .setActionRow(
+                    Button.primary("start-auth", "🔐 " + messageSource.getMessage("status.button.login", null, userLocale)),
+                    Button.secondary("status-close", "🚪 " + messageSource.getMessage("status.button.close", null, userLocale))
+                )
+                .queue();
+        } else {
+            String authMethod = UserTokenManager.getAuthMethod(userIdStr);
+            String authMethodText = "manual".equals(authMethod) ?
+                messageSource.getMessage("status.auth.method.manual", null, userLocale) :
+                messageSource.getMessage("status.auth.method.google", null, userLocale);
+
+            String userName = hook.getInteraction().getUser().getName();
+            String description = messageSource.getMessage("status.authenticated.description",
+                new Object[]{userName, authMethodText}, userLocale);
+
+            EmbedBuilder embed = new EmbedBuilder()
+                .setTitle(messageSource.getMessage("status.authenticated.title", null, userLocale))
+                .setDescription(description)
+                .setColor(0x00FF00);
+
+            hook.editOriginalEmbeds(embed.build())
+                .setActionRow(
+                    Button.secondary("status-close", "🚪 " + messageSource.getMessage("status.button.close", null, userLocale)),
+                    Button.danger("status-logout", "🔓 " + messageSource.getMessage("status.button.logout", null, userLocale))
+                )
+                .queue();
+        }
     }
     
-    private void executeHelpCommandWithHook(net.dv8tion.jda.api.interactions.InteractionHook hook, Locale userLocale) {
-        String message = userLocale.equals(languageService.getPortugueseLocale())
-            ? "Use o comando `/help` para ver a lista de comandos disponíveis."
-            : "Use el comando `/help` para ver la lista de comandos disponibles.";
-            
-        hook.editOriginal(message).setComponents().queue();
+    private void executeHelpCommandWithHook(InteractionHook hook, Locale userLocale) {
+        Long userId = hook.getInteraction().getUser().getIdLong();
+        activeFlowMessageService.registerFlowHook(userId, hook);
+        
+        EmbedBuilder embed = new EmbedBuilder()
+            .setTitle("📚 " + messageSource.getMessage("txt_help_titulo", null, userLocale))
+            .setDescription(messageSource.getMessage("txt_help_descricao", null, userLocale))
+            .setColor(0x00AE86)
+            .addField("📋 `/squad-log`", messageSource.getMessage("txt_help_squad_log_descricao", null, userLocale), false)
+            .addField("📦 `/squad-log-lote`", messageSource.getMessage("txt_help_squad_log_lote_descricao", null, userLocale), false)
+            .addField("🚀 `/start`", messageSource.getMessage("txt_help_start_descricao", null, userLocale), false)
+            .addField("📊 `/status`", messageSource.getMessage("txt_help_status_descricao", null, userLocale), false)
+            .addField("🛑 `/stop`", messageSource.getMessage("txt_help_stop_descricao", null, userLocale), false)
+            .addField("🌐 `/language`", messageSource.getMessage("txt_help_language_descricao", null, userLocale), false)
+            .addField("❓ `/help`", messageSource.getMessage("txt_help_help_descricao", null, userLocale), false)
+            .setFooter(messageSource.getMessage("txt_help_footer", null, userLocale), null);
+
+        hook.editOriginalEmbeds(embed.build())
+            .setActionRow(
+                Button.danger("help-close", "🚪 " + messageSource.getMessage("txt_sair", null, userLocale))
+            )
+            .queue();
     }
     
     private void executeLanguageCommandWithHook(net.dv8tion.jda.api.interactions.InteractionHook hook, Locale userLocale) {
